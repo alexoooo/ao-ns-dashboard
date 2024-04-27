@@ -907,7 +907,7 @@ define(["N/record"], function(record) {
         }
 
         const withMultiSelect = [];
-        for (const fieldId in Object.keys(groupByFieldId)) {
+        for (const fieldId of Object.keys(groupByFieldId)) {
             const fieldAssignments = groupByFieldId[fieldId];
             if (fieldAssignments.length === 1) {
                 withMultiSelect.push(fieldAssignments[0]);
@@ -915,7 +915,7 @@ define(["N/record"], function(record) {
             else {
                 withMultiSelect.push({
                     fieldId,
-                    "fieldText": fieldAssignments.map(i => i.fieldText);
+                    "fieldText": fieldAssignments.map(i => i.fieldText)
                 });
             }
         }
@@ -944,13 +944,12 @@ define(["N/record"], function(record) {
 		rec, fieldId, fieldText
 	) {
         const field = rec.getField({fieldId});
-        if (field.type === "select") {
-            return setRecordSelect(rec, fieldId, fieldText);
+        if (field.type === "select" || field.type === "multiselect") {
+            return setRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
         }
 
         if (Array.isArray(fieldText)) {
-			throw new Error(
-				"Single value expected (" + fieldId + "): " + fieldText);
+			throw new Error("Single value expected (" + fieldId + "): " + fieldText);
         }
 
 		const existingText = rec.getText({fieldId});
@@ -968,9 +967,12 @@ define(["N/record"], function(record) {
 	}
 
 	function setRecordSelect(
-		rec, fieldId, fieldText
+		rec, fieldId, fieldText, multi
 	) {
 	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+        if (! multi && asList.length > 1) {
+			throw new Error("Single value expected (" + fieldId + "): " + fieldText);
+        }
 
         const allIds = asList.every(i => /^\d+$/.test(i.trim()));
         const someIds = asList.some(i => /^\d+$/.test(i.trim()));
@@ -986,7 +988,7 @@ define(["N/record"], function(record) {
             if (JSON.stringify(fieldValues) !== JSON.stringify(existingList)) {
                 rec.setValue({
                     fieldId,
-                    "value": fieldValues
+                    "value": (multi ? fieldValues : fieldValues[0])
                 });
             }
             return reload => {
@@ -1001,7 +1003,7 @@ define(["N/record"], function(record) {
 		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
 			rec.setText({
 				fieldId,
-				"text": asList
+				"text": (multi ? asList : asList[0])
 			});
 		}
 
@@ -1016,8 +1018,8 @@ define(["N/record"], function(record) {
 	) {
 		const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
 
-        if (field.type === "select") {
-            return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, fieldText);
+        if (field.type === "select" || field.type === "multiselect") {
+            return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, fieldText, field.type === "multiselect");
         }
 
         if (Array.isArray(fieldText)) {
@@ -1052,9 +1054,12 @@ define(["N/record"], function(record) {
 	}
 
 	function setSublistSelect(
-		rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText
+		rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, multi
 	) {
 	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+        if (! multi && asList.length > 1) {
+			throw new Error("Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText);
+        }
 
         const allIds = asList.every(i => /^\d+$/.test(i.trim()));
         const someIds = asList.some(i => /^\d+$/.test(i.trim()));
@@ -1072,7 +1077,7 @@ define(["N/record"], function(record) {
                     sublistId,
                     fieldId,
                     line: sublistLine,
-                    "value": fieldValues
+                    "value": (multi ? fieldValues : fieldValues[0])
                 });
             }
             return reload => {
@@ -1088,7 +1093,7 @@ define(["N/record"], function(record) {
 			rec.getSublistText({
 				sublistId,
 				fieldId,
-				"text": asList
+				"text": (multi ? asList : asList[0])
 			});
 		}
 
@@ -1359,8 +1364,8 @@ define(["N/record"], function(record) {
 		rec, fieldId, fieldText
 	) {
         const field = rec.getField({fieldId});
-        if (field.type === "select") {
-            return setDefaultRecordSelect(rec, fieldId, fieldText);
+        if (field.type === "select" || field.type === "multiselect") {
+            return setDefaultRecordSelect(rec, fieldId, fieldText, field.type === "multiselect);
         }
 
         if (Array.isArray(fieldText)) {
@@ -1382,9 +1387,13 @@ define(["N/record"], function(record) {
 	}
 
 	function setDefaultRecordSelect(
-		rec, fieldId, fieldText
+		rec, fieldId, fieldText, multi
 	) {
 	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+        if (! multi && asList.length > 1) {
+			throw new Error(
+				"Single value expected (" + fieldId + "): " + fieldText);
+        }
 
         const allIds = asList.every(i => /^\d+$/.test(i.trim()));
         const someIds = asList.some(i => /^\d+$/.test(i.trim()));
@@ -1397,7 +1406,7 @@ define(["N/record"], function(record) {
             const fieldValues = asList.map(i => parseInt(i));
             rec.setValue({
                 fieldId,
-                "value": fieldValues
+                "value": (multi ? fieldValues : fieldValues[0])
             });
             return reload => {
                 const afterSave = reload.getValue({fieldId});
@@ -1410,7 +1419,7 @@ define(["N/record"], function(record) {
 
         rec.setText({
             fieldId,
-            "text": asList
+            "text": (multi ? asList : asList[0])
         });
 
 		return reload => {
