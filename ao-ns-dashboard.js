@@ -985,7 +985,7 @@ define(["N/record"], function(record) {
             const fieldValues = asList.map(i => parseInt(i));
             const existingValue = rec.getValue({fieldId});
             const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-            if (JSON.stringify(fieldValues) !== JSON.stringify(existingList)) {
+            if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
                 rec.setValue({
                     fieldId,
                     "value": (multi ? fieldValues : fieldValues[0])
@@ -1072,7 +1072,7 @@ define(["N/record"], function(record) {
             const fieldValues = asList.map(i => parseInt(i));
             const existingValue = rec.getSublistValue({sublistId, fieldId, "line": sublistLine});
             const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-            if (JSON.stringify(fieldValues) !== JSON.stringify(existingList)) {
+            if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
                 rec.setSublistValue({
                     sublistId,
                     fieldId,
@@ -1365,7 +1365,7 @@ define(["N/record"], function(record) {
 	) {
         const field = rec.getField({fieldId});
         if (field.type === "select" || field.type === "multiselect") {
-            return setDefaultRecordSelect(rec, fieldId, fieldText, field.type === "multiselect);
+            return setDefaultRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
         }
 
         if (Array.isArray(fieldText)) {
@@ -1411,7 +1411,7 @@ define(["N/record"], function(record) {
             return reload => {
                 const afterSave = reload.getValue({fieldId});
                 const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-                return JSON.stringify(afterSave) ===  JSON.stringify(fieldValues)
+                return JSON.stringify(asList) === JSON.stringify(afterSaveList)
                     ? `Default ${fieldId} to '${fieldText}'`
                     : `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
             };
