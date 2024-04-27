@@ -7,3 +7,9 @@ Extend NetSuite with the following capabilities:
 - Systematically look up record and sublist fields
 - Systematically edit one or more records, including setting fields and creating/updating/deleting sublist lines
 - Mass creating/deleting/saving of record
+
+Installation:
+- Customization / Scripting / Scripts / New
+- [+] add Script File, Choose file, Select downloaded js, "file name" as "ao-ns-dashboard.js", [Save]
+- [Create Script Record]
+- Deployments / Add new

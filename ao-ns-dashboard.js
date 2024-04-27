@@ -28,7 +28,7 @@
 */
 define(["N/record"], function(record) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.03.15";
+	const version = "2024.04.27";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -583,7 +583,7 @@ define(["N/record"], function(record) {
 			return JSON.stringify(["Empty"]);
 		}
 		
-		const parts = splitVetricalBar(tabDelimitedRow);
+		const parts = splitVerticalBar(tabDelimitedRow);
 		
 		const recordType = getRecordType(parts[0]);
 		const recordId = normalizeKey(parts[1]);
@@ -667,23 +667,6 @@ define(["N/record"], function(record) {
 			? ` | ${sublistValue}`: "";
 		
 		return `${sublistText} | line ${sublistLine}${sublistValueSuffix}`;
-	}
-	
-	function parseFieldAssignment(fieldAssignment) {
-		const firstEquals = fieldAssignment.indexOf("=");
-		if (firstEquals === -1) {
-			throw new Error(
-				"Field assignment expected (fieldId=value): " +
-					fieldAssignment);
-		}
-		
-		const fieldId = fieldAssignment.substring(0, firstEquals);
-		const fieldText = fieldAssignment.substring(firstEquals + 1);
-		
-		return {
-			fieldId: normalizeKey(fieldId),
-			fieldText
-		};
 	}
 	
 	function getSublistLine(rec, sublistId, sublistLineQuery) {
@@ -810,7 +793,7 @@ define(["N/record"], function(record) {
 	function handleEditRecord(context) {
 		const tabDelimitedRows = JSON.parse(context.request.body);
 		const firstTabDelimitedRow = tabDelimitedRows[0];
-		const firstParts = splitVetricalBar(firstTabDelimitedRow);
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
 		const recordType = getRecordType(firstParts[0]);
 		const recordId = normalizeKey(firstParts[1]);
 		
@@ -821,7 +804,7 @@ define(["N/record"], function(record) {
 		
 		const allValidators = [];
 		for (const tabDelimitedRow of tabDelimitedRows) {
-			const parts = splitVetricalBar(tabDelimitedRow);
+			const parts = splitVerticalBar(tabDelimitedRow);
 			
 			const actionLocation = parts[2];
 			const fieldValues = parts[3];
@@ -913,22 +896,63 @@ define(["N/record"], function(record) {
 		if (fieldAssignmentList === "") {
 			return [];
 		}
-		
-		return splitAmpersand(fieldAssignmentList)
-			.map(i => parseFieldAssignment(i));
+
+		const parts = splitAmpersand(fieldAssignmentList);
+		const assignments = parts.map(i => parseFieldAssignment(i));
+
+        const groupByFieldId = {};
+        for (const i of assignments) {
+            groupByFieldId[i.fieldId] = (groupByFieldId[i.fieldId] || []);
+            groupByFieldId[i.fieldId].push(i);
+        }
+
+        const withMultiSelect = [];
+        for (const fieldId in Object.keys(groupByFieldId)) {
+            const fieldAssignments = groupByFieldId[fieldId];
+            if (fieldAssignments.length === 1) {
+                withMultiSelect.push(fieldAssignments[0]);
+            }
+            else {
+                withMultiSelect.push({
+                    fieldId,
+                    "fieldText": fieldAssignments.map(i => i.fieldText);
+                });
+            }
+        }
+
+		return withMultiSelect;
+	}
+
+	function parseFieldAssignment(fieldAssignment) {
+		const firstEquals = fieldAssignment.indexOf("=");
+		if (firstEquals === -1) {
+			throw new Error(
+				"Field assignment expected (fieldId=value): " +
+					fieldAssignment);
+		}
+
+		const fieldId = fieldAssignment.substring(0, firstEquals);
+		const fieldText = fieldAssignment.substring(firstEquals + 1);
+
+		return {
+			fieldId: normalizeKey(fieldId),
+			fieldText
+		};
 	}
 
 	function setRecordField(
 		rec, fieldId, fieldText
 	) {
-		if (/^\d+$/.test(fieldText.trim())) {
-			const field = rec.getField({fieldId});
-			if (field.type === "select") {
-				const fieldValue = parseInt(fieldText);
-				return setRecordFieldValue(rec, fieldId, fieldValue);
-			}
-		}
-		
+        const field = rec.getField({fieldId});
+        if (field.type === "select") {
+            return setRecordSelect(rec, fieldId, fieldText);
+        }
+
+        if (Array.isArray(fieldText)) {
+			throw new Error(
+				"Single value expected (" + fieldId + "): " + fieldText);
+        }
+
 		const existingText = rec.getText({fieldId});
 		if (existingText !== fieldText) {
 			rec.setText({
@@ -943,20 +967,47 @@ define(["N/record"], function(record) {
 		};
 	}
 
-	function setRecordFieldValue(
-		rec, fieldId, fieldValue
+	function setRecordSelect(
+		rec, fieldId, fieldText
 	) {
-		const existingValue = rec.getValue({fieldId});
-		if (existingValue !== fieldValue) {
-			rec.setValue({
+	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+
+        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        if (someIds && ! allIds) {
+            throw new Error(
+                "All must be text or all must be IDs (" + fieldId + "): " + fieldText);
+        }
+
+        if (allIds) {
+            const fieldValues = asList.map(i => parseInt(i));
+            const existingValue = rec.getValue({fieldId});
+            const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
+            if (JSON.stringify(fieldValues) !== JSON.stringify(existingList)) {
+                rec.setValue({
+                    fieldId,
+                    "value": fieldValues
+                });
+            }
+            return reload => {
+                const afterUpdate = reload.getValue({fieldId});
+                return validateSetField(fieldId, "" + existingList, "" + asList, "" + afterUpdate);
+            };
+        }
+
+		const existingText = rec.getText({fieldId});
+        const existingList = Array.isArray(existingText) ? existingText : [existingText];
+
+		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+			rec.setText({
 				fieldId,
-				"value": fieldValue
+				"text": asList
 			});
 		}
-		
+
 		return reload => {
-			const afterUpdate = reload.getValue({fieldId});
-			return validateSetField(fieldId, "" + existingValue, "" + fieldValue, "" + afterUpdate);
+			const afterUpdate = reload.getText({fieldId});
+			return validateSetField(fieldId, "" + existingText, "" + fieldText, "" + afterUpdate);
 		};
 	}
 
@@ -964,18 +1015,15 @@ define(["N/record"], function(record) {
 		rec, sublistId, sublistLineQuery, fieldId, fieldText
 	) {
 		const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
-		
-		if (/^\d+$/.test(fieldText.trim())) {
-			const field = rec.getSublistField({
-				sublistId,
-				fieldId,
-				line: sublistLine
-			});
-			if (field.type === "select") {
-				const fieldValue = parseInt(fieldText);
-				return setSublistFieldValue(rec, sublistId, fieldId, sublistLine, fieldValue);
-			}
-		}
+
+        if (field.type === "select") {
+            return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, fieldText);
+        }
+
+        if (Array.isArray(fieldText)) {
+			throw new Error(
+				"Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText);
+        }
 		
 		const existingText = rec.getSublistText({
 			sublistId,
@@ -1002,34 +1050,52 @@ define(["N/record"], function(record) {
 			return validateSetField(fieldId, existingText, fieldText, afterUpdate);
 		};
 	}
-	
-	
-	function setSublistFieldValue(
-		rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldValue
+
+	function setSublistSelect(
+		rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText
 	) {
-		const existingValue = rec.getSublistValue({
-			sublistId,
-			fieldId,
-			line: sublistLine
-		});
-		
-		if (existingValue !== fieldValue) {
-			rec.setSublistValue({
+	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+
+        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        if (someIds && ! allIds) {
+            throw new Error(
+                "All must be text or all must be IDs (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText);
+        }
+
+        if (allIds) {
+            const fieldValues = asList.map(i => parseInt(i));
+            const existingValue = rec.getSublistValue({sublistId, fieldId, "line": sublistLine});
+            const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
+            if (JSON.stringify(fieldValues) !== JSON.stringify(existingList)) {
+                rec.setSublistValue({
+                    sublistId,
+                    fieldId,
+                    line: sublistLine,
+                    "value": fieldValues
+                });
+            }
+            return reload => {
+                const afterUpdate = reload.getSublistValue({sublistId, fieldId, "line": sublistLine});
+                return validateSetField(fieldId, "" + existingList, "" + asList, "" + afterUpdate);
+            };
+        }
+
+		const existingText = rec.getText({fieldId});
+        const existingList = Array.isArray(existingText) ? existingText : [existingText];
+
+		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+			rec.getSublistText({
 				sublistId,
 				fieldId,
-				line: sublistLine,
-				"value": fieldValue
+				"text": asList
 			});
 		}
-		
+
 		return reload => {
 			const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
-			const afterUpdate = reload.getSublistValue({
-				sublistId,
-				fieldId,
-				line: reloadSublistLine
-			});
-			return validateSetField(fieldId, "" + existingValue, "" + fieldValue, "" + afterUpdate);
+			const afterUpdate = reload.getSublistText({sublistId, fieldId, line: reloadSublistLine});
+			return validateSetField(fieldId, "" + existingText, "" + fieldText, "" + afterUpdate);
 		};
 	}
 	
@@ -1039,7 +1105,7 @@ define(["N/record"], function(record) {
 				return `Did not change ${fieldId}, already set to '${existingText}'`;
 			}
 			else {
-				return `Unepected change ${fieldId}, was already '${existingText}' but now '${afterUpdate}'`;
+				return `Unexpected change ${fieldId}, was already '${existingText}' but now '${afterUpdate}'`;
 			}
 		}
 		else if (existingText === afterUpdate) {
@@ -1049,7 +1115,7 @@ define(["N/record"], function(record) {
 			return `Changed ${fieldId} from '${existingText}' to '${afterUpdate}'`;
 		}
 		else {
-			return `Unepected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
+			return `Unexpected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
 		}
 	};
 	
@@ -1057,7 +1123,6 @@ define(["N/record"], function(record) {
 		rec, sublistId, sublistLineQuery, fieldAssignments
 	) {
 		const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
-		
 		const ignoreRecalc = getIgnoreCalcArgument(fieldAssignments, true);
 		
 		rec.insertLine({
@@ -1225,7 +1290,7 @@ define(["N/record"], function(record) {
 	function handleCreateRecord(context) {
 		const tabDelimitedRows = JSON.parse(context.request.body);
 		const firstTabDelimitedRow = tabDelimitedRows[0];
-		const firstParts = splitVetricalBar(firstTabDelimitedRow);
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
 		const recordType = getRecordType(firstParts[0]);
 		const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
 		const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
@@ -1293,6 +1358,16 @@ define(["N/record"], function(record) {
 	function setDefaultRecordField(
 		rec, fieldId, fieldText
 	) {
+        const field = rec.getField({fieldId});
+        if (field.type === "select") {
+            return setDefaultRecordSelect(rec, fieldId, fieldText);
+        }
+
+        if (Array.isArray(fieldText)) {
+			throw new Error(
+				"Single value expected (" + fieldId + "): " + fieldText);
+        }
+
 		rec.setText({
 			fieldId,
 			"text": fieldText
@@ -1305,7 +1380,48 @@ define(["N/record"], function(record) {
 				: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 		};
 	}
-	
+
+	function setDefaultRecordSelect(
+		rec, fieldId, fieldText
+	) {
+	    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+
+        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        if (someIds && ! allIds) {
+            throw new Error(
+                "All must be text or all must be IDs (" + fieldId + "): " + fieldText);
+        }
+
+        if (allIds) {
+            const fieldValues = asList.map(i => parseInt(i));
+            rec.setValue({
+                fieldId,
+                "value": fieldValues
+            });
+            return reload => {
+                const afterSave = reload.getValue({fieldId});
+                const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
+                return JSON.stringify(afterSave) ===  JSON.stringify(fieldValues)
+                    ? `Default ${fieldId} to '${fieldText}'`
+                    : `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
+            };
+        }
+
+        rec.setText({
+            fieldId,
+            "text": asList
+        });
+
+		return reload => {
+			const afterSave = reload.getText({fieldId});
+            const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
+			return JSON.stringify(afterSaveList) ===  JSON.stringify(asList)
+				? `Default ${fieldId} to '${fieldText}'`
+				: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
+		};
+	}
+
 	pages["create-records"] = {
 		label: "Create Records",
 		render: createRecordsPage,
@@ -1347,7 +1463,7 @@ define(["N/record"], function(record) {
 	function handleMassSave(context) {
 		const tabDelimitedRows = JSON.parse(context.request.body);
 		const firstTabDelimitedRow = tabDelimitedRows[0];
-		const firstParts = splitVetricalBar(firstTabDelimitedRow);
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
 		const recordType = getRecordType(firstParts[0]);
 		const recordId = normalizeKey(firstParts[1] || "");
 		
@@ -1393,7 +1509,7 @@ define(["N/record"], function(record) {
 				${runNextJs()}
 				${runAllJs()}
 			</script>
-			<h1 style="color: red">***Records are PERMAMENTLY DELETED***</h1>
+			<h1 style="color: red">***Records are PERMANENTLY DELETED***</h1>
 			${documentationSection(`
 				<h3>· DELETE each Record by Record Type/Internal ID, see [${pages[pageLookupFields].label}] page (left menu)</h3>
 			`)}
@@ -1404,7 +1520,7 @@ define(["N/record"], function(record) {
 	function handleMassDelete(context) {
 		const tabDelimitedRows = JSON.parse(context.request.body);
 		const firstTabDelimitedRow = tabDelimitedRows[0];
-		const firstParts = splitVetricalBar(firstTabDelimitedRow);
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
 		const recordType = getRecordType(firstParts[0]);
 		const recordId = normalizeKey(firstParts[1] || "");
 		
@@ -1482,7 +1598,7 @@ define(["N/record"], function(record) {
 	}
 	
 	
-	function splitVetricalBar(value) {
+	function splitVerticalBar(value) {
 		const withSentinel = value.replaceAll("\\|", "__VERTICAL_BAR_ESCAPE__");
 		return withSentinel.split("|").map(i => i.replace("__VERTICAL_BAR_ESCAPE__", "|"));
 	}
