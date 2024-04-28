@@ -28,7 +28,7 @@
 */
 define(["N/record"], function(record) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.04.27";
+	const version = "2024.04.28";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -974,8 +974,8 @@ define(["N/record"], function(record) {
 			throw new Error("Single value expected (" + fieldId + "): " + fieldText);
         }
 
-        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
-        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
         if (someIds && ! allIds) {
             throw new Error(
                 "All must be text or all must be IDs (" + fieldId + "): " + fieldText);
@@ -1061,8 +1061,8 @@ define(["N/record"], function(record) {
 			throw new Error("Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText);
         }
 
-        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
-        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
         if (someIds && ! allIds) {
             throw new Error(
                 "All must be text or all must be IDs (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText);
@@ -1395,8 +1395,8 @@ define(["N/record"], function(record) {
 				"Single value expected (" + fieldId + "): " + fieldText);
         }
 
-        const allIds = asList.every(i => /^\d+$/.test(i.trim()));
-        const someIds = asList.some(i => /^\d+$/.test(i.trim()));
+        const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
+        const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
         if (someIds && ! allIds) {
             throw new Error(
                 "All must be text or all must be IDs (" + fieldId + "): " + fieldText);
@@ -1597,7 +1597,7 @@ define(["N/record"], function(record) {
 
 	//----------------------------------------------------------------------------------------------------------------
 	function normalizeKey(value) {
-		return value.replace(/\W/g, "").toLowerCase();
+		return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();
 	}
 	
 	
