@@ -26,9 +26,9 @@
 *@NApiVersion 2.1
 *@NScriptType Suitelet
 */
-define(["N/record"], function(record) {
+define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.04.28";
+	const version = "2024.04.28b";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -200,7 +200,6 @@ define(["N/record"], function(record) {
 	//----------------------------------------------------------------------------------------------------------------
 	const recordTypePage = "record-type";
 	const commandRecordType = "record-type";
-	const foundMessage = "Yes";
 	
 	function typePage(context) {
 		const recordId = normalizeKey(context.request.parameters[paramRecordId] || "");
@@ -225,10 +224,9 @@ define(["N/record"], function(record) {
 			${documentationSection(`
 				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
 				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· Detected Record Types will have a Result of '${foundMessage}'</h3>
 				<h3>· The same Internal ID can exist in multiple Record Types</h3>
 				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
-				<h3>· Custom Record Types are not automatically populated, but you can manually tpye them in below</h3>
+				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
 			`)}
 			<hr/>
 			<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
@@ -239,7 +237,7 @@ define(["N/record"], function(record) {
 					name="${paramRecordId}"
 					autofocus
 					onchange="onRecordId(this.value);"/>
-				<label class="mdl-textfield__label" for="recordId">Internal ID</label>
+				<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
 			</div>
 			<hr/>
 			${taskListAndRunStatusJs("Record Type")}
@@ -270,21 +268,56 @@ define(["N/record"], function(record) {
 		if (! recordId) {
 			return "Record ID not specified";
 		}
-		
+
 		const recordType = getRecordType(recordTypeName);
-		
-		let message;
-		try {
-			record.load({
-				type: recordType,
-				id: recordId
-			});
-			message = foundMessage;
-		}
-		catch (e) {
-			message = "No: " + e.message;
-		}
-		
+
+        const canBeInternal = /^-?\d+$/.test(recordId.trim());
+		let internalMessage;
+        if (canBeInternal) {
+            try {
+                record.load({
+                    type: recordType,
+                    id: recordId
+                });
+                internalMessage = "Internal ID found";
+            }
+            catch (e) {
+                internalMessage = "Internal ID not found: " + e.message;
+            }
+        }
+        else {
+            internalMessage = "Internal ID invalid";
+        }
+
+		let externalMessage;
+        try {
+            // TODO: use search.Type?
+            const externalIdSearch = search.create({
+                type: recordType,
+                filters: [
+                    search.createFilter({
+                        name: 'externalid',
+                        operator: search.Operator.IS,
+                        values: recordId
+                    })
+                ],
+                columns: []
+            });
+
+            const searchResults = externalIdSearch.run().getRange({ start: 0, end: 1 });
+            if (searchResults.length > 0) {
+                const internalId = searchResults[0].id;
+                externalMessage = "External ID found, with Internal ID = " + internalId;
+            }
+            else {
+                externalMessage = "External ID not found";
+            }
+        }
+        catch (e) {
+            externalMessage = "External ID not found: " + e.message;
+        }
+
+        const message = internalMessage + " | " + externalMessage;
 		return JSON.stringify([message]);
 	}
 	
