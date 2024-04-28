@@ -28,7 +28,7 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.04.28b";
+	const version = "2024.04.28c";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -224,6 +224,7 @@ define(["N/record", "N/search"], function(record, search) {
 			${documentationSection(`
 				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
 				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
+				<h3>· If the Internal ID or External ID is found, the Result will contain '***'</h3>
 				<h3>· The same Internal ID can exist in multiple Record Types</h3>
 				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
 				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
@@ -279,7 +280,7 @@ define(["N/record", "N/search"], function(record, search) {
                     type: recordType,
                     id: recordId
                 });
-                internalMessage = "Internal ID found";
+                internalMessage = "*** Internal ID found";
             }
             catch (e) {
                 internalMessage = "Internal ID not found: " + e.message;
@@ -291,7 +292,6 @@ define(["N/record", "N/search"], function(record, search) {
 
 		let externalMessage;
         try {
-            // TODO: use search.Type?
             const externalIdSearch = search.create({
                 type: recordType,
                 filters: [
@@ -307,7 +307,7 @@ define(["N/record", "N/search"], function(record, search) {
             const searchResults = externalIdSearch.run().getRange({ start: 0, end: 1 });
             if (searchResults.length > 0) {
                 const internalId = searchResults[0].id;
-                externalMessage = "External ID found, with Internal ID = " + internalId;
+                externalMessage = "*** External ID found, with Internal ID = " + internalId;
             }
             else {
                 externalMessage = "External ID not found";
