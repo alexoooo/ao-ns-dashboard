@@ -28,7 +28,7 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.04.28c";
+	const version = "2024.07.11";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -224,7 +224,6 @@ define(["N/record", "N/search"], function(record, search) {
 			${documentationSection(`
 				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
 				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· If the Internal ID or External ID is found, the Result will contain '***'</h3>
 				<h3>· The same Internal ID can exist in multiple Record Types</h3>
 				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
 				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
@@ -292,6 +291,7 @@ define(["N/record", "N/search"], function(record, search) {
 
 		let externalMessage;
         try {
+            // TODO: use search.Type?
             const externalIdSearch = search.create({
                 type: recordType,
                 filters: [
@@ -849,6 +849,7 @@ define(["N/record", "N/search"], function(record, search) {
 			
 			const validators = handleEditRecordAction(
 				rec, actionName, actionLocation, fieldValues);
+			
 			allValidators.push(validators);
 		}
 	
@@ -1050,9 +1051,10 @@ define(["N/record", "N/search"], function(record, search) {
 		rec, sublistId, sublistLineQuery, fieldId, fieldText
 	) {
 		const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
-
+		
+		const field = rec.getSublistField({sublistId, fieldId, line: sublistLine});
         if (field.type === "select" || field.type === "multiselect") {
-            return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, fieldText, field.type === "multiselect");
+            return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, field.type === "multiselect");
         }
 
         if (Array.isArray(fieldText)) {
@@ -1119,13 +1121,18 @@ define(["N/record", "N/search"], function(record, search) {
             };
         }
 
-		const existingText = rec.getText({fieldId});
+		const existingText = rec.getSublistText({
+			sublistId,
+			fieldId,
+			line: sublistLine
+		});
         const existingList = Array.isArray(existingText) ? existingText : [existingText];
 
 		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
-			rec.getSublistText({
+			rec.setSublistText({
 				sublistId,
 				fieldId,
+				line: sublistLine,
 				"text": (multi ? asList : asList[0])
 			});
 		}
@@ -1133,7 +1140,8 @@ define(["N/record", "N/search"], function(record, search) {
 		return reload => {
 			const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
 			const afterUpdate = reload.getSublistText({sublistId, fieldId, line: reloadSublistLine});
-			return validateSetField(fieldId, "" + existingText, "" + fieldText, "" + afterUpdate);
+			const afterUpdateAsList = Array.isArray(afterUpdate) ? afterUpdate : [afterUpdate];
+			return validateSetField(fieldId, "" + JSON.stringify(existingList), "" + JSON.stringify(asList), "" + JSON.stringify(afterUpdateAsList));
 		};
 	}
 	
