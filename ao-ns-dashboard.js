@@ -28,7 +28,7 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.07.11";
+	const version = "2024.08.08";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -1188,30 +1188,48 @@ define(["N/record", "N/search"], function(record, search) {
 		
 		const validationSublistFields = rec.getSublistFields({sublistId})
 			.filter(i => ! i.startsWith("sys_"));
-		const sublistValues = validationSublistFields.map(fieldId =>
-			rec.getSublistText({sublistId, fieldId, line: sublistLine}));
-		
-		//const allValues = [];
-		//allValues.push(sublistValues);
+		const sublistTextOrValues = validationSublistFields.map(fieldId =>
+			getSublistTextOrValue(rec, sublistId, fieldId, sublistLine));
 		
 		return [
 			reload => {
 				const foundAt = [];
 				const lineCount = reload.getLineCount({sublistId});
-				for (let i = 0; i < lineCount; i++) {
-					const reloadSublistValues = validationSublistFields.map(fieldId =>
-						reload.getSublistText({sublistId, fieldId, line: i}));
-					//allValues.push(reloadSublistValues);
-					//const matches = sublistValues.map((val, idx) => val === "" || val === reloadSublistValues[idx]);
-					//allValues.push(matches);
-					const allEqual = sublistValues.every((val, idx) => val === "" || val === reloadSublistValues[idx]);
+				const allReloadSublistTextOrValues = [...Array(lineCount).keys()].map(line =>
+					validationSublistFields.map(fieldId => {
+						const originalTextOrValue = sublistTextOrValues.find(i => i[1] === fieldId)[2];
+						return originalTextOrValue
+							? rec.getSublistText({sublistId, fieldId, line})
+							: rec.getSublistValue({sublistId, fieldId, line});
+					}));
+				
+				for (let line = 0; line < lineCount; line++) {
+					const reloadSublistTextOrValues = allReloadSublistTextOrValues[line];
+					const allEqual = sublistTextOrValues.every((val, idx) =>
+						val[0] === "" || // appears to indicate missing
+						JSON.stringify(val[0]) === JSON.stringify(reloadSublistTextOrValues[idx])
+					);
 					if (allEqual) {
-						foundAt.push(i);
+						foundAt.push(line);
 					}
 				}
 				return `Inserted at ${sublistLine} (found at ${foundAt.join(", ")})`; //  - ${JSON.stringify(allValues)}
 			}];
 	}
+	
+	
+	function getSublistTextOrValue(rec, sublistId, fieldId, line) {
+		try {
+			return [rec.getSublistText({sublistId, fieldId, line}), fieldId, true];
+		}
+		catch (e) {
+			if (e.message.includes("must use getSublistValue")) {
+				return [rec.getSublistValue({sublistId, fieldId, line}), fieldId, false];
+			}
+			throw e;
+		}
+	}
+	
 	
 	function removeSublistLine(
 		rec, sublistId, sublistLineQuery, fieldAssignments
