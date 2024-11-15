@@ -1661,14 +1661,16 @@ define(["N/record", "N/search"], function(record, search) {
 	
 	
 	function splitAmpersand(value) {
-		const withSentinel = value.replaceAll("\\&", "__AMPERSAND_ESCAPE__");
-		return withSentinel.split("&").map(i => i.replaceAll("__AMPERSAND_ESCAPE__", "&"));
+		const sentinel = "__AMPERSAND_ESCAPE__" + Math.random().toString(36).substring(2);
+		const withSentinel = value.replaceAll("\\&", sentinel);
+		return withSentinel.split("&").map(i => i.replaceAll(sentinel, "&"));
 	}
 	
 	
 	function splitVerticalBar(value) {
-		const withSentinel = value.replaceAll("\\|", "__VERTICAL_BAR_ESCAPE__");
-		return withSentinel.split("|").map(i => i.replaceAll("__VERTICAL_BAR_ESCAPE__", "|"));
+		const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
+		const withSentinel = value.replaceAll("\\|", sentinel);
+		return withSentinel.split("|").map(i => i.replaceAll(sentinel, "|"));
 	}
 	
 	
@@ -1676,8 +1678,9 @@ define(["N/record", "N/search"], function(record, search) {
 		if (value === "") {
 			return [];
 		}
-		const withSentinel = value.replaceAll("\\/", "__SLASH_ESCAPE__");
-		return withSentinel.split("/").map(i => i.replaceAll("__SLASH_ESCAPE__", "/"));
+		const sentinel = "__SLASH_ESCAPE__" + Math.random().toString(36).substring(2);
+		const withSentinel = value.replaceAll("\\/", sentinel);
+		return withSentinel.split("/").map(i => i.replaceAll(sentinel, "/"));
 	}
 	
 	
