@@ -28,7 +28,7 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.08.08";
+	const version = "2024.11.15";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -1662,13 +1662,13 @@ define(["N/record", "N/search"], function(record, search) {
 	
 	function splitAmpersand(value) {
 		const withSentinel = value.replaceAll("\\&", "__AMPERSAND_ESCAPE__");
-		return withSentinel.split("&").map(i => i.replace("__AMPERSAND_ESCAPE__", "&"));
+		return withSentinel.split("&").map(i => i.replaceAll("__AMPERSAND_ESCAPE__", "&"));
 	}
 	
 	
 	function splitVerticalBar(value) {
 		const withSentinel = value.replaceAll("\\|", "__VERTICAL_BAR_ESCAPE__");
-		return withSentinel.split("|").map(i => i.replace("__VERTICAL_BAR_ESCAPE__", "|"));
+		return withSentinel.split("|").map(i => i.replaceAll("__VERTICAL_BAR_ESCAPE__", "|"));
 	}
 	
 	
@@ -1677,7 +1677,7 @@ define(["N/record", "N/search"], function(record, search) {
 			return [];
 		}
 		const withSentinel = value.replaceAll("\\/", "__SLASH_ESCAPE__");
-		return withSentinel.split("/").map(i => i.replace("__SLASH_ESCAPE__", "/"));
+		return withSentinel.split("/").map(i => i.replaceAll("__SLASH_ESCAPE__", "/"));
 	}
 	
 	
