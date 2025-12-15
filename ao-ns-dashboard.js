@@ -760,6 +760,20 @@ define(["N/record", "N/search"], function(record, search) {
 				
 				if (sublistFieldText === queryField.fieldText) {
 					remainingCandidates.push(candidates[i]);
+					continue;
+				}
+
+				if (Number.isInteger(Number(queryField.fieldText))) {
+                    const sublistValue = rec.getSublistValue({
+                        "sublistId": sublistId,
+                        "fieldId": queryField.fieldId,
+                        line: candidates[i]
+                    });
+
+                    if (Number(queryField.fieldText) === Number("" + sublistValue)) {
+                        remainingCandidates.push(candidates[i]);
+                        continue;
+                    }
 				}
 			}
 			candidates = remainingCandidates;
