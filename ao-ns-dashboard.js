@@ -28,7 +28,7 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2024.11.15";
+	const version = "2025.12.15";
 	
 	const pages = {};
 	const defaultPage = "welcome";
@@ -653,9 +653,9 @@ define(["N/record", "N/search"], function(record, search) {
 			const fieldValue = rec.getValue({"fieldId": fieldId});
 			const fieldValueSuffix = 
 				"" + fieldValue !== fieldText && fieldValue
-				? ` | ${fieldValue}`: "";
+				? ` (${fieldValue})`: "";
 			
-			return fieldText + fieldValueSuffix;
+			return `${fieldId}=${fieldText}${fieldValueSuffix}`;
 		}
 		const sublistOrSubrecord = remainingPath[0];
 		
@@ -666,7 +666,7 @@ define(["N/record", "N/search"], function(record, search) {
 		
 		if (remainingPath.length === 1 &&
 				(fieldId === "count" || fieldId === "linecount")) {
-			return rec.getLineCount({
+			return `${sublistOrSubrecord}.${fieldId}=` + rec.getLineCount({
 				sublistId: sublistOrSubrecord
 			});
 		}
@@ -697,9 +697,9 @@ define(["N/record", "N/search"], function(record, search) {
 		});
 		const sublistValueSuffix = 
 			"" + sublistValue !== sublistText && sublistValue
-			? ` | ${sublistValue}`: "";
+			? ` (${sublistValue})`: "";
 		
-		return `${sublistText} | line ${sublistLine}${sublistValueSuffix}`;
+		return `${sublistOrSubrecord}.${sublistLine}.${fieldId}=${sublistText}${sublistValueSuffix}`;
 	}
 	
 	function getSublistLine(rec, sublistId, sublistLineQuery) {
@@ -816,7 +816,7 @@ define(["N/record", "N/search"], function(record, search) {
 				<h4>&nbsp; &nbsp; · Multiple values can be used with ${actionSet}/${actionInsertLine}</h4>
 				<h3>· The following Actions are available:</h3>
 				<h4>&nbsp; &nbsp; · ${actionSet}: assign new value to one or more fields</h4>
-				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line</h4>
+				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line (before given Location, use line=-0 to insert at end)</h4>
 				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
 			`)}
 			<hr/>
