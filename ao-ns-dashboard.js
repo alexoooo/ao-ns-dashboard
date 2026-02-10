@@ -191,6 +191,8 @@ define(["N/record", "N/search"], function(record, search) {
 			<h1>Welcome!</h1>
 			<h2>Let's get down to business :)</h2>
 			<h3><span class="material-icons md-48">arrow_back</span> Navigation is on the left</h3>
+			<h4>Get the latest version here:
+			    <a href="https://github.com/alexoooo/ao-ns-dashboard">https://github.com/alexoooo/ao-ns-dashboard</a></h4>
 		`;
 	}
 	
