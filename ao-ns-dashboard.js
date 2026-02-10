@@ -28,8 +28,11 @@
 */
 define(["N/record", "N/search"], function(record, search) {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2025.12.15";
+	const version = "2026.02.09";
 	
+	const mdlCssUrl ="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
+	const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
+				
 	const pages = {};
 	const defaultPage = "welcome";
 	
@@ -123,13 +126,13 @@ define(["N/record", "N/search"], function(record, search) {
 			`<!DOCTYPE html>
 			<head>
 				<title>${title}</title>
-				<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-				<link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
-				<script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+				<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
+				<link rel="stylesheet" href="${mdlCssUrl}"/>
+				<script defer src="${mdlJsUrl}"></script>
 				
 				<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
 				<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js" integrity="sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css" integrity="sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css" integrity="sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
 				<script>
 					$(document).on('select2:open', () => {
 						document.querySelector('.select2-search__field').focus();
