@@ -13,3 +13,6 @@ Installation:
 - [+] add Script File, Choose file, Select downloaded js, "file name" as "ao-ns-dashboard.js", [Save]
 - [Create Script Record]
 - Deployments / Add new
+
+Screenshot:
+![Screenshot](screenshot.png)
