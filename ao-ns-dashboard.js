@@ -26,9 +26,12 @@
 *@NApiVersion 2.1
 *@NScriptType Suitelet
 */
-define(["N/record", "N/search"], function(record, search) {
+define(
+    ["N/record", "N/search", "N/runtime"],
+    function(record, search, runtime)
+{
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2026.02.09";
+	const version = "2026.03.17";
 	
 	const mdlCssUrl ="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 	const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
@@ -187,12 +190,15 @@ define(["N/record", "N/search"], function(record, search) {
 	
 	//----------------------------------------------------------------------------------------------------------------
 	function welcomePage(context) {
+		const nsVersion = runtime.version || "Unknown";
 		return `
 			<h1>Welcome!</h1>
 			<h2>Let's get down to business :)</h2>
 			<h3><span class="material-icons md-48">arrow_back</span> Navigation is on the left</h3>
 			<h4>Get the latest version here:
 			    <a href="https://github.com/alexoooo/ao-ns-dashboard">https://github.com/alexoooo/ao-ns-dashboard</a></h4>
+			<br/><br/>
+            NetSuite version: ${nsVersion}
 		`;
 	}
 	
