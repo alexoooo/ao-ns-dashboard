@@ -23,15 +23,15 @@
 *   alex@ostrovsky.biz
 *   https://www.linkedin.com/in/alex-ostrovsky-315b2a27/
 *
-*@NApiVersion 2.1
-*@NScriptType Suitelet
+* @NApiVersion 2.1
+* @NScriptType Suitelet
 */
 define(
     ["N/record", "N/search", "N/runtime"],
     function(record, search, runtime)
 {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2026.03.17";
+	const version = "2026.03.20";
 	
 	const mdlCssUrl ="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 	const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
@@ -125,6 +125,7 @@ define(
 		
 		const currentLabel = pages[pageParam].label;
 		const title = `${currentLabel} - AO Dashboard`;
+		const nsVersion = runtime.version || "[unknown version]";
 		context.response.write(
 			`<!DOCTYPE html>
 			<head>
@@ -156,9 +157,10 @@ define(
 						<div class="mdl-layout__header-row">
 							<span class="mdl-layout-title" style="width: 100%;">
 								${title}
-								<span style="float: right" title="version">
+								<span style="float: right; text-align: right" title="version">
 									<span id="env" title="Environment" style="font-family: monospace">...</span>
-									v${version}
+									v${version} <br/>
+									NetSuite ${nsVersion}
 								</span>
 							</span>
 						</div>
@@ -190,15 +192,19 @@ define(
 	
 	//----------------------------------------------------------------------------------------------------------------
 	function welcomePage(context) {
-		const nsVersion = runtime.version || "Unknown";
+        const currentUser = runtime.getCurrentUser();
+        const displayName = currentUser.name;
+        const name =
+            displayName.startsWith('EMP')
+            ? displayName.split(' ').slice(1).join(' ')
+            : displayName;
 		return `
-			<h1>Welcome!</h1>
+			<h1>Welcome, ${name}!</h1>
 			<h2>Let's get down to business :)</h2>
 			<h3><span class="material-icons md-48">arrow_back</span> Navigation is on the left</h3>
 			<h4>Get the latest version here:
 			    <a href="https://github.com/alexoooo/ao-ns-dashboard">https://github.com/alexoooo/ao-ns-dashboard</a></h4>
-			<br/><br/>
-            NetSuite version: ${nsVersion}
+			<br/>
 		`;
 	}
 	
@@ -742,7 +748,7 @@ define(
 			const asNumber = Number(conjunction);
 			if (Number.isInteger(asNumber)) {
 				// NB: handle -0 for inserting last
-				if (! conjunction.startsWith("-")) {
+				if (!conjunction.startsWith("-")) {
 					if (asNumber > candidates.length) {
 						throw new Error("Line ${asNumber} is too big: ${candidates}");
 					}
@@ -1193,7 +1199,11 @@ define(
 	function insertSublistLine(
 		rec, sublistId, sublistLineQuery, fieldAssignments
 	) {
-		const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
+	    const count = rec.getLineCount({sublistId});
+		const sublistLine =
+		    count === 0 && (sublistLineQuery === "0" || sublistLineQuery === "-0")
+		    ? 0
+		    : getSublistLine(rec, sublistId, sublistLineQuery);
 		const ignoreRecalc = getIgnoreCalcArgument(fieldAssignments, true);
 		
 		rec.insertLine({
