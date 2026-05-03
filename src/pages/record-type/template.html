@@ -1,0 +1,33 @@
+<script>
+{{bulkRunnerJs}}
+const staticCommandPrefix = "{{commandPrefixJs}}";
+
+function onRecordId(value) {
+	window.commandPostUrl = staticCommandPrefix + "&{{paramRecordIdJs}}=" + value;
+}
+</script>
+<h2>Detect the Record Type(s) for an Internal ID</h2>
+{{documentationHtml}}
+<hr/>
+<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+	<input
+		class="mdl-textfield__input"
+		type="text"
+		id="recordId"
+		name="{{paramRecordId}}"
+		autofocus
+		onchange="onRecordId(this.value);"/>
+	<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
+</div>
+<hr/>
+{{scaffoldHtml}}
+<script>
+onRecordId(document.getElementById('recordId').value);
+
+document.getElementById('pageCount').value = {{recordTypeCountJs}};
+onPageCount(document.getElementById('pageCount').value);
+
+if (document.getElementById('tasks').value === "") {
+	document.getElementById('tasks').value = "{{recordTypeNamesJs}}";
+}
+</script>

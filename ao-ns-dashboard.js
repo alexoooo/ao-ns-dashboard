@@ -58,7 +58,85 @@ function interpolate(template, vars) {
 	});
 }
 
+
+function documentationSection(documentationHtml) {
+	return `
+		<script>
+			var documentationShowing = false;
+			function toggleDocumentation() {
+				documentationShowing = ! documentationShowing;
+				document.getElementById('docBody').style.display =
+					documentationShowing ? "block" : "none";
+			}
+		</script>
+		<div style="margin-bottom: 1em"><button
+				class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+				onclick="toggleDocumentation()">
+			<span class="material-icons md-18">help</span> Help
+		</button></div>
+		<div id="docBody" style="display:none">
+			${documentationHtml}
+		</div>
+	`;
+}
+
 var layoutHtml = "<!DOCTYPE html>\n<head>\n\t<title>{{title}}</title>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\"/>\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\"/>\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\n\t<script src=\"https://code.jquery.com/jquery-3.6.0.js\" integrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\" crossorigin=\"anonymous\"></script>\n\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\" integrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n\t<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\" integrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"/>\n\t<script>\n\t\t$(document).on('select2:open', () => {\n\t\t\tdocument.querySelector('.select2-search__field').focus();\n\t\t});\n\t\t$(function() {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split('.')[0];\n\t\t\tif (! env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName('mdl-layout__header-row')[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\tdocument.getElementById('env').innerHTML = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body>\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%;\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%;\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br/>\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">\n\t\t\t\t{{navHtml}}\n\t\t\t</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">\n\t\t\t\t{{bodyHtml}}\n\t\t\t</div>\n\t\t</main>\n\t</div>\n</body>\n";
+
+// Server-side counterpart to ./client/bulk-runner.client.js.
+// Returns the HTML scaffold (textarea + Run All button + status table container)
+// that the bulk-runner browser code wires into.
+
+function bulkRunnerScaffold(taskTypeLabel) {
+	return `
+		<div id="taskList">
+			<fieldset style="width: 40em">
+				<legend>${taskTypeLabel} (one per line)</legend>
+				<textarea
+						class="mdl-textfield__input"
+						rows="20"
+						id="tasks"
+						autofocus></textarea>
+			</fieldset>
+			<div><button
+					class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+					onclick="runAll()">
+				<span class="material-icons md-18">play_arrow</span> Run All
+			</button></div>
+		</div>
+		<div id="runStatus" style="display: none">
+			<div>
+				<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
+					<input type="text"
+							class="mdl-textfield__input"
+							id="pageStart"
+							value="1"
+							onchange="onPageStart(this.value);" />
+					<label class="mdl-textfield__label" for="customSegment">Start</label>
+				</span>
+				<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em; margin-left: 1em">
+					<input type="text"
+							class="mdl-textfield__input"
+							id="pageCount"
+							value="100"
+							onchange="onPageCount(this.value);" />
+					<label class="mdl-textfield__label" for="customSegment">Count</label>
+				</span>
+				<span style="margin-left: 1em">
+					<button
+							class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+							style="margin-left: 1em"
+							onclick="downloadStatus()">
+						<span class="material-icons md-18">download</span> Download
+					</button>
+				</span>
+				<span id="statusMessage" style="margin-left: 1em">
+				</span>
+			</div>
+
+			<div id="statusTable">
+			</div>
+		</div>`;
+}
 
 var bulkRunnerJs = "// Shared browser-side runtime for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n//\n// Each page sets `commandPostUrl` and optionally pushes a callback into\n// `modelProcessors` to assign tasks into batches via `i.group`.\n// The page then renders a textarea + Run All button via taskListAndRunStatusJs,\n// and clicking the button drives the runNext / runCommand loop below.\n\nconst model = [];\nconst modelProcessors = [];\n\nvar pageStart = 0;\nvar pageCount = 100;\n\nfunction onPageStart(value) {\n\twindow.pageStart = parseInt(value) - 1;\n\trender();\n}\nfunction onPageCount(value) {\n\twindow.pageCount = parseInt(value);\n\trender();\n}\n\nvar commandPostUrl;\nfunction runCommand(nextBatch) {\n\tvar request = new XMLHttpRequest();\n\trequest.onreadystatechange = function() {\n\t\tif (this.readyState === 4) {\n\t\t\tconst status = this.status;\n\t\t\tif (status !== 200) {\n\t\t\t\tnextBatch[0].status = \"Error \" + status + \": \" + this.responseText;\n\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\tnextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse {\n\t\t\t\ttry {\n\t\t\t\t\tconst responses = JSON.parse(this.responseText);\n\t\t\t\t\tfor (let i = 0; i < responses.length; i++) {\n\t\t\t\t\t\tconst adjustedStatus = (responses[i] === \"\" ? \"(blank)\" : \"\" + responses[i]);\n\t\t\t\t\t\tnextBatch[i].status = adjustedStatus;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (e) {\n\t\t\t\t\tnextBatch[0].status = \"\" + this.responseText;\n\t\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\t\tnextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\trunNext();\n\t\t}\n\t\telse {\n\t\t\tfor (const next of nextBatch) {\n\t\t\t\tnext.status = \"Running...\";\n\t\t\t}\n\t\t}\n\t};\n\trequest.open(\"POST\", commandPostUrl);\n\trequest.setRequestHeader('Content-type', 'application/json');\n\n\tconst body = nextBatch.map(i => i.task);\n\trequest.send(JSON.stringify(body));\n}\n\nfunction csvEncode(value) {\n\treturn value.replaceAll('\"', '\"\"');\n}\nfunction downloadStatus() {\n\tconst rows = [];\n\trows.push(\"Number,Task,Result\");\n\tfor (let i = 0; i < model.length; i++) {\n\t\tconst item = model[i];\n\t\trows.push((i + 1) + ',\"' + csvEncode(item.task) + '\",\"' + csvEncode(item.status) + '\"');\n\t}\n\tconst csv = rows.join(\"\\r\\n\");\n\n\tconst element = document.createElement('a');\n\telement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));\n\telement.setAttribute('download', \"result.csv\");\n\telement.style.display = 'none';\n\tdocument.body.appendChild(element);\n\telement.click();\n\tdocument.body.removeChild(element);\n}\n\nfunction render() {\n\tconst message = document.getElementById('statusMessage');\n\tconst startedCount = model.filter(i => i.status !== \"\").length;\n\tmessage.innerHTML = \"Progress: \" + startedCount + \" of \" + model.length;\n\n\tconst container = document.getElementById('statusTable');\n\n\tconst rows = [];\n\tfor (let index = pageStart, i = 0;\n\t\t\tindex < model.length && i < pageCount;\n\t\t\tindex++, i++)\n\t{\n\t\tconst item = model[index];\n\t\trows.push(\n\t\t\t\"<tr>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\">' +\n\t\t\t\t\t(index + 1) +\n\t\t\t\t\"</td>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\">' +\n\t\t\t\t\titem.task +\n\t\t\t\t\"</td>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\" ' +\n\t\t\t\t\t\t(item.status.toLowerCase().includes(\"error\")\n\t\t\t\t\t\t? 'style=\"color: red; white-space: normal\"'\n\t\t\t\t\t\t: 'style=\"white-space: normal\"') + '>' +\n\t\t\t\t\titem.status +\n\t\t\t\t\"</td>\" +\n\t\t\t\"</tr>\");\n\t}\n\n\tcontainer.innerHTML =\n\t\t'<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">' +\n\t\t\t\"<thead><tr>\" +\n\t\t\t\t'<th class=\"mdl-data-table__cell\">Number</th>' +\n\t\t\t\t'<th class=\"mdl-data-table__cell--non-numeric\">Task</th>' +\n\t\t\t\t'<th class=\"mdl-data-table__cell--non-numeric\" style=\"width: 100%\">Result</th>' +\n\t\t\t\"</tr></thead>\" +\n\t\t\t\"<tbody>\" +\n\t\t\t\trows.join(\"\") +\n\t\t\t\"</tbody>\" +\n\t\t\"</table>\";\n}\n\nfunction runNext() {\n\tconst nextIndex = model.findIndex(e => e.status === \"\");\n\tif (nextIndex === -1) {\n\t\trender();\n\t\treturn;\n\t}\n\n\tconst first = model[nextIndex];\n\n\tconst batch =\n\t\tfirst.group === \"\"\n\t\t? [first]\n\t\t: model.filter(i => i.group === first.group);\n\n\tbatch.forEach(next => {\n\t\tnext.status = \"Running\";\n\t});\n\n\trunCommand(batch);\n\trender();\n}\n\nfunction runAll() {\n\tdocument.getElementById('taskList').style.display = \"none\";\n\tdocument.getElementById('runStatus').style.display = \"block\";\n\tconst taskValues = document.getElementById('tasks').value;\n\tconst tasks = taskValues.split(/\\r?\\n/);\n\tfor (const task of tasks) {\n\t\tconst trimmed = task.trim();\n\t\tif (trimmed !== \"\") {\n\t\t\tmodel.push({\n\t\t\t\t\"task\": task,\n\t\t\t\t\"status\": \"\",\n\t\t\t\t\"group\": \"\"\n\t\t\t});\n\t\t}\n\t}\n\tfor (const modelProcessor of modelProcessors) {\n\t\tmodelProcessor();\n\t}\n\trender();\n\trunNext();\n}\n";
 
@@ -178,6 +256,123 @@ function recordTypeOptions(selectedRecordType) {
 	}).join("");
 }
 
+var templateHtml$1 = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>Get the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a></h4>\n<br/>\n";
+
+var welcomePage = {
+	name: "welcome",
+	label: "Welcome",
+
+	render(context) {
+		const displayName = runtime.getCurrentUser().name;
+		const name = displayName.startsWith("EMP")
+			? displayName.split(" ").slice(1).join(" ")
+			: displayName;
+		return interpolate(templateHtml$1, { name });
+	},
+};
+
+var templateHtml = "<script>\n{{bulkRunnerJs}}\nconst staticCommandPrefix = \"{{commandPrefixJs}}\";\n\nfunction onRecordId(value) {\n\twindow.commandPostUrl = staticCommandPrefix + \"&{{paramRecordIdJs}}=\" + value;\n}\n</script>\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr/>\n<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t<input\n\t\tclass=\"mdl-textfield__input\"\n\t\ttype=\"text\"\n\t\tid=\"recordId\"\n\t\tname=\"{{paramRecordId}}\"\n\t\tautofocus\n\t\tonchange=\"onRecordId(this.value);\"/>\n\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID or External ID</label>\n</div>\n<hr/>\n{{scaffoldHtml}}\n<script>\nonRecordId(document.getElementById('recordId').value);\n\ndocument.getElementById('pageCount').value = {{recordTypeCountJs}};\nonPageCount(document.getElementById('pageCount').value);\n\nif (document.getElementById('tasks').value === \"\") {\n\tdocument.getElementById('tasks').value = \"{{recordTypeNamesJs}}\";\n}\n</script>\n";
+
+const commandName = "record-type";
+
+
+var recordTypePageDef = {
+	name: "record-type",
+	label: "Detect Record Type",
+
+	render(context) {
+		const all = allRecordTypes();
+		const recordTypeNamesJs = Object.keys(all)
+			.map(type => type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" "))
+			.join("\\n");
+
+		return interpolate(templateHtml, {
+			bulkRunnerJs,
+			commandPrefixJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			paramRecordId,
+			paramRecordIdJs: paramRecordId,
+			documentationHtml: documentationSection(`
+				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
+				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
+				<h3>· The same Internal ID can exist in multiple Record Types</h3>
+				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
+				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
+			`),
+			scaffoldHtml: bulkRunnerScaffold("Record Type"),
+			recordTypeCountJs: Object.keys(all).length,
+			recordTypeNamesJs,
+		});
+	},
+
+	commands: {
+		[commandName]: handleTypeListing,
+	},
+};
+
+
+function handleTypeListing(context) {
+	const recordTypes = JSON.parse(context.request.body);
+	const recordTypeName = recordTypes[0];
+	if (! recordTypeName) {
+		return "Record Type not specified";
+	}
+
+	const recordId = context.request.parameters[paramRecordId];
+	if (! recordId) {
+		return "Record ID not specified";
+	}
+
+	const recordType = getRecordType(recordTypeName);
+
+	const canBeInternal = /^-?\d+$/.test(recordId.trim());
+	let internalMessage;
+	if (canBeInternal) {
+		try {
+			record.load({
+				type: recordType,
+				id: recordId,
+			});
+			internalMessage = "*** Internal ID found";
+		}
+		catch (e) {
+			internalMessage = "Internal ID not found: " + e.message;
+		}
+	}
+	else {
+		internalMessage = "Internal ID invalid";
+	}
+
+	let externalMessage;
+	try {
+		const externalIdSearch = search.create({
+			type: recordType,
+			filters: [
+				search.createFilter({
+					name: "externalid",
+					operator: search.Operator.IS,
+					values: recordId,
+				}),
+			],
+			columns: [],
+		});
+
+		const searchResults = externalIdSearch.run().getRange({ start: 0, end: 1 });
+		if (searchResults.length > 0) {
+			const internalId = searchResults[0].id;
+			externalMessage = "*** External ID found, with Internal ID = " + internalId;
+		}
+		else {
+			externalMessage = "External ID not found";
+		}
+	}
+	catch (e) {
+		externalMessage = "External ID not found: " + e.message;
+	}
+
+	const message = internalMessage + " | " + externalMessage;
+	return JSON.stringify([message]);
+}
+
 const pages = {};
 
 
@@ -237,156 +432,11 @@ const pages = {};
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
-	function welcomePage(context) {
-        const currentUser = runtime.getCurrentUser();
-        const displayName = currentUser.name;
-        const name =
-            displayName.startsWith('EMP')
-            ? displayName.split(' ').slice(1).join(' ')
-            : displayName;
-		return `
-			<h1>Welcome, ${name}!</h1>
-			<h2>Let's get down to business :)</h2>
-			<h3><span class="material-icons md-48">arrow_back</span> Navigation is on the left</h3>
-			<h4>Get the latest version here:
-			    <a href="https://github.com/alexoooo/ao-ns-dashboard">https://github.com/alexoooo/ao-ns-dashboard</a></h4>
-			<br/>
-		`;
-	}
-	
-	pages[defaultPage] = {
-		label: "Welcome",
-		render: welcomePage
-	};
+	pages[welcomePage.name] = welcomePage;
+	pages[recordTypePageDef.name] = recordTypePageDef;
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
-	const recordTypePage = "record-type";
-	const commandRecordType = "record-type";
-	
-	function typePage(context) {
-		const commandPrefix = scriptDeployParam(context) +
-			"&" + paramCommand + "=" + commandRecordType;
-		
-		return `
-			<script>
-				${bulkRunnerJs}
-				const staticCommandPrefix = "${commandPrefix}";
-				
-
-				function onRecordId(value) {
-					window.commandPostUrl = staticCommandPrefix + "&${paramRecordId}=" + value;
-				}
-			</script>
-			<h2>Detect the Record Type(s) for an Internal ID</h2>
-			${documentationSection(`
-				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
-				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· The same Internal ID can exist in multiple Record Types</h3>
-				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
-				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
-			`)}
-			<hr/>
-			<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-				<input
-					class="mdl-textfield__input"
-					type="text"
-					id="recordId"
-					name="${paramRecordId}"
-					autofocus
-					onchange="onRecordId(this.value);"/>
-				<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
-			</div>
-			<hr/>
-			${taskListAndRunStatusJs("Record Type")}
-			<script>
-				onRecordId(document.getElementById('recordId').value);
-				
-				document.getElementById('pageCount').value = ${Object.keys(allRecordTypes()).length};
-				onPageCount(document.getElementById('pageCount').value);
-
-				if (document.getElementById('tasks').value === "") {
-					document.getElementById('tasks').value = "${
-						Object.keys(allRecordTypes()).map(type =>
-							type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" ")
-						).join("\\n")
-					}";
-				}
-			</script>`;
-	}
-	
-	function handleTypeListing(context) {
-		const recordTypes = JSON.parse(context.request.body);
-		const recordTypeName = recordTypes[0];
-		if (! recordTypeName) {
-			return "Record Type not specified";
-		}
-		
-		const recordId = context.request.parameters[paramRecordId];
-		if (! recordId) {
-			return "Record ID not specified";
-		}
-
-		const recordType = getRecordType(recordTypeName);
-
-        const canBeInternal = /^-?\d+$/.test(recordId.trim());
-		let internalMessage;
-        if (canBeInternal) {
-            try {
-                record.load({
-                    type: recordType,
-                    id: recordId
-                });
-                internalMessage = "*** Internal ID found";
-            }
-            catch (e) {
-                internalMessage = "Internal ID not found: " + e.message;
-            }
-        }
-        else {
-            internalMessage = "Internal ID invalid";
-        }
-
-		let externalMessage;
-        try {
-            // TODO: use search.Type?
-            const externalIdSearch = search.create({
-                type: recordType,
-                filters: [
-                    search.createFilter({
-                        name: 'externalid',
-                        operator: search.Operator.IS,
-                        values: recordId
-                    })
-                ],
-                columns: []
-            });
-
-            const searchResults = externalIdSearch.run().getRange({ start: 0, end: 1 });
-            if (searchResults.length > 0) {
-                const internalId = searchResults[0].id;
-                externalMessage = "*** External ID found, with Internal ID = " + internalId;
-            }
-            else {
-                externalMessage = "External ID not found";
-            }
-        }
-        catch (e) {
-            externalMessage = "External ID not found: " + e.message;
-        }
-
-        const message = internalMessage + " | " + externalMessage;
-		return JSON.stringify([message]);
-	}
-	
-	
-	pages[recordTypePage] = {
-		label: "Detect Record Type",
-		render: typePage,
-		commands: {
-			[commandRecordType]: handleTypeListing
-		}
-	};
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
@@ -422,7 +472,7 @@ const pages = {};
 			<div>
 				<h2>Retrieve all info about a particular record</h2>
 				${documentationSection(`
-					<h3>· To detect the Record Type(s) for a particular Internal ID, see [${pages[recordTypePage].label}] page (left menu)</h3>
+					<h3>· To detect the Record Type(s) for a particular Internal ID, see [${recordTypePageDef.label}] page (left menu)</h3>
 				`)}
 			</div>
 			<form method="post">
@@ -661,7 +711,7 @@ const pages = {};
 				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Internal ID|Location|Field ID')}`;
+			${bulkRunnerScaffold('Record Type|Internal ID|Location|Field ID')}`;
 	}
 	
 	function handleLookupFields(context) {
@@ -886,7 +936,7 @@ const pages = {};
 				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Internal ID|Location|Field Values|Action')}`;
+			${bulkRunnerScaffold('Record Type|Internal ID|Location|Field Values|Action')}`;
 	}
 	
 	function handleEditRecord(context) {
@@ -1407,7 +1457,7 @@ const pages = {};
 				<h3>· Sublists are not supported during creation (use [${pages[pageEditRecords].label}] after)</h3>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Default Values|Field Values')}`;
+			${bulkRunnerScaffold('Record Type|Default Values|Field Values')}`;
 	}
 	
 	function handleCreateRecord(context) {
@@ -1581,7 +1631,7 @@ const pages = {};
 				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs("Record Type|Internal ID")}`;
+			${bulkRunnerScaffold("Record Type|Internal ID")}`;
 	}
 	
 	function handleMassSave(context) {
@@ -1635,7 +1685,7 @@ const pages = {};
 				<h3>· DELETE each Record by Record Type/Internal ID, see [${pages[pageLookupFields].label}] page (left menu)</h3>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs("Record Type|Internal ID")}`;
+			${bulkRunnerScaffold("Record Type|Internal ID")}`;
 	}
 	
 	function handleMassDelete(context) {
@@ -1705,83 +1755,6 @@ const pages = {};
 			[commandMassDelete]: handleMassDelete
 		}
 	};
-	
-
-	//----------------------------------------------------------------------------------------------------------------
-	function documentationSection(documentationHtml) {
-		return `
-			<script>
-				var documentationShowing = false;
-				function toggleDocumentation() {
-					documentationShowing = ! documentationShowing;
-					document.getElementById('docBody').style.display =
-						documentationShowing ? "block" : "none";
-				}
-			</script>
-			<div style="margin-bottom: 1em"><button
-					class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-					onclick="toggleDocumentation()">
-				<span class="material-icons md-18">help</span> Help
-			</button></div>
-			<div id="docBody" style="display:none">
-				${documentationHtml}
-			</div>
-		`;
-	}
-	
-	
-
-	function taskListAndRunStatusJs(taskTypeLabel) {
-		return `
-			<div id="taskList">
-				<fieldset style="width: 40em">
-					<legend>${taskTypeLabel} (one per line)</legend>
-					<textarea
-							class="mdl-textfield__input"
-							rows="20"
-							id="tasks"
-							autofocus></textarea>
-				</fieldset>
-				<div><button
-						class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-						onclick="runAll()">
-					<span class="material-icons md-18">play_arrow</span> Run All
-				</button></div>
-			</div>
-			<div id="runStatus" style="display: none">
-				<div>
-					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
-						<input type="text"
-								class="mdl-textfield__input"
-								id="pageStart"
-								value="1"
-								onchange="onPageStart(this.value);" />
-						<label class="mdl-textfield__label" for="customSegment">Start</label>
-					</span>
-					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em; margin-left: 1em">
-						<input type="text"
-								class="mdl-textfield__input"
-								id="pageCount"
-								value="100"
-								onchange="onPageCount(this.value);" />
-						<label class="mdl-textfield__label" for="customSegment">Count</label>
-					</span>
-					<span style="margin-left: 1em">
-						<button
-								class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-								style="margin-left: 1em"
-								onclick="downloadStatus()">
-							<span class="material-icons md-18">download</span> Download
-						</button>
-					</span>
-					<span id="statusMessage" style="margin-left: 1em">
-					</span>
-				</div>
-			
-				<div id="statusTable">
-				</div>
-			</div>`;
-	}
 
 var index = { onRequest: main };
 

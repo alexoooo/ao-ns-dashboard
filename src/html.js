@@ -27,3 +27,25 @@ export function interpolate(template, vars) {
 		return escapeHtml(value);
 	});
 }
+
+
+export function documentationSection(documentationHtml) {
+	return `
+		<script>
+			var documentationShowing = false;
+			function toggleDocumentation() {
+				documentationShowing = ! documentationShowing;
+				document.getElementById('docBody').style.display =
+					documentationShowing ? "block" : "none";
+			}
+		</script>
+		<div style="margin-bottom: 1em"><button
+				class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+				onclick="toggleDocumentation()">
+			<span class="material-icons md-18">help</span> Help
+		</button></div>
+		<div id="docBody" style="display:none">
+			${documentationHtml}
+		</div>
+	`;
+}

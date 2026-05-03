@@ -3,8 +3,9 @@ import search from "N/search";
 import query from "N/query";
 import runtime from "N/runtime";
 
-import { interpolate } from "./html.js";
+import { interpolate, documentationSection } from "./html.js";
 import layoutHtml from "./layout.html";
+import { bulkRunnerScaffold } from "./bulk-runner.js";
 import bulkRunnerJs from "./client/bulk-runner.client.js?raw";
 import {
 	version,
@@ -24,6 +25,9 @@ import {
 	getRecordType,
 	recordTypeOptions,
 } from "./record-types.js";
+
+import welcomePage from "./pages/welcome/server.js";
+import recordTypePageDef from "./pages/record-type/server.js";
 
 	const pages = {};
 
@@ -84,156 +88,11 @@ import {
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
-	function welcomePage(context) {
-        const currentUser = runtime.getCurrentUser();
-        const displayName = currentUser.name;
-        const name =
-            displayName.startsWith('EMP')
-            ? displayName.split(' ').slice(1).join(' ')
-            : displayName;
-		return `
-			<h1>Welcome, ${name}!</h1>
-			<h2>Let's get down to business :)</h2>
-			<h3><span class="material-icons md-48">arrow_back</span> Navigation is on the left</h3>
-			<h4>Get the latest version here:
-			    <a href="https://github.com/alexoooo/ao-ns-dashboard">https://github.com/alexoooo/ao-ns-dashboard</a></h4>
-			<br/>
-		`;
-	}
-	
-	pages[defaultPage] = {
-		label: "Welcome",
-		render: welcomePage
-	};
+	pages[welcomePage.name] = welcomePage;
+	pages[recordTypePageDef.name] = recordTypePageDef;
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
-	const recordTypePage = "record-type";
-	const commandRecordType = "record-type";
-	
-	function typePage(context) {
-		const commandPrefix = scriptDeployParam(context) +
-			"&" + paramCommand + "=" + commandRecordType;
-		
-		return `
-			<script>
-				${bulkRunnerJs}
-				const staticCommandPrefix = "${commandPrefix}";
-				
-
-				function onRecordId(value) {
-					window.commandPostUrl = staticCommandPrefix + "&${paramRecordId}=" + value;
-				}
-			</script>
-			<h2>Detect the Record Type(s) for an Internal ID</h2>
-			${documentationSection(`
-				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
-				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· The same Internal ID can exist in multiple Record Types</h3>
-				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
-				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
-			`)}
-			<hr/>
-			<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-				<input
-					class="mdl-textfield__input"
-					type="text"
-					id="recordId"
-					name="${paramRecordId}"
-					autofocus
-					onchange="onRecordId(this.value);"/>
-				<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
-			</div>
-			<hr/>
-			${taskListAndRunStatusJs("Record Type")}
-			<script>
-				onRecordId(document.getElementById('recordId').value);
-				
-				document.getElementById('pageCount').value = ${Object.keys(allRecordTypes()).length};
-				onPageCount(document.getElementById('pageCount').value);
-
-				if (document.getElementById('tasks').value === "") {
-					document.getElementById('tasks').value = "${
-						Object.keys(allRecordTypes()).map(type =>
-							type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" ")
-						).join("\\n")
-					}";
-				}
-			</script>`;
-	}
-	
-	function handleTypeListing(context) {
-		const recordTypes = JSON.parse(context.request.body);
-		const recordTypeName = recordTypes[0];
-		if (! recordTypeName) {
-			return "Record Type not specified";
-		}
-		
-		const recordId = context.request.parameters[paramRecordId];
-		if (! recordId) {
-			return "Record ID not specified";
-		}
-
-		const recordType = getRecordType(recordTypeName);
-
-        const canBeInternal = /^-?\d+$/.test(recordId.trim());
-		let internalMessage;
-        if (canBeInternal) {
-            try {
-                record.load({
-                    type: recordType,
-                    id: recordId
-                });
-                internalMessage = "*** Internal ID found";
-            }
-            catch (e) {
-                internalMessage = "Internal ID not found: " + e.message;
-            }
-        }
-        else {
-            internalMessage = "Internal ID invalid";
-        }
-
-		let externalMessage;
-        try {
-            // TODO: use search.Type?
-            const externalIdSearch = search.create({
-                type: recordType,
-                filters: [
-                    search.createFilter({
-                        name: 'externalid',
-                        operator: search.Operator.IS,
-                        values: recordId
-                    })
-                ],
-                columns: []
-            });
-
-            const searchResults = externalIdSearch.run().getRange({ start: 0, end: 1 });
-            if (searchResults.length > 0) {
-                const internalId = searchResults[0].id;
-                externalMessage = "*** External ID found, with Internal ID = " + internalId;
-            }
-            else {
-                externalMessage = "External ID not found";
-            }
-        }
-        catch (e) {
-            externalMessage = "External ID not found: " + e.message;
-        }
-
-        const message = internalMessage + " | " + externalMessage;
-		return JSON.stringify([message]);
-	}
-	
-	
-	pages[recordTypePage] = {
-		label: "Detect Record Type",
-		render: typePage,
-		commands: {
-			[commandRecordType]: handleTypeListing
-		}
-	};
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
@@ -269,7 +128,7 @@ import {
 			<div>
 				<h2>Retrieve all info about a particular record</h2>
 				${documentationSection(`
-					<h3>· To detect the Record Type(s) for a particular Internal ID, see [${pages[recordTypePage].label}] page (left menu)</h3>
+					<h3>· To detect the Record Type(s) for a particular Internal ID, see [${recordTypePageDef.label}] page (left menu)</h3>
 				`)}
 			</div>
 			<form method="post">
@@ -508,7 +367,7 @@ import {
 				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Internal ID|Location|Field ID')}`;
+			${bulkRunnerScaffold('Record Type|Internal ID|Location|Field ID')}`;
 	}
 	
 	function handleLookupFields(context) {
@@ -733,7 +592,7 @@ import {
 				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Internal ID|Location|Field Values|Action')}`;
+			${bulkRunnerScaffold('Record Type|Internal ID|Location|Field Values|Action')}`;
 	}
 	
 	function handleEditRecord(context) {
@@ -1254,7 +1113,7 @@ import {
 				<h3>· Sublists are not supported during creation (use [${pages[pageEditRecords].label}] after)</h3>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs('Record Type|Default Values|Field Values')}`;
+			${bulkRunnerScaffold('Record Type|Default Values|Field Values')}`;
 	}
 	
 	function handleCreateRecord(context) {
@@ -1428,7 +1287,7 @@ import {
 				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs("Record Type|Internal ID")}`;
+			${bulkRunnerScaffold("Record Type|Internal ID")}`;
 	}
 	
 	function handleMassSave(context) {
@@ -1482,7 +1341,7 @@ import {
 				<h3>· DELETE each Record by Record Type/Internal ID, see [${pages[pageLookupFields].label}] page (left menu)</h3>
 			`)}
 			<hr/>
-			${taskListAndRunStatusJs("Record Type|Internal ID")}`;
+			${bulkRunnerScaffold("Record Type|Internal ID")}`;
 	}
 	
 	function handleMassDelete(context) {
@@ -1553,82 +1412,6 @@ import {
 		}
 	};
 	
-
-	//----------------------------------------------------------------------------------------------------------------
-	function documentationSection(documentationHtml) {
-		return `
-			<script>
-				var documentationShowing = false;
-				function toggleDocumentation() {
-					documentationShowing = ! documentationShowing;
-					document.getElementById('docBody').style.display =
-						documentationShowing ? "block" : "none";
-				}
-			</script>
-			<div style="margin-bottom: 1em"><button
-					class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-					onclick="toggleDocumentation()">
-				<span class="material-icons md-18">help</span> Help
-			</button></div>
-			<div id="docBody" style="display:none">
-				${documentationHtml}
-			</div>
-		`;
-	}
-	
-	
-
-	function taskListAndRunStatusJs(taskTypeLabel) {
-		return `
-			<div id="taskList">
-				<fieldset style="width: 40em">
-					<legend>${taskTypeLabel} (one per line)</legend>
-					<textarea
-							class="mdl-textfield__input"
-							rows="20"
-							id="tasks"
-							autofocus></textarea>
-				</fieldset>
-				<div><button
-						class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-						onclick="runAll()">
-					<span class="material-icons md-18">play_arrow</span> Run All
-				</button></div>
-			</div>
-			<div id="runStatus" style="display: none">
-				<div>
-					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
-						<input type="text"
-								class="mdl-textfield__input"
-								id="pageStart"
-								value="1"
-								onchange="onPageStart(this.value);" />
-						<label class="mdl-textfield__label" for="customSegment">Start</label>
-					</span>
-					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em; margin-left: 1em">
-						<input type="text"
-								class="mdl-textfield__input"
-								id="pageCount"
-								value="100"
-								onchange="onPageCount(this.value);" />
-						<label class="mdl-textfield__label" for="customSegment">Count</label>
-					</span>
-					<span style="margin-left: 1em">
-						<button
-								class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-								style="margin-left: 1em"
-								onclick="downloadStatus()">
-							<span class="material-icons md-18">download</span> Download
-						</button>
-					</span>
-					<span id="statusMessage" style="margin-left: 1em">
-					</span>
-				</div>
-			
-				<div id="statusTable">
-				</div>
-			</div>`;
-	}
 	
 	
 	//----------------------------------------------------------------------------------------------------------------
