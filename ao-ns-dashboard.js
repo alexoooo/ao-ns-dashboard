@@ -42,7 +42,6 @@ define(
 	const paramPage = "page";
 	const paramRecordId = "record";
 	const paramRecordType = "record-type";
-	const paramTask = "task";
 	const paramCommand = "command";
 	
 	const getCommandParam = context =>
@@ -1311,16 +1310,6 @@ define(
 	}
 	
 	
-	function getSublistRowValues(rec, sublistId, line) {
-		//const lineCount = rec.getLineCount({sublistId});
-		const sublistFields = rec.getSublistFields({sublistId});
-
-		return sublistFields.map(fieldId => {
-			return rec.getSublistValue({sublistId, fieldId, line});
-		});
-	}
-	
-	
 	function getIgnoreCalcArgument(fieldAssignments, allowExtra) {
 		if (fieldAssignments.length === 0) {
 			return false;
@@ -1947,7 +1936,6 @@ define(
 					<legend>${taskTypeLabel} (one per line)</legend>
 					<textarea
 							class="mdl-textfield__input"
-							type="text"
 							rows="20"
 							id="tasks"
 							autofocus></textarea>
