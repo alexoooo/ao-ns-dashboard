@@ -14,5 +14,12 @@ Installation:
 - [Create Script Record]
 - Deployments / Add new
 
+Building from source:
+- Source files live under `src/`; `ao-ns-dashboard.js` at the repo root is the build output uploaded to NetSuite.
+- Requires Node.js (any recent LTS).
+- One-time: `npm install`
+- Build: `npm run build` (produces `ao-ns-dashboard.js`)
+- Watch mode (rebuild on save): `npm run dev`
+
 Screenshot:
 ![Screenshot](screenshot.png)

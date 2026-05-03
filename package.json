@@ -1,0 +1,13 @@
+{
+	"name": "ao-ns-dashboard",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "rollup -c",
+		"dev": "rollup -c -w"
+	},
+	"devDependencies": {
+		"rollup": "^4.0.0"
+	}
+}
