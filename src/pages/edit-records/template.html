@@ -1,0 +1,17 @@
+<script>
+{{bulkRunnerJs}}
+window.commandPostUrl = "{{commandUrlJs}}";
+
+modelProcessors.push(() => {
+	model.forEach(i => {
+		const parts = i.task.split("|")
+			.map(part => part.replace(/\W/g, "").toLowerCase());
+		i.group = parts[0] + "|" + parts[1];
+	});
+});
+</script>
+
+<h2>Edit one or more records</h2>
+{{documentationHtml}}
+<hr/>
+{{scaffoldHtml}}

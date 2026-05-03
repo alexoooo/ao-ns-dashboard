@@ -3,8 +3,6 @@ export const version = "2026.05.02";
 export const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 export const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
 
-export const defaultPage = "welcome";
-
 export const paramPage = "page";
 export const paramRecordId = "record";
 export const paramRecordType = "record-type";
