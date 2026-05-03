@@ -9,6 +9,7 @@ import editRecords from "./edit-records/server.js";
 import createRecords from "./create-records/server.js";
 import massSave from "./mass-save/server.js";
 import massDelete from "./mass-delete/server.js";
+import suiteql from "./suiteql/server.js";
 
 
 export default [
@@ -19,5 +20,6 @@ export default [
 	editRecords,
 	createRecords,
 	massSave,
+	suiteql,
 	massDelete,
 ];
