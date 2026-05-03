@@ -3,73 +3,33 @@ import search from "N/search";
 import query from "N/query";
 import runtime from "N/runtime";
 
-	//----------------------------------------------------------------------------------------------------------------
-	const version = "2026.05.02";
-	
-	const mdlCssUrl ="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
-	const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
-				
+import { interpolate } from "./html.js";
+import layoutHtml from "./layout.html";
+import bulkRunnerJs from "./client/bulk-runner.client.js?raw";
+import {
+	version,
+	mdlCssUrl,
+	mdlJsUrl,
+	defaultPage,
+	paramPage,
+	paramRecordId,
+	paramRecordType,
+	paramCommand,
+} from "./constants.js";
+import { getCommandParam, scriptDeployParam, setPageParam } from "./url.js";
+import { normalizeKey, splitAmpersand, splitVerticalBar, splitSlash } from "./utils.js";
+import {
+	undocumentedRecordTypes,
+	allRecordTypes,
+	getRecordType,
+	recordTypeOptions,
+} from "./record-types.js";
+
 	const pages = {};
-	const defaultPage = "welcome";
-	
-	const paramPage = "page";
-	const paramRecordId = "record";
-	const paramRecordType = "record-type";
-	const paramCommand = "command";
-	
-	const getCommandParam = context =>
-		context.request.parameters[paramCommand] || "";
-	
-	const scriptDeployParam = (context) =>
-		"?script=" + context.request.parameters["script"] + "&" +
-		"deploy=" + context.request.parameters["deploy"];
-	
-	const setPageParam = (context, page) =>
-		scriptDeployParam(context) + "&" +
-		paramPage + "=" + page;
-	
-	
-	//----------------------------------------------------------------------------------------------------------------
-	const undocumentedRecordTypes = {
-		"TRANSFER": "transfer",
-		"CURRENCY_REVALUATION": "fxreval"
-	};
-	
-	const allRecordTypes = {};
-	function initAllRecordTypes() {
-		Object.keys(record.Type).forEach(k => {
-			if (! k.startsWith("CUSTOM_")) {
-				allRecordTypes[k] = record.Type[k];
-			}
-		});
-		Object.keys(undocumentedRecordTypes).forEach(k => allRecordTypes[k] = undocumentedRecordTypes[k]);
-	}
-	
-	const lettersOnly = /[^a-zA-Z]/g;
 
-	function getRecordType(recordType) {
-		if (recordType in allRecordTypes) {
-			return allRecordTypes[recordType];
-		}
-
-		const normalized = recordType.replace(lettersOnly, "").toLowerCase();
-		if (Object.values(allRecordTypes).includes(normalized)) {
-			return normalized;
-		}
-
-		const matchingKey = Object.keys(allRecordTypes).find(k => k.replace(lettersOnly, "").toLowerCase() === normalized);
-		if (matchingKey) {
-			return allRecordTypes[matchingKey];
-		}
-
-		return normalized;
-	}
-	
 
 	//----------------------------------------------------------------------------------------------------------------
     function main(context) {
-		initAllRecordTypes();
-		
 		const command = getCommandParam(context);
 		if (command !== "") {
 			const pageCommands = Object.values(pages).map(i => (i.commands || {}));
@@ -103,70 +63,23 @@ import runtime from "N/runtime";
 				</a>`;
 		}
 		
+		const navHtml = navigationLink(defaultPage)
+			+ "<hr/>"
+			+ Object.keys(pages)
+				.filter(page => page !== defaultPage)
+				.map(navigationLink)
+				.join("");
+
 		const currentLabel = pages[pageParam].label;
-		const title = `${currentLabel} - AO Dashboard`;
-		const nsVersion = runtime.version || "[unknown version]";
-		context.response.write(
-			`<!DOCTYPE html>
-			<head>
-				<title>${title}</title>
-				<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
-				<link rel="stylesheet" href="${mdlCssUrl}"/>
-				<script defer src="${mdlJsUrl}"></script>
-				
-				<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-				<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js" integrity="sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-				<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css" integrity="sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
-				<script>
-					$(document).on('select2:open', () => {
-						document.querySelector('.select2-search__field').focus();
-					});
-					$(function() {
-						const host = window.location.hostname;
-						const env = host.split('.')[0];
-						if (! env.includes("-sb")) {
-							document.getElementsByClassName('mdl-layout__header-row')[0].style = "background-color: red";
-						}
-						document.getElementById('env').innerHTML = "[" + env + "]";
-					});
-				</script>
-			</head>
-			<body>
-				<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer" style="width: 100%;">
-					<header class="mdl-layout__header">
-						<div class="mdl-layout__header-row">
-							<span class="mdl-layout-title" style="width: 100%;">
-								${title}
-								<span style="float: right; text-align: right" title="version">
-									<span id="env" title="Environment" style="font-family: monospace">...</span>
-									v${version} <br/>
-									NetSuite ${nsVersion}
-								</span>
-							</span>
-						</div>
-					</header>
-					
-					<div class="mdl-layout__drawer">
-						<nav class="mdl-navigation">
-							${navigationLink(defaultPage)}
-							<hr/>
-							${
-								Object.keys(pages).map(page => {
-									return page === defaultPage
-										? ""
-										: navigationLink(page);
-								}).join("")
-							}
-						</nav>
-					</div>
-					
-					<main class="mdl-layout__content">
-						<div class="page-content" style="padding: 1em">
-							${pageHtml}
-						</div>
-					  </main>
-				</div>
-			</body>`);
+		context.response.write(interpolate(layoutHtml, {
+			title: `${currentLabel} - AO Dashboard`,
+			mdlCssUrl,
+			mdlJsUrl,
+			version,
+			nsVersion: runtime.version || "[unknown version]",
+			navHtml,
+			bodyHtml: pageHtml,
+		}));
     }
 	
 	
@@ -204,12 +117,9 @@ import runtime from "N/runtime";
 		
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				const staticCommandPrefix = "${commandPrefix}";
 				
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 
 				function onRecordId(value) {
 					window.commandPostUrl = staticCommandPrefix + "&${paramRecordId}=" + value;
@@ -239,12 +149,12 @@ import runtime from "N/runtime";
 			<script>
 				onRecordId(document.getElementById('recordId').value);
 				
-				document.getElementById('pageCount').value = ${Object.keys(allRecordTypes).length};
+				document.getElementById('pageCount').value = ${Object.keys(allRecordTypes()).length};
 				onPageCount(document.getElementById('pageCount').value);
-				
+
 				if (document.getElementById('tasks').value === "") {
 					document.getElementById('tasks').value = "${
-						Object.keys(allRecordTypes).map(type =>
+						Object.keys(allRecordTypes()).map(type =>
 							type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" ")
 						).join("\\n")
 					}";
@@ -578,12 +488,9 @@ import runtime from "N/runtime";
 			"&" + paramCommand + "=" + commandLookupFields;
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				window.commandPostUrl = "${commandUrl}";
 
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 			</script>
 		
 			<h2>Retrieve field values from some records</h2>
@@ -800,7 +707,7 @@ import runtime from "N/runtime";
 		
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				window.commandPostUrl = "${commandPrefix}";
 
 				modelProcessors.push(() => {
@@ -811,9 +718,6 @@ import runtime from "N/runtime";
 					});
 				});
 				
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 			</script>
 		
 			<h2>Edit one or more records</h2>
@@ -1329,11 +1233,8 @@ import runtime from "N/runtime";
 		
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				window.commandPostUrl = "${commandPrefix}";
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 			</script>
 		
 			<h2>Create one or more records</h2>
@@ -1513,12 +1414,9 @@ import runtime from "N/runtime";
 		
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				window.commandPostUrl = "${commandPrefix}";
 				
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 			</script>
 			<h1>Edit/Save Records</h1>
 			<h2>(without changing values, to trigger events)</h2>
@@ -1575,12 +1473,9 @@ import runtime from "N/runtime";
 		
 		return `
 			<script>
-				${runCommandJs()}
+				${bulkRunnerJs}
 				window.commandPostUrl = "${commandPrefix}";
 				
-				${renderStatusJs()}
-				${runNextJs()}
-				${runAllJs()}
 			</script>
 			<h1 style="color: red">***Records are PERMANENTLY DELETED***</h1>
 			${documentationSection(`
@@ -1660,48 +1555,6 @@ import runtime from "N/runtime";
 	
 
 	//----------------------------------------------------------------------------------------------------------------
-	function normalizeKey(value) {
-		return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();
-	}
-	
-	
-	function splitAmpersand(value) {
-		const sentinel = "__AMPERSAND_ESCAPE__" + Math.random().toString(36).substring(2);
-		const withSentinel = value.replaceAll("\\&", sentinel);
-		return withSentinel.split("&").map(i => i.replaceAll(sentinel, "&"));
-	}
-	
-	
-	function splitVerticalBar(value) {
-		const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
-		const withSentinel = value.replaceAll("\\|", sentinel);
-		return withSentinel.split("|").map(i => i.replaceAll(sentinel, "|"));
-	}
-	
-	
-	function splitSlash(value) {
-		if (value === "") {
-			return [];
-		}
-		const sentinel = "__SLASH_ESCAPE__" + Math.random().toString(36).substring(2);
-		const withSentinel = value.replaceAll("\\/", sentinel);
-		return withSentinel.split("/").map(i => i.replaceAll(sentinel, "/"));
-	}
-	
-	
-	function recordTypeOptions(selectedRecordType) {
-		return Object.keys(allRecordTypes).map(type => {
-			const formatted = type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" ");
-			const suffix = (type in undocumentedRecordTypes) ? " (undocumented)" : "";
-			return `
-				<option
-					value="${allRecordTypes[type]}"
-					${allRecordTypes[type] === selectedRecordType ? 'selected="selected"' : ""}
-				>${formatted}${suffix}</option>`;
-		}).join("");
-	}
-	
-	
 	function documentationSection(documentationHtml) {
 		return `
 			<script>
@@ -1724,183 +1577,6 @@ import runtime from "N/runtime";
 	}
 	
 	
-	function runCommandJs() {
-		return `
-			const model = [];
-			const modelProcessors = [];
-			
-			var pageStart = 0;
-			var pageCount = 100;
-		
-			function onPageStart(value) {
-				window.pageStart = parseInt(value) - 1;
-				render();
-			}
-			function onPageCount(value) {
-				window.pageCount = parseInt(value);
-				render();
-			}
-			
-			var commandPostUrl;
-			function runCommand(nextBatch) {
-				var request = new XMLHttpRequest();
-				request.onreadystatechange = function() {
-					if (this.readyState === 4) {
-						const status = this.status;
-						if (status !== 200) {
-							nextBatch[0].status = "Error " + status + ": " + this.responseText;
-							for (let i = 1; i < nextBatch.length; i++) {
-								nextBatch[i].status = "Error for: " + nextBatch[0].group;
-							}
-						}
-						else {
-							try {
-								const responses = JSON.parse(this.responseText);
-								for (let i = 0; i < responses.length; i++) {
-									const adjustedStatus = (responses[i] === "" ? "(blank)" : "" + responses[i]);
-									nextBatch[i].status = adjustedStatus;
-								}
-							}
-							catch (e) {
-								nextBatch[0].status = "" + this.responseText;
-								for (let i = 1; i < nextBatch.length; i++) {
-									nextBatch[i].status = "Error as part of: " + nextBatch[0].group;
-								}
-							}
-						}
-
-						runNext();
-					}
-					else {
-						for (const next of nextBatch) {
-							next.status = "Running...";
-						}
-					}
-				};
-				request.open("POST", commandPostUrl);
-				request.setRequestHeader('Content-type', 'application/json');
-				
-				const body = nextBatch.map(i => i.task);
-				request.send(JSON.stringify(body));
-			}`;
-	}
-	
-	function renderStatusJs() {
-		return `
-			function csvEncode(value) {
-				return value.replaceAll('"', '""');
-			}
-			function downloadStatus() {
-				const rows = [];
-				rows.push("Number,Task,Result");
-				for (let i = 0; i < model.length; i++) {
-					const item = model[i];
-					rows.push((i + 1) + ',"' + csvEncode(item.task) + '","' + csvEncode(item.status) + '"');
-				}
-				const csv = rows.join("\\r\\n");
-				
-				const element = document.createElement('a');
-				element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));
-				element.setAttribute('download', "result.csv");
-				element.style.display = 'none';
-				document.body.appendChild(element);
-				element.click();
-				document.body.removeChild(element);
-			}
-			
-			function render() {
-				const message = document.getElementById('statusMessage');
-				const startedCount = model.filter(i => i.status !== "").length;
-				message.innerHTML = "Progress: " + startedCount + " of " + model.length;
-				
-				const container = document.getElementById('statusTable');
-				
-				const rows = [];
-				for (let index = pageStart, i = 0;
-						index < model.length && i < pageCount;
-						index++, i++)
-				{
-					const item = model[index];
-					rows.push(
-						"<tr>" +
-							'<td class="mdl-data-table__cell--non-numeric">' +
-								(index + 1) +
-							"</td>" +
-							'<td class="mdl-data-table__cell--non-numeric">' +
-								item.task +
-							"</td>" +
-							'<td class="mdl-data-table__cell--non-numeric" ' +
-									(item.status.toLowerCase().includes("error")
-									? 'style="color: red; white-space: normal"'
-									: 'style="white-space: normal"') + '>' +
-								item.status +
-							"</td>" +
-						"</tr>");
-				}
-				
-				container.innerHTML =
-					'<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%">' +
-						"<thead><tr>" +
-							'<th class="mdl-data-table__cell">Number</th>' +
-							'<th class="mdl-data-table__cell--non-numeric">Task</th>' +
-							'<th class="mdl-data-table__cell--non-numeric" style="width: 100%">Result</th>' +
-						"</tr></thead>" +
-						"<tbody>" +
-							rows.join("") +
-						"</tbody>" +
-					"</table>";
-			}`;
-	}
-
-	function runNextJs() {
-		return `
-			function runNext() {
-				const nextIndex = model.findIndex(e => e.status === "");
-				if (nextIndex === -1) {
-					render();
-					return;
-				}
-				
-				const first = model[nextIndex];
-				
-				const batch =
-					first.group === ""
-					? [first]
-					: model.filter(i => i.group === first.group);
-				
-				batch.forEach(next => {
-					next.status = "Running";
-				});
-				
-				runCommand(batch);
-				render();
-			}`;
-	}
-
-	function runAllJs() {
-		return `
-			function runAll() {
-				document.getElementById('taskList').style.display = "none";
-				document.getElementById('runStatus').style.display = "block";
-				const taskValues = document.getElementById('tasks').value;
-				const tasks = taskValues.split(/\\r?\\n/);
-				for (const task of tasks) {
-					const trimmed = task.trim();
-					if (trimmed !== "") {
-						model.push({
-							"task": task,
-							"status": "",
-							"group": ""
-						});
-					}
-				}
-				for (const modelProcessor of modelProcessors) {
-					modelProcessor();
-				}
-				render();
-				runNext();
-			}`;
-	}
 
 	function taskListAndRunStatusJs(taskTypeLabel) {
 		return `
