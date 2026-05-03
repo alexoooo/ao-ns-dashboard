@@ -27,11 +27,11 @@
 * @NScriptType Suitelet
 */
 define(
-    ["N/record", "N/search", "N/runtime"],
-    function(record, search, runtime)
+    ["N/record", "N/search", "N/query", "N/runtime"],
+    function(record, search, query, runtime)
 {
 	//----------------------------------------------------------------------------------------------------------------
-	const version = "2026.03.20";
+	const version = "2026.05.02";
 	
 	const mdlCssUrl ="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 	const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
@@ -73,21 +73,23 @@ define(
 		Object.keys(undocumentedRecordTypes).forEach(k => allRecordTypes[k] = undocumentedRecordTypes[k]);
 	}
 	
+	const lettersOnly = /[^a-zA-Z]/g;
+
 	function getRecordType(recordType) {
 		if (recordType in allRecordTypes) {
 			return allRecordTypes[recordType];
 		}
-		
-		const normalized = recordType.replace(/[^a-zA-Z]/g, "").toLowerCase();
+
+		const normalized = recordType.replace(lettersOnly, "").toLowerCase();
 		if (Object.values(allRecordTypes).includes(normalized)) {
 			return normalized;
 		}
-		
-		const matchingKey = Object.keys(allRecordTypes).find(k => k.replace(/[^a-zA-Z]/g, "").toLowerCase() === normalized);
+
+		const matchingKey = Object.keys(allRecordTypes).find(k => k.replace(lettersOnly, "").toLowerCase() === normalized);
 		if (matchingKey) {
 			return allRecordTypes[matchingKey];
 		}
-		
+
 		return normalized;
 	}
 	
@@ -99,19 +101,25 @@ define(
 		const command = getCommandParam(context);
 		if (command !== "") {
 			const pageCommands = Object.values(pages).map(i => (i.commands || {}));
-			const handler = pageCommands.find(i => command in i)[command];
+			const matchingCommands = pageCommands.find(i => command in i);
 			let responseText;
-			try {
-				responseText = "" + handler(context);
+			if (! matchingCommands) {
+				responseText = `Error: unknown command '${command}'`;
 			}
-			catch (e) {
-				responseText = `Error: ${e.message}`;
+			else {
+				try {
+					responseText = "" + matchingCommands[command](context);
+				}
+				catch (e) {
+					responseText = `Error: ${e.message}`;
+				}
 			}
 			context.response.write(responseText || "(blank)");
 			return;
 		}
 		
-		const pageParam = context.request.parameters[paramPage] || defaultPage;
+		const requestedPage = context.request.parameters[paramPage];
+		const pageParam = pages[requestedPage] ? requestedPage : defaultPage;
 		const pageHtml = pages[pageParam].render(context);
 		
 		function navigationLink(page) {
@@ -219,8 +227,6 @@ define(
 	const commandRecordType = "record-type";
 	
 	function typePage(context) {
-		const recordId = normalizeKey(context.request.parameters[paramRecordId] || "");
-		
 		const commandPrefix = scriptDeployParam(context) +
 			"&" + paramCommand + "=" + commandRecordType;
 		
@@ -444,17 +450,17 @@ define(
 			const recordFieldNames = rec.getFields();
 			const recordFields = recordFieldNames
 				.map(fieldId => {
-					const recordField = rec.getField({"fieldId": fieldId});
+					const recordField = rec.getField({fieldId});
 					
 					let fieldText;
 					try {
-						fieldText = rec.getText({"fieldId": fieldId});
+						fieldText = rec.getText({fieldId});
 					}
 					catch (e) {
 						fieldText = "Error: " + e.message;
 					}
 					
-					const fieldValue = rec.getValue({"fieldId": fieldId});
+					const fieldValue = rec.getValue({fieldId});
 					const fieldValueIfDifferent = 
 						"" + fieldValue !== fieldText && fieldValue
 						? "" + fieldValue : "";
@@ -479,7 +485,7 @@ define(
 						const field = lineCount > 0
 							? rec.getSublistField({sublistId: sublistId, fieldId: sublistField, line: 0})
 							: null;
-							
+
 						const label = field?.label ?? "";
 						const type = field?.type ?? "";
 						
@@ -544,7 +550,7 @@ define(
 				<h3>Fields</h3>
 				<div style="width: 100%; overflow-x: auto; max-height: 40em; overflow-y: auto">
 					<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp"
-						style="border-width: 1px; border-color: light-gray">
+						style="border-width: 1px; border-color: lightgray">
 					<thead>
 						<tr>
 							<th class="mdl-data-table__cell--non-numeric"
@@ -749,14 +755,14 @@ define(
 			if (Number.isInteger(asNumber)) {
 				// NB: handle -0 for inserting last
 				if (!conjunction.startsWith("-")) {
-					if (asNumber > candidates.length) {
-						throw new Error("Line ${asNumber} is too big: ${candidates}");
+					if (asNumber >= candidates.length) {
+						throw new Error(`Line ${asNumber} is too big: ${candidates}`);
 					}
 					return [candidates[asNumber]];
 				}
 				else {
 					if (-asNumber > candidates.length) {
-						throw new Error("Line ${asNumber} is too small: ${candidates}");
+						throw new Error(`Line ${asNumber} is too small: ${candidates}`);
 					}
 					else if (asNumber === 0) { // negative zero
 						return [candidates[candidates.length - 1] + 1];
@@ -1194,7 +1200,7 @@ define(
 		else {
 			return `Unexpected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
 		}
-	};
+	}
 	
 	function insertSublistLine(
 		rec, sublistId, sublistLineQuery, fieldAssignments
@@ -1212,7 +1218,6 @@ define(
 			"ignoreRecalc": ignoreRecalc
 		});
 		
-		const setFieldValidators = [];
 		for (const fieldAssignment of fieldAssignments) {
 			if (fieldAssignment.fieldId === ignoreRecalcArg) {
 				continue;
@@ -1234,8 +1239,8 @@ define(
 					validationSublistFields.map(fieldId => {
 						const originalTextOrValue = sublistTextOrValues.find(i => i[1] === fieldId)[2];
 						return originalTextOrValue
-							? rec.getSublistText({sublistId, fieldId, line})
-							: rec.getSublistValue({sublistId, fieldId, line});
+							? reload.getSublistText({sublistId, fieldId, line})
+							: reload.getSublistValue({sublistId, fieldId, line});
 					}));
 				
 				for (let line = 0; line < lineCount; line++) {
@@ -1274,22 +1279,25 @@ define(
 		
 		const validationSublistFields = rec.getSublistFields({sublistId})
 			.filter(i => ! i.startsWith("sys_"));
-		const sublistValues = validationSublistFields.map(fieldId =>
-			rec.getSublistText({sublistId, fieldId, line: sublistLine}));
-			
+		const removedLineFingerprint = validationSublistFields.map(fieldId =>
+			getSublistTextOrValue(rec, sublistId, fieldId, sublistLine));
+
 		rec.removeLine({
 			"sublistId": sublistId,
 			line: sublistLine,
 			"ignoreRecalc": ignoreRecalc
 		});
-		
+
 		return reload => {
 			const foundAt = [];
 			const lineCount = reload.getLineCount({sublistId});
 			for (let i = 0; i < lineCount; i++) {
-				const reloadSublistValues = validationSublistFields.map(fieldId =>
-					reload.getSublistText({sublistId, fieldId, line: i}));
-				const allEqual = sublistValues.every((val, idx) => val === reloadSublistValues[idx]);
+				const allEqual = removedLineFingerprint.every(([originalValue, fieldId, isText]) => {
+					const reloadValue = isText
+						? reload.getSublistText({sublistId, fieldId, line: i})
+						: reload.getSublistValue({sublistId, fieldId, line: i});
+					return originalValue === reloadValue;
+				});
 				if (allEqual) {
 					foundAt.push(i);
 				}
@@ -1913,7 +1921,7 @@ define(
 				document.getElementById('taskList').style.display = "none";
 				document.getElementById('runStatus').style.display = "block";
 				const taskValues = document.getElementById('tasks').value;
-				const tasks = taskValues.split('\\n');
+				const tasks = taskValues.split(/\\r?\\n/);
 				for (const task of tasks) {
 					const trimmed = task.trim();
 					if (trimmed !== "") {
