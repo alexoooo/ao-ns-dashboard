@@ -22,6 +22,7 @@ export class BulkRunner extends LitElement {
 		model: {state: true},
 		pageStart: {state: true},
 		pageCount: {state: true},
+		paused: {state: true},
 	};
 
 	declare taskTypeLabel: string;
@@ -30,11 +31,18 @@ export class BulkRunner extends LitElement {
 	declare model: BulkRunnerTask[];
 	declare pageStart: number;
 	declare pageCount: number;
+	declare paused: boolean;
 
 	// Aborts any in-flight request when the component is removed (e.g. user
 	// navigates to another page mid-batch). Avoids "set state on detached
 	// element" warnings and stops the run loop cleanly.
 	private abortController: AbortController | null = null;
+
+	// Guards against starting a parallel batch when Resume is clicked while a
+	// batch is still in flight from before Pause. Set true in runNext() before
+	// kicking off runCommand(), cleared in runCommand() before re-entering
+	// runNext().
+	private running = false;
 
 	constructor() {
 		super();
@@ -44,6 +52,7 @@ export class BulkRunner extends LitElement {
 		this.model = [];
 		this.pageStart = 0;
 		this.pageCount = 100;
+		this.paused = false;
 	}
 
 	override disconnectedCallback(): void {
@@ -88,6 +97,28 @@ export class BulkRunner extends LitElement {
 		const visibleStart = this.pageStart;
 		const visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);
 		const visible = this.model.slice(visibleStart, visibleEnd);
+		const finished = this.model.every(i => i.status !== "" && i.status !== "Running");
+		const pauseResumeButton = finished
+			? null
+			: this.paused
+				? html`
+						<button
+							class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+							style="margin-right: 1em"
+							@click=${this.resume}
+						>
+							<span class="material-icons md-18">play_arrow</span> Resume
+						</button>
+					`
+				: html`
+						<button
+							class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+							style="margin-right: 1em"
+							@click=${this.pause}
+						>
+							<span class="material-icons md-18">pause</span> Pause
+						</button>
+					`;
 
 		return html`
 			<div>
@@ -95,6 +126,7 @@ export class BulkRunner extends LitElement {
 					class="bulk-runner-actions"
 					style="position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)"
 				>
+					${pauseResumeButton}
 					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
 						<input
 							type="text"
@@ -125,7 +157,9 @@ export class BulkRunner extends LitElement {
 							<span class="material-icons md-18">download</span> Download
 						</button>
 					</span>
-					<span style="margin-left: 1em">Progress: ${startedCount} of ${this.model.length}</span>
+					<span style="margin-left: 1em">
+						Progress: ${startedCount} of ${this.model.length}${this.paused ? " (paused)" : ""}
+					</span>
 				</div>
 				<div>
 					<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%">
@@ -216,6 +250,10 @@ export class BulkRunner extends LitElement {
 	}
 
 	runNext(): void {
+		if (this.paused || this.running) {
+			this.requestUpdate();
+			return;
+		}
 		const nextIndex = this.model.findIndex(e => e.status === "");
 		if (nextIndex === -1) {
 			this.requestUpdate();
@@ -228,7 +266,17 @@ export class BulkRunner extends LitElement {
 			next.status = "Running";
 		}
 		this.requestUpdate();
+		this.running = true;
 		void this.runCommand(batch);
+	}
+
+	pause(): void {
+		this.paused = true;
+	}
+
+	resume(): void {
+		this.paused = false;
+		this.runNext();
 	}
 
 	async runCommand(nextBatch: BulkRunnerTask[]): Promise<void> {
@@ -250,10 +298,12 @@ export class BulkRunner extends LitElement {
 		} catch (e) {
 			// AbortError — component was disconnected; bail without state changes.
 			if (e instanceof DOMException && e.name === "AbortError") {
+				this.running = false;
 				return;
 			}
 			markBatchError("Error: " + (e instanceof Error ? e.message : String(e)));
 			this.requestUpdate();
+			this.running = false;
 			this.runNext();
 			return;
 		}
@@ -267,6 +317,7 @@ export class BulkRunner extends LitElement {
 			}
 		}
 		this.requestUpdate();
+		this.running = false;
 		this.runNext();
 	}
 

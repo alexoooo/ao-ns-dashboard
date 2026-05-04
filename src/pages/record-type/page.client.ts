@@ -43,22 +43,17 @@ class RecordTypeBulkRunner extends BulkRunner {
 	override renderInput(): TemplateResult {
 		return html`
 			<div>
-				<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-					<input
-						class="mdl-textfield__input"
-						type="text"
-						id="recordId"
-						autofocus
-						@change=${this.onRecordIdChange}
-					/>
-					<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
-				</div>
-				<hr />
-				<fieldset style="width: 40em">
-					<legend>${this.taskTypeLabel} (one per line)</legend>
-					<textarea class="mdl-textfield__input" rows="20" id="tasks" .value=${this.defaultTasks}></textarea>
-				</fieldset>
-				<div>
+				<div style="display: flex; align-items: center; gap: 1em">
+					<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 20em">
+						<input
+							class="mdl-textfield__input"
+							type="text"
+							id="recordId"
+							autofocus
+							@change=${this.onRecordIdChange}
+						/>
+						<label class="mdl-textfield__label" for="recordId">Internal ID or External ID</label>
+					</div>
 					<button
 						class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
 						@click=${this.runAll}
@@ -66,6 +61,11 @@ class RecordTypeBulkRunner extends BulkRunner {
 						<span class="material-icons md-18">play_arrow</span> Run All
 					</button>
 				</div>
+				<hr />
+				<fieldset style="width: 40em">
+					<legend>${this.taskTypeLabel} (one per line)</legend>
+					<textarea class="mdl-textfield__input" rows="20" id="tasks" .value=${this.defaultTasks}></textarea>
+				</fieldset>
 			</div>
 		`;
 	}
