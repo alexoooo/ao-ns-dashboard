@@ -86,18 +86,15 @@ Use the appropriate suffix for placeholders inside `<script>` tags or wherever H
 
 ### Client-side code (`*.client.js`)
 
-`*.client.js` files are imported via `?raw` and inlined into `<script>` tags by the page's server.js. Rollup does NOT bundle them — they're imported as raw text strings. The IDE syntax-highlights them as JS.
+`*.client.js` files are [Lit](https://lit.dev) custom elements written as **module fragments**. The page's server.js imports them via `?raw` and the page template inlines them inside a `<script type="module">` block. The template provides the Lit `import` once at the top of the script; the inlined fragments themselves do **not** carry their own `import` statements (those would clash when fragments are concatenated).
 
-Pages 4–8 (lookup-fields → mass-delete) all use `client/bulk-runner.client.js`, which provides:
-- `model` / `modelProcessors` — the task list state.
-- `runCommand(batch)` — POSTs a batch to `commandPostUrl` and writes the JSON-array response back into `model[i].status`.
-- `runNext` — picks the next un-started task (or batch sharing the same `group`) and calls `runCommand`.
-- `runAll` — parses the textarea, populates `model`, drives `runNext`.
-- `render`, `csvEncode`, `downloadStatus` — progress table + CSV export.
+Each module fragment defines a class extending `LitElement` and registers it with `customElements.define(...)`. Components use **light DOM** (`createRenderRoot() { return this; }`) so MDL CSS classes still apply. Use `componentHandler.upgradeElements(this)` in `updated()` to re-init MDL on freshly rendered nodes.
 
-Each page sets `commandPostUrl` after embedding bulk-runner, and may push a `modelProcessor` to assign tasks into `group` keys (e.g. edit-records groups by record type + ID so multiple edits to the same record are saved as one transaction).
+Lit is loaded as native ESM from a CDN (`https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm`) — same pattern as MDL/jQuery/Select2. No bundling step required.
 
-The page server.js renders the textarea/run-status scaffold via `bulkRunnerScaffold(label)` from `bulk-runner.js`.
+The shared bulk-task component is `client/bulk-runner.client.js` (`<bulk-runner>`). Properties: `task-type-label`, `command-post-url`. Override `groupKey(task)` in a subclass to enable batching — see `pages/edit-records/client.client.js` (`<bulk-runner-edit-records>`) which groups by record type + ID. Pages that don't need batching (lookup-fields, create-records, mass-save, mass-delete) use the base `<bulk-runner>` directly. SuiteQL has its own component `<suiteql-page>`.
+
+For a page that subclasses, the template inlines the base fragment **before** the subclass fragment so the base class is in scope when the subclass declaration runs.
 
 ### Task input format
 

@@ -17,7 +17,7 @@ export default {
 	render(context) {
 		return interpolate(templateHtml, {
 			clientJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· Enter a SuiteQL query and click Run.</h3>
 				<h3>· Results are paged in chunks of up to 1000 rows (NetSuite max page size).</h3>

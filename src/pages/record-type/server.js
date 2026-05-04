@@ -4,13 +4,15 @@ import search from "N/search";
 import { paramCommand, paramRecordId } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { bulkRunnerScaffold } from "../../bulk-runner.js";
 import {
 	allRecordTypes,
 	undocumentedRecordTypes,
 	getRecordType,
 } from "../../record-types.js";
 import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
+// IMPORTANT: in template.html, bulkRunnerJs must be inlined before clientJs —
+// the subclass references the BulkRunner class declared in bulkRunnerJs.
+import clientJs from "./client.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -23,15 +25,15 @@ export default {
 
 	render(context) {
 		const all = allRecordTypes();
-		const recordTypeNamesJs = Object.keys(all)
+		const defaultTasks = Object.keys(all)
 			.map(type => type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" "))
-			.join("\\n");
+			.join("\n");
 
 		return interpolate(templateHtml, {
 			bulkRunnerJs,
-			commandPrefixJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			clientJs,
+			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			paramRecordId,
-			paramRecordIdJs: paramRecordId,
 			documentationHtml: documentationSection(`
 				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
 				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
@@ -39,9 +41,8 @@ export default {
 				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
 				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type"),
-			recordTypeCountJs: Object.keys(all).length,
-			recordTypeNamesJs,
+			defaultTasks,
+			defaultPageCount: Object.keys(all).length,
 		});
 	},
 

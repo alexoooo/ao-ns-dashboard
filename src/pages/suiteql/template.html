@@ -1,25 +1,10 @@
-<script>
+<script type="module">
+import { LitElement, html } from "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm";
+
 {{clientJs}}
-window.commandPostUrl = "{{commandUrlJs}}";
 </script>
 
 <h2>SuiteQL Query</h2>
 {{documentationHtml}}
 <hr/>
-<fieldset style="width: 60em">
-	<legend>SQL</legend>
-	<textarea class="mdl-textfield__input" id="sql" rows="8" autofocus></textarea>
-</fieldset>
-<div style="margin-top: 0.5em">
-	<button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" onclick="runQuery()">
-		<span class="material-icons md-18">play_arrow</span> Run Query
-	</button>
-	<span id="status" style="margin-left: 1em"></span>
-</div>
-<hr/>
-<div id="pagination" style="display: none; margin-bottom: 0.5em">
-	<button class="mdl-button mdl-js-button" id="prevBtn" onclick="prevPage()">Previous</button>
-	<span id="pageLabel" style="margin: 0 1em"></span>
-	<button class="mdl-button mdl-js-button" id="nextBtn" onclick="nextPage()">Next</button>
-</div>
-<div id="results"></div>
+<suiteql-page command-post-url="{{commandUrl}}"></suiteql-page>

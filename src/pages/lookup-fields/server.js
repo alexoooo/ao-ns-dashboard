@@ -3,7 +3,6 @@ import record from "N/record";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { bulkRunnerScaffold } from "../../bulk-runner.js";
 import { normalizeKey, splitAmpersand, splitVerticalBar, splitSlash } from "../../utils.js";
 import { parseFieldAssignment } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
@@ -22,7 +21,7 @@ export default {
 	render(context) {
 		return interpolate(templateHtml, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For valid Record Types and Field IDs, see [${recordDetailsPage.label}] page (left menu)</h3>
 				<h3>· Internal ID for the Record (different from External ID on NetSuite page)</h3>
@@ -36,7 +35,6 @@ export default {
 				<h3>· The following are special characters: | / &amp;</h3>
 				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID|Location|Field ID"),
 		});
 	},
 

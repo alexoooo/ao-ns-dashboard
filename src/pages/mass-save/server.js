@@ -3,7 +3,6 @@ import record from "N/record";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { bulkRunnerScaffold } from "../../bulk-runner.js";
 import { normalizeKey, splitVerticalBar } from "../../utils.js";
 import { getRecordType } from "../../record-types.js";
 import lookupFieldsPage from "../lookup-fields/server.js";
@@ -21,7 +20,7 @@ export default {
 	render(context) {
 		return interpolate(templateHtml, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type/Internal ID, see [${lookupFieldsPage.label}] page (left menu)</h3>
 				<h2>· Each Record by Internal ID:</h2>
@@ -29,7 +28,6 @@ export default {
 				<h2>&nbsp; &nbsp; 2) SAVE Record</h2>
 				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID"),
 		});
 	},
 

@@ -123,62 +123,6 @@ var welcome = {
 	},
 };
 
-// Server-side counterpart to ./client/bulk-runner.client.js.
-// Returns the HTML scaffold (textarea + Run All button + status table container)
-// that the bulk-runner browser code wires into.
-
-function bulkRunnerScaffold(taskTypeLabel) {
-	return `
-		<div id="taskList">
-			<fieldset style="width: 40em">
-				<legend>${taskTypeLabel} (one per line)</legend>
-				<textarea
-						class="mdl-textfield__input"
-						rows="20"
-						id="tasks"
-						autofocus></textarea>
-			</fieldset>
-			<div><button
-					class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-					onclick="runAll()">
-				<span class="material-icons md-18">play_arrow</span> Run All
-			</button></div>
-		</div>
-		<div id="runStatus" style="display: none">
-			<div>
-				<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
-					<input type="text"
-							class="mdl-textfield__input"
-							id="pageStart"
-							value="1"
-							onchange="onPageStart(this.value);" />
-					<label class="mdl-textfield__label" for="customSegment">Start</label>
-				</span>
-				<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em; margin-left: 1em">
-					<input type="text"
-							class="mdl-textfield__input"
-							id="pageCount"
-							value="100"
-							onchange="onPageCount(this.value);" />
-					<label class="mdl-textfield__label" for="customSegment">Count</label>
-				</span>
-				<span style="margin-left: 1em">
-					<button
-							class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-							style="margin-left: 1em"
-							onclick="downloadStatus()">
-						<span class="material-icons md-18">download</span> Download
-					</button>
-				</span>
-				<span id="statusMessage" style="margin-left: 1em">
-				</span>
-			</div>
-
-			<div id="statusTable">
-			</div>
-		</div>`;
-}
-
 const undocumentedRecordTypes = {
 	"TRANSFER": "transfer",
 	"CURRENCY_REVALUATION": "fxreval",
@@ -239,9 +183,11 @@ function recordTypeOptions(selectedRecordType) {
 	}).join("");
 }
 
-var bulkRunnerJs = "// Shared browser-side runtime for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n//\n// Each page sets `commandPostUrl` and optionally pushes a callback into\n// `modelProcessors` to assign tasks into batches via `i.group`.\n// The page then renders a textarea + Run All button via taskListAndRunStatusJs,\n// and clicking the button drives the runNext / runCommand loop below.\n\nconst model = [];\nconst modelProcessors = [];\n\nvar pageStart = 0;\nvar pageCount = 100;\n\nfunction onPageStart(value) {\n\twindow.pageStart = parseInt(value) - 1;\n\trender();\n}\nfunction onPageCount(value) {\n\twindow.pageCount = parseInt(value);\n\trender();\n}\n\nvar commandPostUrl;\nfunction runCommand(nextBatch) {\n\tvar request = new XMLHttpRequest();\n\trequest.onreadystatechange = function() {\n\t\tif (this.readyState === 4) {\n\t\t\tconst status = this.status;\n\t\t\tif (status !== 200) {\n\t\t\t\tnextBatch[0].status = \"Error \" + status + \": \" + this.responseText;\n\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\tnextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse {\n\t\t\t\ttry {\n\t\t\t\t\tconst responses = JSON.parse(this.responseText);\n\t\t\t\t\tfor (let i = 0; i < responses.length; i++) {\n\t\t\t\t\t\tconst adjustedStatus = (responses[i] === \"\" ? \"(blank)\" : \"\" + responses[i]);\n\t\t\t\t\t\tnextBatch[i].status = adjustedStatus;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (e) {\n\t\t\t\t\tnextBatch[0].status = \"\" + this.responseText;\n\t\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\t\tnextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\trunNext();\n\t\t}\n\t\telse {\n\t\t\tfor (const next of nextBatch) {\n\t\t\t\tnext.status = \"Running...\";\n\t\t\t}\n\t\t}\n\t};\n\trequest.open(\"POST\", commandPostUrl);\n\trequest.setRequestHeader('Content-type', 'application/json');\n\n\tconst body = nextBatch.map(i => i.task);\n\trequest.send(JSON.stringify(body));\n}\n\nfunction csvEncode(value) {\n\treturn value.replaceAll('\"', '\"\"');\n}\nfunction downloadStatus() {\n\tconst rows = [];\n\trows.push(\"Number,Task,Result\");\n\tfor (let i = 0; i < model.length; i++) {\n\t\tconst item = model[i];\n\t\trows.push((i + 1) + ',\"' + csvEncode(item.task) + '\",\"' + csvEncode(item.status) + '\"');\n\t}\n\tconst csv = rows.join(\"\\r\\n\");\n\n\tconst element = document.createElement('a');\n\telement.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(csv));\n\telement.setAttribute('download', \"result.csv\");\n\telement.style.display = 'none';\n\tdocument.body.appendChild(element);\n\telement.click();\n\tdocument.body.removeChild(element);\n}\n\nfunction render() {\n\tconst message = document.getElementById('statusMessage');\n\tconst startedCount = model.filter(i => i.status !== \"\").length;\n\tmessage.innerHTML = \"Progress: \" + startedCount + \" of \" + model.length;\n\n\tconst container = document.getElementById('statusTable');\n\n\tconst rows = [];\n\tfor (let index = pageStart, i = 0;\n\t\t\tindex < model.length && i < pageCount;\n\t\t\tindex++, i++)\n\t{\n\t\tconst item = model[index];\n\t\trows.push(\n\t\t\t\"<tr>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\">' +\n\t\t\t\t\t(index + 1) +\n\t\t\t\t\"</td>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\">' +\n\t\t\t\t\titem.task +\n\t\t\t\t\"</td>\" +\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\" ' +\n\t\t\t\t\t\t(item.status.toLowerCase().includes(\"error\")\n\t\t\t\t\t\t? 'style=\"color: red; white-space: normal\"'\n\t\t\t\t\t\t: 'style=\"white-space: normal\"') + '>' +\n\t\t\t\t\titem.status +\n\t\t\t\t\"</td>\" +\n\t\t\t\"</tr>\");\n\t}\n\n\tcontainer.innerHTML =\n\t\t'<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">' +\n\t\t\t\"<thead><tr>\" +\n\t\t\t\t'<th class=\"mdl-data-table__cell\">Number</th>' +\n\t\t\t\t'<th class=\"mdl-data-table__cell--non-numeric\">Task</th>' +\n\t\t\t\t'<th class=\"mdl-data-table__cell--non-numeric\" style=\"width: 100%\">Result</th>' +\n\t\t\t\"</tr></thead>\" +\n\t\t\t\"<tbody>\" +\n\t\t\t\trows.join(\"\") +\n\t\t\t\"</tbody>\" +\n\t\t\"</table>\";\n}\n\nfunction runNext() {\n\tconst nextIndex = model.findIndex(e => e.status === \"\");\n\tif (nextIndex === -1) {\n\t\trender();\n\t\treturn;\n\t}\n\n\tconst first = model[nextIndex];\n\n\tconst batch =\n\t\tfirst.group === \"\"\n\t\t? [first]\n\t\t: model.filter(i => i.group === first.group);\n\n\tbatch.forEach(next => {\n\t\tnext.status = \"Running\";\n\t});\n\n\trunCommand(batch);\n\trender();\n}\n\nfunction runAll() {\n\tdocument.getElementById('taskList').style.display = \"none\";\n\tdocument.getElementById('runStatus').style.display = \"block\";\n\tconst taskValues = document.getElementById('tasks').value;\n\tconst tasks = taskValues.split(/\\r?\\n/);\n\tfor (const task of tasks) {\n\t\tconst trimmed = task.trim();\n\t\tif (trimmed !== \"\") {\n\t\t\tmodel.push({\n\t\t\t\t\"task\": task,\n\t\t\t\t\"status\": \"\",\n\t\t\t\t\"group\": \"\"\n\t\t\t});\n\t\t}\n\t}\n\tfor (const modelProcessor of modelProcessors) {\n\t\tmodelProcessor();\n\t}\n\trender();\n\trunNext();\n}\n";
+var bulkRunnerJs = "// Lit base component for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n//\n// This file is a \"module fragment\": it is concatenated into a <script type=\"module\">\n// block by the page template, which provides the lit imports. Do NOT add an\n// `import` line for lit here — it would clash with the template's import when\n// fragments are concatenated together.\n//\n// Subclass to enable batching by overriding `groupKey(task)`.\n\nclass BulkRunner extends LitElement {\n\tstatic properties = {\n\t\ttaskTypeLabel: { type: String, attribute: \"task-type-label\" },\n\t\tcommandPostUrl: { type: String, attribute: \"command-post-url\" },\n\t\tphase: { state: true },\n\t\tmodel: { state: true },\n\t\tpageStart: { state: true },\n\t\tpageCount: { state: true },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.taskTypeLabel = \"\";\n\t\tthis.commandPostUrl = \"\";\n\t\tthis.phase = \"input\";\n\t\tthis.model = [];\n\t\tthis.pageStart = 0;\n\t\tthis.pageCount = 100;\n\t}\n\n\tcreateRenderRoot() {\n\t\treturn this;\n\t}\n\n\tgroupKey(task) {\n\t\treturn \"\";\n\t}\n\n\trender() {\n\t\treturn this.phase === \"input\" ? this.renderInput() : this.renderStatus();\n\t}\n\n\trenderInput() {\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" autofocus></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t@click=${this.runAll}>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\trenderStatus() {\n\t\tconst startedCount = this.model.filter(i => i.status !== \"\").length;\n\t\tconst visibleStart = this.pageStart;\n\t\tconst visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);\n\t\tconst visible = this.model.slice(visibleStart, visibleEnd);\n\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<div>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageStart + 1)}\n\t\t\t\t\t\t\t\t@change=${this.onPageStartChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Start</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em; margin-left: 1em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageCount)}\n\t\t\t\t\t\t\t\t@change=${this.onPageCountChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Count</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">\n\t\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t\t@click=${this.downloadStatus}>\n\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">Progress: ${startedCount} of ${this.model.length}</span>\n\t\t\t\t</div>\n\t\t\t\t<div>\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell\">Number</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Task</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\" style=\"width: 100%\">Result</th>\n\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t${visible.map((item, i) => {\n\t\t\t\t\t\t\t\tconst isError = item.status.toLowerCase().includes(\"error\");\n\t\t\t\t\t\t\t\tconst cellStyle = isError\n\t\t\t\t\t\t\t\t\t? \"color: red; white-space: normal\"\n\t\t\t\t\t\t\t\t\t: \"white-space: normal\";\n\t\t\t\t\t\t\t\treturn html`\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${visibleStart + i + 1}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${item.task}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=${cellStyle}>${item.status}</td>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t`;\n\t\t\t\t\t\t\t})}\n\t\t\t\t\t\t</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\tupdated() {\n\t\t// MDL classes need re-upgrading after re-render so freshly created\n\t\t// buttons/inputs pick up ripple/floating-label behavior.\n\t\tif (window.componentHandler) {\n\t\t\twindow.componentHandler.upgradeElements(this);\n\t\t}\n\t}\n\n\tonPageStartChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageStart = Number.isFinite(parsed) ? Math.max(0, parsed - 1) : 0;\n\t}\n\n\tonPageCountChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 100;\n\t}\n\n\trunAll() {\n\t\tconst taskValues = this.querySelector(\"#tasks\").value;\n\t\tconst tasks = taskValues.split(/\\r?\\n/);\n\t\tconst newModel = [];\n\t\tfor (const task of tasks) {\n\t\t\tconst trimmed = task.trim();\n\t\t\tif (trimmed !== \"\") {\n\t\t\t\tnewModel.push({\n\t\t\t\t\ttask,\n\t\t\t\t\tstatus: \"\",\n\t\t\t\t\tgroup: this.groupKey(task) || \"\",\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\tthis.model = newModel;\n\t\tthis.phase = \"running\";\n\t\tthis.runNext();\n\t}\n\n\trunNext() {\n\t\tconst nextIndex = this.model.findIndex(e => e.status === \"\");\n\t\tif (nextIndex === -1) {\n\t\t\tthis.requestUpdate();\n\t\t\treturn;\n\t\t}\n\t\tconst first = this.model[nextIndex];\n\t\tconst batch = first.group === \"\"\n\t\t\t? [first]\n\t\t\t: this.model.filter(i => i.group === first.group);\n\n\t\tfor (const next of batch) {\n\t\t\tnext.status = \"Running\";\n\t\t}\n\t\tthis.requestUpdate();\n\t\tthis.runCommand(batch);\n\t}\n\n\trunCommand(nextBatch) {\n\t\tconst request = new XMLHttpRequest();\n\t\trequest.onreadystatechange = () => {\n\t\t\tif (request.readyState !== 4) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tconst status = request.status;\n\t\t\tif (status !== 200) {\n\t\t\t\tnextBatch[0].status = \"Error \" + status + \": \" + request.responseText;\n\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\tnextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse {\n\t\t\t\ttry {\n\t\t\t\t\tconst responses = JSON.parse(request.responseText);\n\t\t\t\t\tfor (let i = 0; i < responses.length; i++) {\n\t\t\t\t\t\tconst adjustedStatus = (responses[i] === \"\" ? \"(blank)\" : \"\" + responses[i]);\n\t\t\t\t\t\tnextBatch[i].status = adjustedStatus;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (e) {\n\t\t\t\t\tnextBatch[0].status = \"\" + request.responseText;\n\t\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\t\tnextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tthis.requestUpdate();\n\t\t\tthis.runNext();\n\t\t};\n\t\trequest.open(\"POST\", this.commandPostUrl);\n\t\trequest.setRequestHeader(\"Content-type\", \"application/json\");\n\t\trequest.send(JSON.stringify(nextBatch.map(i => i.task)));\n\t}\n\n\tcsvEncode(value) {\n\t\treturn String(value).replaceAll('\"', '\"\"');\n\t}\n\n\tdownloadStatus() {\n\t\tconst rows = [\"Number,Task,Result\"];\n\t\tfor (let i = 0; i < this.model.length; i++) {\n\t\t\tconst item = this.model[i];\n\t\t\trows.push((i + 1) + ',\"' + this.csvEncode(item.task) + '\",\"' + this.csvEncode(item.status) + '\"');\n\t\t}\n\t\tconst csv = rows.join(\"\\r\\n\");\n\t\tconst a = document.createElement(\"a\");\n\t\ta.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n\t\ta.setAttribute(\"download\", \"result.csv\");\n\t\ta.style.display = \"none\";\n\t\tdocument.body.appendChild(a);\n\t\ta.click();\n\t\tdocument.body.removeChild(a);\n\t}\n}\n\ncustomElements.define(\"bulk-runner\", BulkRunner);\n";
 
-var templateHtml$7 = "<script>\n{{bulkRunnerJs}}\nconst staticCommandPrefix = \"{{commandPrefixJs}}\";\n\nfunction onRecordId(value) {\n\twindow.commandPostUrl = staticCommandPrefix + \"&{{paramRecordIdJs}}=\" + value;\n}\n</script>\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr/>\n<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t<input\n\t\tclass=\"mdl-textfield__input\"\n\t\ttype=\"text\"\n\t\tid=\"recordId\"\n\t\tname=\"{{paramRecordId}}\"\n\t\tautofocus\n\t\tonchange=\"onRecordId(this.value);\"/>\n\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID or External ID</label>\n</div>\n<hr/>\n{{scaffoldHtml}}\n<script>\nonRecordId(document.getElementById('recordId').value);\n\ndocument.getElementById('pageCount').value = {{recordTypeCountJs}};\nonPageCount(document.getElementById('pageCount').value);\n\nif (document.getElementById('tasks').value === \"\") {\n\tdocument.getElementById('tasks').value = \"{{recordTypeNamesJs}}\";\n}\n</script>\n";
+var clientJs$2 = "// Record-type subclass of BulkRunner.\n//\n// Adds an Internal ID input above the bulk-runner scaffold and rebuilds the\n// command URL whenever it changes. Each row in the textarea is a Record Type\n// to probe against the entered Internal ID.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n// IMPORTANT: bulk-runner.client.js MUST be inlined before this file.\n\nclass RecordTypeBulkRunner extends BulkRunner {\n\tstatic properties = {\n\t\t...BulkRunner.properties,\n\t\tcommandPrefix: { type: String, attribute: \"command-prefix\" },\n\t\trecordIdParam: { type: String, attribute: \"record-id-param\" },\n\t\tdefaultTasks: { type: String, attribute: \"default-tasks\" },\n\t\tdefaultPageCount: { type: Number, attribute: \"default-page-count\" },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.commandPrefix = \"\";\n\t\tthis.recordIdParam = \"\";\n\t\tthis.defaultTasks = \"\";\n\t\tthis.defaultPageCount = 100;\n\t}\n\n\tconnectedCallback() {\n\t\tsuper.connectedCallback();\n\t\tthis.pageCount = this.defaultPageCount;\n\t}\n\n\tonRecordIdChange(e) {\n\t\tconst id = e.target.value;\n\t\tthis.commandPostUrl = this.commandPrefix + \"&\" + this.recordIdParam + \"=\" + id;\n\t}\n\n\trenderInput() {\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t\t\t\t<input class=\"mdl-textfield__input\" type=\"text\" id=\"recordId\"\n\t\t\t\t\t\t\tautofocus\n\t\t\t\t\t\t\t@change=${this.onRecordIdChange} />\n\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID or External ID</label>\n\t\t\t\t</div>\n\t\t\t\t<hr/>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" .value=${this.defaultTasks}></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t@click=${this.runAll}>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n}\n\ncustomElements.define(\"bulk-runner-record-type\", RecordTypeBulkRunner);\n";
+
+var templateHtml$7 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n{{clientJs}}\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner-record-type\n\t\ttask-type-label=\"Record Type\"\n\t\tcommand-prefix=\"{{commandPrefix}}\"\n\t\trecord-id-param=\"{{paramRecordId}}\"\n\t\tdefault-tasks=\"{{defaultTasks}}\"\n\t\tdefault-page-count=\"{{defaultPageCount}}\">\n</bulk-runner-record-type>\n";
 
 const commandName$6 = "record-type";
 
@@ -252,15 +198,15 @@ var recordType = {
 
 	render(context) {
 		const all = allRecordTypes();
-		const recordTypeNamesJs = Object.keys(all)
+		const defaultTasks = Object.keys(all)
 			.map(type => type.split("_").map(i => i[0] + i.substring(1).toLowerCase()).join(" "))
-			.join("\\n");
+			.join("\n");
 
 		return interpolate(templateHtml$7, {
 			bulkRunnerJs,
-			commandPrefixJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
+			clientJs: clientJs$2,
+			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
 			paramRecordId,
-			paramRecordIdJs: paramRecordId,
 			documentationHtml: documentationSection(`
 				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
 				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
@@ -268,9 +214,8 @@ var recordType = {
 				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
 				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type"),
-			recordTypeCountJs: Object.keys(all).length,
-			recordTypeNamesJs,
+			defaultTasks,
+			defaultPageCount: Object.keys(all).length,
 		});
 	},
 
@@ -614,7 +559,7 @@ function parseFieldAssignmentList(fieldAssignmentList) {
 	return withMultiSelect;
 }
 
-var templateHtml$5 = "<script>\n{{bulkRunnerJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr/>\n{{scaffoldHtml}}\n";
+var templateHtml$5 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner\n\t\ttask-type-label=\"Record Type|Internal ID|Location|Field ID\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$5 = "lookup-fields";
 
@@ -626,7 +571,7 @@ var lookupFields = {
 	render(context) {
 		return interpolate(templateHtml$5, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$5,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$5,
 			documentationHtml: documentationSection(`
 				<h3>· For valid Record Types and Field IDs, see [${recordDetails.label}] page (left menu)</h3>
 				<h3>· Internal ID for the Record (different from External ID on NetSuite page)</h3>
@@ -640,7 +585,6 @@ var lookupFields = {
 				<h3>· The following are special characters: | / &amp;</h3>
 				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID|Location|Field ID"),
 		});
 	},
 
@@ -824,7 +768,9 @@ function findSublistLines(rec, sublistId, sublistLineQuery) {
 	return candidates;
 }
 
-var templateHtml$4 = "<script>\n{{bulkRunnerJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n\nmodelProcessors.push(() => {\n\tmodel.forEach(i => {\n\t\tconst parts = i.task.split(\"|\")\n\t\t\t.map(part => part.replace(/\\W/g, \"\").toLowerCase());\n\t\ti.group = parts[0] + \"|\" + parts[1];\n\t});\n});\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr/>\n{{scaffoldHtml}}\n";
+var clientJs$1 = "// Edit-records subclass of BulkRunner: groups tasks by record type + ID so\n// multiple edits to the same record are saved as a single transaction.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n// IMPORTANT: bulk-runner.client.js MUST be inlined before this file in the\n// page template's <script type=\"module\"> block, since BulkRunner must be in\n// scope when this class declaration runs.\n\nclass EditRecordsBulkRunner extends BulkRunner {\n\tgroupKey(task) {\n\t\tconst parts = task.split(\"|\").map(part => part.replace(/\\W/g, \"\").toLowerCase());\n\t\treturn parts[0] + \"|\" + parts[1];\n\t}\n}\n\ncustomElements.define(\"bulk-runner-edit-records\", EditRecordsBulkRunner);\n";
+
+var templateHtml$4 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n{{clientJs}}\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner-edit-records\n\t\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner-edit-records>\n";
 
 const commandName$4 = "edit";
 const actionSet = "set";
@@ -840,7 +786,8 @@ var editRecords = {
 	render(context) {
 		return interpolate(templateHtml$4, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$4,
+			clientJs: clientJs$1,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$4,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type/Internal ID/Location, see [${lookupFields.label}] page (left menu)</h3>
 				<h3>· Field Values have the following format:</h3>
@@ -852,7 +799,6 @@ var editRecords = {
 				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line (before given Location, use line=-0 to insert at end)</h4>
 				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID|Location|Field Values|Action"),
 		});
 	},
 
@@ -1266,7 +1212,7 @@ function getIgnoreCalcArgument(fieldAssignments, allowExtra) {
 	}
 }
 
-var templateHtml$3 = "<script>\n{{bulkRunnerJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n</script>\n\n<h2>Create one or more records</h2>\n{{documentationHtml}}\n<hr/>\n{{scaffoldHtml}}\n";
+var templateHtml$3 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n</script>\n\n<h2>Create one or more records</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner\n\t\ttask-type-label=\"Record Type|Default Values|Field Values\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$3 = "create";
 
@@ -1278,7 +1224,7 @@ var createRecords = {
 	render(context) {
 		return interpolate(templateHtml$3, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$3,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$3,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type, see [${lookupFields.label}] page (left menu)</h3>
 				<h3>· Default Values and Field Values have the following format:</h3>
@@ -1294,7 +1240,6 @@ var createRecords = {
 				<h3>· Result contains the new Internal ID that is automatically generated by NetSuite</h3>
 				<h3>· Sublists are not supported during creation (use [${editRecords.label}] after)</h3>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Default Values|Field Values"),
 		});
 	},
 
@@ -1429,7 +1374,7 @@ function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
 	};
 }
 
-var templateHtml$2 = "<script>\n{{bulkRunnerJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n</script>\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr/>\n{{scaffoldHtml}}\n";
+var templateHtml$2 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner\n\t\ttask-type-label=\"Record Type|Internal ID\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$2 = "mass-save";
 
@@ -1441,7 +1386,7 @@ var massSave = {
 	render(context) {
 		return interpolate(templateHtml$2, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$2,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$2,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type/Internal ID, see [${lookupFields.label}] page (left menu)</h3>
 				<h2>· Each Record by Internal ID:</h2>
@@ -1449,7 +1394,6 @@ var massSave = {
 				<h2>&nbsp; &nbsp; 2) SAVE Record</h2>
 				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID"),
 		});
 	},
 
@@ -1482,7 +1426,7 @@ function handleMassSave(context) {
 	return `["Edit/Save"]`;
 }
 
-var templateHtml$1 = "<script>\n{{bulkRunnerJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n</script>\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr/>\n{{scaffoldHtml}}\n";
+var templateHtml$1 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr/>\n<bulk-runner\n\t\ttask-type-label=\"Record Type|Internal ID\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$1 = "mass-delete";
 
@@ -1494,11 +1438,10 @@ var massDelete = {
 	render(context) {
 		return interpolate(templateHtml$1, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$1,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$1,
 			documentationHtml: documentationSection(`
 				<h3>· DELETE each Record by Record Type/Internal ID, see [${lookupFields.label}] page (left menu)</h3>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID"),
 		});
 	},
 
@@ -1568,9 +1511,9 @@ function handleMassDelete(context) {
 	}
 }
 
-var clientJs = "// Browser-side runtime for the SuiteQL Query page.\n// Tracks the current page index, POSTs the query + page index to the server,\n// renders the returned rows into a table, and handles Prev/Next navigation.\n\nconst pageSize = 1000;\nlet currentPageIndex = 0;\nlet lastResponse = null;\n\nfunction runQuery() {\n\tcurrentPageIndex = 0;\n\tfetchPage();\n}\n\nfunction prevPage() {\n\tif (currentPageIndex > 0) {\n\t\tcurrentPageIndex--;\n\t\tfetchPage();\n\t}\n}\n\nfunction nextPage() {\n\tif (lastResponse && currentPageIndex < lastResponse.pageCount - 1) {\n\t\tcurrentPageIndex++;\n\t\tfetchPage();\n\t}\n}\n\nfunction fetchPage() {\n\tconst sql = document.getElementById('sql').value;\n\tsetStatus('Running...');\n\tdocument.getElementById('pagination').style.display = 'none';\n\n\tconst xhr = new XMLHttpRequest();\n\txhr.onreadystatechange = function () {\n\t\tif (this.readyState !== 4) return;\n\t\tif (this.status !== 200) {\n\t\t\tsetStatus('HTTP ' + this.status + ': ' + this.responseText);\n\t\t\treturn;\n\t\t}\n\t\tlet resp;\n\t\ttry {\n\t\t\tresp = JSON.parse(this.responseText);\n\t\t}\n\t\tcatch (e) {\n\t\t\tsetStatus('Bad response: ' + this.responseText);\n\t\t\treturn;\n\t\t}\n\t\tif (resp.error) {\n\t\t\tsetStatus('Error: ' + resp.error);\n\t\t\treturn;\n\t\t}\n\t\tlastResponse = resp;\n\t\trenderResults(resp);\n\t};\n\txhr.open('POST', window.commandPostUrl);\n\txhr.setRequestHeader('Content-type', 'application/json');\n\txhr.send(JSON.stringify({ query: sql, pageIndex: currentPageIndex, pageSize }));\n}\n\nfunction setStatus(text) {\n\tdocument.getElementById('status').textContent = text;\n}\n\nfunction renderResults(resp) {\n\tsetStatus('Page ' + (resp.pageIndex + 1) + ' of ' + Math.max(resp.pageCount, 1) + ' · ' + resp.totalCount + ' rows total');\n\tdocument.getElementById('pageLabel').textContent = 'Page ' + (resp.pageIndex + 1) + ' / ' + resp.pageCount;\n\tdocument.getElementById('prevBtn').disabled = resp.pageIndex === 0;\n\tdocument.getElementById('nextBtn').disabled = resp.pageIndex >= resp.pageCount - 1;\n\tdocument.getElementById('pagination').style.display = resp.pageCount > 1 ? 'block' : 'none';\n\n\tconst headRow = '<tr>' +\n\t\tresp.columns.map(c =>\n\t\t\t'<th class=\"mdl-data-table__cell--non-numeric\">' + escapeHtml(c) + '</th>'\n\t\t).join('') +\n\t\t'</tr>';\n\tconst bodyRows = resp.rows.map(r =>\n\t\t'<tr>' +\n\t\t\tr.map(v =>\n\t\t\t\t'<td class=\"mdl-data-table__cell--non-numeric\" style=\"font-family: monospace\">' +\n\t\t\t\t\tescapeHtml(v == null ? '' : String(v)) +\n\t\t\t\t'</td>'\n\t\t\t).join('') +\n\t\t'</tr>'\n\t).join('');\n\n\tdocument.getElementById('results').innerHTML =\n\t\t'<div style=\"overflow-x: auto; max-height: 40em; overflow-y: auto\">' +\n\t\t\t'<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"white-space: nowrap\">' +\n\t\t\t\t'<thead>' + headRow + '</thead>' +\n\t\t\t\t'<tbody>' + bodyRows + '</tbody>' +\n\t\t\t'</table>' +\n\t\t'</div>';\n}\n\nfunction escapeHtml(s) {\n\treturn s.replace(/[&<>\"']/g, c => ({\n\t\t'&': '&amp;',\n\t\t'<': '&lt;',\n\t\t'>': '&gt;',\n\t\t'\"': '&quot;',\n\t\t\"'\": '&#39;',\n\t})[c]);\n}\n";
+var clientJs = "// SuiteQL Query page Lit component. Tracks the current page index, POSTs the\n// query + page index to the server, renders the returned rows into a table.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n\nclass SuiteqlPage extends LitElement {\n\tstatic properties = {\n\t\tcommandPostUrl: { type: String, attribute: \"command-post-url\" },\n\t\tcurrentPageIndex: { state: true },\n\t\tlastResponse: { state: true },\n\t\tstatusText: { state: true },\n\t\trunning: { state: true },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.commandPostUrl = \"\";\n\t\tthis.currentPageIndex = 0;\n\t\tthis.lastResponse = null;\n\t\tthis.statusText = \"\";\n\t\tthis.running = false;\n\t}\n\n\tcreateRenderRoot() {\n\t\treturn this;\n\t}\n\n\tupdated() {\n\t\tif (window.componentHandler) {\n\t\t\twindow.componentHandler.upgradeElements(this);\n\t\t}\n\t}\n\n\trender() {\n\t\tconst resp = this.lastResponse;\n\t\tconst showPagination = resp != null && resp.pageCount > 1;\n\t\tconst showResults = resp != null && resp.columns != null;\n\n\t\treturn html`\n\t\t\t<fieldset style=\"width: 60em\">\n\t\t\t\t<legend>SQL</legend>\n\t\t\t\t<textarea class=\"mdl-textfield__input\" id=\"sql\" rows=\"8\" autofocus></textarea>\n\t\t\t</fieldset>\n\t\t\t<div style=\"margin-top: 0.5em\">\n\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t@click=${this.runQuery}\n\t\t\t\t\t\t?disabled=${this.running}>\n\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run Query\n\t\t\t\t</button>\n\t\t\t\t<span style=\"margin-left: 1em\">${this.statusText}</span>\n\t\t\t</div>\n\t\t\t<hr/>\n\t\t\t${showPagination ? html`\n\t\t\t\t<div style=\"margin-bottom: 0.5em\">\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t@click=${this.prevPage}\n\t\t\t\t\t\t\t?disabled=${resp.pageIndex === 0}>Previous</button>\n\t\t\t\t\t<span style=\"margin: 0 1em\">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t@click=${this.nextPage}\n\t\t\t\t\t\t\t?disabled=${resp.pageIndex >= resp.pageCount - 1}>Next</button>\n\t\t\t\t</div>\n\t\t\t` : \"\"}\n\t\t\t${showResults ? html`\n\t\t\t\t<div style=\"overflow-x: auto; max-height: 40em; overflow-y: auto\">\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"white-space: nowrap\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>${resp.columns.map(c => html`\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">${c}</th>\n\t\t\t\t\t\t\t`)}</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>${resp.rows.map(r => html`\n\t\t\t\t\t\t\t<tr>${r.map(v => html`\n\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=\"font-family: monospace\">${v == null ? \"\" : String(v)}</td>\n\t\t\t\t\t\t\t`)}</tr>\n\t\t\t\t\t\t`)}</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t` : \"\"}\n\t\t`;\n\t}\n\n\trunQuery() {\n\t\tthis.currentPageIndex = 0;\n\t\tthis.fetchPage();\n\t}\n\n\tprevPage() {\n\t\tif (this.currentPageIndex > 0) {\n\t\t\tthis.currentPageIndex--;\n\t\t\tthis.fetchPage();\n\t\t}\n\t}\n\n\tnextPage() {\n\t\tif (this.lastResponse && this.currentPageIndex < this.lastResponse.pageCount - 1) {\n\t\t\tthis.currentPageIndex++;\n\t\t\tthis.fetchPage();\n\t\t}\n\t}\n\n\tfetchPage() {\n\t\tconst sql = this.querySelector(\"#sql\").value;\n\t\tthis.statusText = \"Running...\";\n\t\tthis.running = true;\n\n\t\tconst xhr = new XMLHttpRequest();\n\t\txhr.onreadystatechange = () => {\n\t\t\tif (xhr.readyState !== 4) return;\n\t\t\tthis.running = false;\n\t\t\tif (xhr.status !== 200) {\n\t\t\t\tthis.statusText = \"HTTP \" + xhr.status + \": \" + xhr.responseText;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tlet resp;\n\t\t\ttry {\n\t\t\t\tresp = JSON.parse(xhr.responseText);\n\t\t\t}\n\t\t\tcatch (e) {\n\t\t\t\tthis.statusText = \"Bad response: \" + xhr.responseText;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tif (resp.error) {\n\t\t\t\tthis.statusText = \"Error: \" + resp.error;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tthis.lastResponse = resp;\n\t\t\tthis.statusText = \"Page \" + (resp.pageIndex + 1) + \" of \" + Math.max(resp.pageCount, 1) +\n\t\t\t\t\" · \" + resp.totalCount + \" rows total\";\n\t\t};\n\t\txhr.open(\"POST\", this.commandPostUrl);\n\t\txhr.setRequestHeader(\"Content-type\", \"application/json\");\n\t\txhr.send(JSON.stringify({\n\t\t\tquery: sql,\n\t\t\tpageIndex: this.currentPageIndex,\n\t\t\tpageSize: 1000,\n\t\t}));\n\t}\n}\n\ncustomElements.define(\"suiteql-page\", SuiteqlPage);\n";
 
-var templateHtml = "<script>\n{{clientJs}}\nwindow.commandPostUrl = \"{{commandUrlJs}}\";\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr/>\n<fieldset style=\"width: 60em\">\n\t<legend>SQL</legend>\n\t<textarea class=\"mdl-textfield__input\" id=\"sql\" rows=\"8\" autofocus></textarea>\n</fieldset>\n<div style=\"margin-top: 0.5em\">\n\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\" onclick=\"runQuery()\">\n\t\t<span class=\"material-icons md-18\">play_arrow</span> Run Query\n\t</button>\n\t<span id=\"status\" style=\"margin-left: 1em\"></span>\n</div>\n<hr/>\n<div id=\"pagination\" style=\"display: none; margin-bottom: 0.5em\">\n\t<button class=\"mdl-button mdl-js-button\" id=\"prevBtn\" onclick=\"prevPage()\">Previous</button>\n\t<span id=\"pageLabel\" style=\"margin: 0 1em\"></span>\n\t<button class=\"mdl-button mdl-js-button\" id=\"nextBtn\" onclick=\"nextPage()\">Next</button>\n</div>\n<div id=\"results\"></div>\n";
+var templateHtml = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{clientJs}}\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr/>\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
 
 const commandName = "suiteql";
 
@@ -1582,7 +1525,7 @@ var suiteql = {
 	render(context) {
 		return interpolate(templateHtml, {
 			clientJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· Enter a SuiteQL query and click Run.</h3>
 				<h3>· Results are paged in chunks of up to 1000 rows (NetSuite max page size).</h3>

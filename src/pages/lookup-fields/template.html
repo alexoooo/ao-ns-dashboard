@@ -1,9 +1,13 @@
-<script>
+<script type="module">
+import { LitElement, html } from "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm";
+
 {{bulkRunnerJs}}
-window.commandPostUrl = "{{commandUrlJs}}";
 </script>
 
 <h2>Retrieve field values from some records</h2>
 {{documentationHtml}}
 <hr/>
-{{scaffoldHtml}}
+<bulk-runner
+		task-type-label="Record Type|Internal ID|Location|Field ID"
+		command-post-url="{{commandUrl}}">
+</bulk-runner>

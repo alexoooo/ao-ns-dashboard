@@ -3,13 +3,16 @@ import record from "N/record";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { bulkRunnerScaffold } from "../../bulk-runner.js";
 import { normalizeKey, splitVerticalBar, splitSlash } from "../../utils.js";
 import { parseFieldAssignmentList } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import { getSublistLine } from "../lookup-fields/server.js";
 import lookupFieldsPage from "../lookup-fields/server.js";
 import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
+// IMPORTANT: in template.html the bulkRunnerJs fragment must be inlined
+// before clientJs — the subclass references the BulkRunner class declared
+// in bulkRunnerJs's module scope.
+import clientJs from "./client.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -27,7 +30,8 @@ export default {
 	render(context) {
 		return interpolate(templateHtml, {
 			bulkRunnerJs,
-			commandUrlJs: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
+			clientJs,
+			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type/Internal ID/Location, see [${lookupFieldsPage.label}] page (left menu)</h3>
 				<h3>· Field Values have the following format:</h3>
@@ -39,7 +43,6 @@ export default {
 				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line (before given Location, use line=-0 to insert at end)</h4>
 				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
 			`),
-			scaffoldHtml: bulkRunnerScaffold("Record Type|Internal ID|Location|Field Values|Action"),
 		});
 	},
 

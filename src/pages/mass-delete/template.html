@@ -1,8 +1,13 @@
-<script>
+<script type="module">
+import { LitElement, html } from "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm";
+
 {{bulkRunnerJs}}
-window.commandPostUrl = "{{commandUrlJs}}";
 </script>
+
 <h1 style="color: red">***Records are PERMANENTLY DELETED***</h1>
 {{documentationHtml}}
 <hr/>
-{{scaffoldHtml}}
+<bulk-runner
+		task-type-label="Record Type|Internal ID"
+		command-post-url="{{commandUrl}}">
+</bulk-runner>
