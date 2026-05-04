@@ -1,7 +1,7 @@
 // Map of client-side ES module ids to their source text. Loaded into the
-// Suitelet bundle via Rollup's ?raw plugin, then served by main.js when the
-// page requests `?clientJs=<id>`. Ids correspond to bare specifiers in the
-// import map (see layout.html).
+// Suitelet bundle via Rollup's ?raw plugin, then embedded into each rendered
+// page as data: URLs in the import map (see main.js#renderPage and
+// layout.html). Ids correspond to bare specifiers in that import map.
 
 import csvSource from "./client/csv.client.js?raw";
 import bulkRunnerSource from "./client/bulk-runner.client.js?raw";
