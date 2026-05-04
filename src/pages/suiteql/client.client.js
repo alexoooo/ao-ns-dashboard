@@ -30,6 +30,12 @@ class SuiteqlPage extends LitElement {
 		if (window.componentHandler) {
 			window.componentHandler.upgradeElements(this);
 		}
+		// Sync the thead's sticky offset with the actual height of the actions row
+		// so the column headers freeze just below it instead of overlapping.
+		const actions = this.querySelector(".suiteql-actions");
+		if (actions) {
+			this.style.setProperty("--suiteql-actions-height", actions.offsetHeight + "px");
+		}
 	}
 
 	render() {
@@ -42,48 +48,46 @@ class SuiteqlPage extends LitElement {
 				<legend>SQL</legend>
 				<textarea class="mdl-textfield__input" id="sql" rows="8" autofocus></textarea>
 			</fieldset>
-			<div style="margin-top: 0.5em">
+			<div class="suiteql-actions" style="position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">
 				<button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
 						@click=${this.runQuery}
 						?disabled=${this.running}>
 					<span class="material-icons md-18">play_arrow</span> Run Query
 				</button>
-				<span style="margin-left: 1em">${this.statusText}</span>
-			</div>
-			<hr/>
-			${showResults ? html`
-				<div style="margin-bottom: 0.5em">
-					${showPagination ? html`
-						<button class="mdl-button mdl-js-button"
-								@click=${this.prevPage}
-								?disabled=${resp.pageIndex === 0}>Previous</button>
-						<span style="margin: 0 1em">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>
-						<button class="mdl-button mdl-js-button"
-								@click=${this.nextPage}
-								?disabled=${resp.pageIndex >= resp.pageCount - 1}>Next</button>
-					` : ""}
+				${showResults ? html`
 					<button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
 							style="margin-left: 1em"
 							@click=${this.downloadCsv}>
 						<span class="material-icons md-18">download</span> Download
 					</button>
-				</div>
-			` : ""}
+				` : ""}
+				${showPagination ? html`
+					<span style="margin-left: 2em">
+						<button class="mdl-button mdl-js-button"
+								@click=${this.prevPage}
+								?disabled=${resp.pageIndex === 0}>Previous</button>
+						<span style="margin: 0 0.5em">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>
+						<button class="mdl-button mdl-js-button"
+								@click=${this.nextPage}
+								?disabled=${resp.pageIndex >= resp.pageCount - 1}>Next</button>
+					</span>
+				` : ""}
+				<span style="margin-left: 1em">${this.statusText}</span>
+			</div>
 			${showResults ? html`
-				<div style="overflow-x: auto; max-height: 40em; overflow-y: auto">
-					<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="white-space: nowrap">
-						<thead>
-							<tr>${resp.columns.map(c => html`
-								<th class="mdl-data-table__cell--non-numeric">${c}</th>
-							`)}</tr>
-						</thead>
-						<tbody>${resp.rows.map(r => html`
-							<tr>${r.map(v => html`
-								<td class="mdl-data-table__cell--non-numeric" style="font-family: monospace">${v == null ? "" : String(v)}</td>
-							`)}</tr>
-						`)}</tbody>
-					</table>
-				</div>
+				<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="white-space: nowrap">
+					<thead>
+						<tr>${resp.columns.map(c => html`
+							<th class="mdl-data-table__cell--non-numeric"
+									style="position: sticky; top: var(--suiteql-actions-height, 52px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">${c}</th>
+						`)}</tr>
+					</thead>
+					<tbody>${resp.rows.map(r => html`
+						<tr>${r.map(v => html`
+							<td class="mdl-data-table__cell--non-numeric" style="font-family: monospace">${v == null ? "" : String(v)}</td>
+						`)}</tr>
+					`)}</tbody>
+				</table>
 			` : ""}
 		`;
 	}

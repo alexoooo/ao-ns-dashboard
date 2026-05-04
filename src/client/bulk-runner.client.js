@@ -70,7 +70,7 @@ export class BulkRunner extends LitElement {
 
 		return html`
 			<div>
-				<div>
+				<div class="bulk-runner-actions" style="position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">
 					<span class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 5em">
 						<input type="text" class="mdl-textfield__input"
 								.value=${String(this.pageStart + 1)}
@@ -96,9 +96,12 @@ export class BulkRunner extends LitElement {
 					<table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp" style="width: 100%">
 						<thead>
 							<tr>
-								<th class="mdl-data-table__cell">Number</th>
-								<th class="mdl-data-table__cell--non-numeric">Task</th>
-								<th class="mdl-data-table__cell--non-numeric" style="width: 100%">Result</th>
+								<th class="mdl-data-table__cell"
+										style="position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">Number</th>
+								<th class="mdl-data-table__cell--non-numeric"
+										style="position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">Task</th>
+								<th class="mdl-data-table__cell--non-numeric"
+										style="width: 100%; position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)">Result</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -127,6 +130,12 @@ export class BulkRunner extends LitElement {
 		// buttons/inputs pick up ripple/floating-label behavior.
 		if (window.componentHandler) {
 			window.componentHandler.upgradeElements(this);
+		}
+		// Sync the thead's sticky offset with the actual height of the actions
+		// row so the column headers freeze just below it instead of overlapping.
+		const actions = this.querySelector(".bulk-runner-actions");
+		if (actions) {
+			this.style.setProperty("--bulk-runner-actions-height", actions.offsetHeight + "px");
 		}
 	}
 

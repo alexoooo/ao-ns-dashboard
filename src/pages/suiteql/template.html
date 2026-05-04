@@ -1,4 +1,11 @@
 <script type="module">import "suiteql";</script>
+<style>
+	/* MDL's default is overflow-x: hidden, which clips wide result tables.
+	   Wrapping the table in an overflow-x: auto div would create a scroll
+	   container that breaks the page-level sticky thead, so let the page
+	   itself scroll horizontally instead. */
+	.mdl-layout__content { overflow-x: auto !important; }
+</style>
 
 <h2>SuiteQL Query</h2>
 {{documentationHtml}}
