@@ -197,7 +197,7 @@ Always use `splitVerticalBar` / `splitAmpersand` / `splitSlash` from `src/shared
 
 ### NetSuite API constraint: lazy module init
 
-NetSuite throws `SUITESCRIPT_API_UNAVAILABLE_IN_DEFINE` if a SuiteScript API module (`record`, `search`, `query`, `runtime`) is invoked while the AMD `define` callback is still running. **Do not call into `record.*` / `search.*` / `runtime.*` at module top level.** Wrap any such initialization in a function that runs during request handling. See `record-types.ts` for the lazy `cached` pattern.
+NetSuite throws `SUITESCRIPT_API_UNAVAILABLE_IN_DEFINE` if a SuiteScript API module (`record`, `search`, `query`, `runtime`) is invoked while the AMD `define` callback is still running. **Do not call into `record.*` / `search.*` / `runtime.*` at module top level.** Wrap any such initialization in a function that runs during request handling. See `src/server/record-types.ts` for the lazy `cached` pattern.
 
 This is enforced mechanically by an ESLint rule in `eslint.config.js` (`no-restricted-syntax` selector matching top-level `record.*` / `search.*` / `query.*` / `runtime.*` calls). The rule fires only on calls that are direct children of `Program` — calls inside method/function bodies are fine.
 
@@ -223,3 +223,57 @@ Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, e
 - Indentation: tabs, width 4 (enforced by Prettier + `.editorconfig`). Preserve indentation in template literals — leading whitespace in `<script>` tags shows up in the rendered HTML.
 - Cross-page references use the imported page def's `.label` (e.g. `${lookupFieldsPage.label}`) so renaming a page is a single-file edit. Importing a page def for `pageLink(context, pageDef)` is the only legitimate cross-page server import — internal helper logic belongs in `src/server/`, not in another page's `server.ts`.
 - **Page documentation** is rendered by `documentationSection(html)` in `src/lib/html.ts`, which wraps the body in a native `<details>/<summary>` disclosure. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/lib/help.ts` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).
+
+## Adapting this layout to your own Suitelet
+
+This project began as a single-file Suitelet (one `.js`, one entry function, inline HTML strings) and grew into the structure above. If you want to apply the same architecture to another single-file Suitelet, this section is the map. The split between **what's transferable** and **what's NetSuite-specific** matters most — copy the transferable pieces, keep the NetSuite-specific ones, drop or replace anything else.
+
+### Layer charters (why each folder exists, not just what's in it)
+
+A single-file Suitelet mixes concerns that have different reasons to change. The folders below isolate those concerns; each has one reason to be edited.
+
+- `app/` — the **framework layer**: how a request becomes a response. Edit when changing the dispatch contract (new query parameter, new envelope shape, new layout placeholder). The Suitelet entry point lives here so `rollup.config.js` has exactly one input.
+- `lib/` — **pure helpers** with no NetSuite imports. Anything in `lib/` is unit-testable from `tests/` and reusable. Edit when adding a parser, formatter, or escape helper. Distinguishing rule: if it imports `N/*`, it doesn't belong here.
+- `shared/` — **code that runs identically on both sides** (server bundle and browser import map). The same source is statically imported by server modules AND `?raw`-loaded into a `data:` URL for the browser. Edit when adding a parser whose semantics must not drift between sides — `splitVerticalBar` is the motivating example: server validates input, client groups bulk-runner tasks, both must agree on escape rules byte-for-byte.
+- `server/` — **NetSuite-aware helpers**: anything that imports `N/record`, `N/search`, `N/query`, `N/runtime`. Edit when wrapping a NetSuite API. Pages call into here for record loading, sublist navigation, field setters.
+- `client/` — **Lit custom elements** delivered to the browser. Edit when adding a UI control reusable across pages (e.g. `<bulk-runner>`). Single-page interactivity belongs in the page's own `page.client.ts`, not here.
+- `pages/<name>/` — **feature folders**, one per `?page=` value. Each is `{server.ts, template.html}` plus an optional `page.client.ts`. The server module default-exports a `PageDef`; `pages/index.ts` aggregates them. Edit when adding or modifying a page.
+
+### Refactoring a single-file Suitelet, in order
+
+The order matters: each step leaves the bundle in a deployable state, so you can ship between steps.
+
+1. **Set up the build, keep one output.** Add `rollup`, `typescript`, `eslint`, `prettier`, `vitest`. Configure Rollup to produce one AMD file at the repo root with a banner read from a text file (so the `@NApiVersion` / `@NScriptType` JSDoc that NetSuite parses survives bundling). Move your single source file into `src/app/index.ts` exporting `default { onRequest: main }`. Ship — nothing should look different yet.
+2. **Externalise the layout.** Pull the outer HTML scaffold (`<head>`, header, drawer, `<main>` wrapper) into `src/app/layout.html` and add an `interpolate(template, vars)` helper in `src/lib/html.ts` that substitutes `{{key}}` markers with HTML-escaped values (and treats `{{keyHtml}}` / `{{keyJs}}` as verbatim). Each page now returns just the body fragment.
+3. **Introduce a dispatcher.** In `src/app/main.ts`, switch on `request.parameters.page` to pick the page; default to the first registered page when missing. Switch on `request.parameters.command` (when present) to invoke a per-page POST handler. **This is the step that turns "one Suitelet, one purpose" into "one Suitelet, many pages."** Without it the rest is just file-shuffling.
+4. **Adopt a uniform response envelope.** All `?command=` POSTs return `CommandResponse<T> = {ok: true; data: T} | {ok: false; error: {code?; message}}`. Add `success(data)` / `failure(message, code?)` / `fromError(e)` helpers in `src/app/command.ts`. Wrap the dispatcher in a try/catch that converts thrown errors via `fromError`, so handlers never have to remember to catch. Clients get one shape to parse.
+5. **Extract pages.** For each existing page-like behaviour, create `src/pages/<name>/server.ts` exporting a `PageDef` with `name`, `label`, `render(context)`, optional `commands: { [name]: handler }`. Move POST logic from inline `if (request.method === "POST")` blocks into the `commands` map. Aggregate everything in `src/pages/index.ts` as an ordered array; element 0 becomes the default landing page. Drawer order falls out of array order — no separate config.
+6. **Lift cross-page helpers.** Anything two `server.ts` files would otherwise have to share goes into `src/lib/` (pure) or `src/server/` (NetSuite-aware). The ESLint `no-restricted-imports` rule that forbids `pages/*/server` imports from other pages enforces this; copy the rule.
+7. **Add browser-side interactivity (if needed).** If a page needs more than form submits, write a Lit custom element under `src/client/` (or `src/pages/<name>/page.client.ts` for one-off code). Register it in `src/app/client-modules.ts` and add a `paths` entry to `tsconfig.json`. The bundle uses Rollup's `?raw` plugin to embed each client module's source as a string, then `main.ts` builds a `<script type="importmap">` block at request time mapping each id to a `data:text/javascript;...` URL. The browser loads them as native ES modules — no separate fetch round-trip per file, no Content-Type fight with NetSuite.
+
+### What's transferable vs. NetSuite-specific
+
+Copy these patterns to any single-file → modular refactor (Suitelet or otherwise):
+
+- The `app/` / `lib/` / `shared/` / `server/` / `client/` / `pages/` split.
+- The `PageDef` registry pattern (one ordered array, default = element 0).
+- The `interpolate({{key}} | {{keyHtml}} | {{keyJs}})` template helper with suffix-based escape policy.
+- The `CommandResponse<T>` envelope and `success` / `failure` / `fromError` builders.
+- Rollup `?raw` imports + import-map `data:` URLs for shipping browser modules without a separate fetch route.
+- ESLint `no-restricted-imports` to forbid cross-page coupling at the page boundary.
+- Per-page `bodyClass` for layout-level CSS escape hatches.
+
+These are NetSuite-specific and would change or vanish in another environment:
+
+- AMD output format (`format: "amd"`, `define([...], function(...) {})`). NetSuite expects this.
+- The banner file (`src/app/banner.txt`) — exists because NetSuite parses `@NApiVersion 2.1` / `@NScriptType Suitelet` JSDoc at the top of the bundled file.
+- The lazy-init rule and its ESLint enforcement — only NetSuite throws `SUITESCRIPT_API_UNAVAILABLE_IN_DEFINE` on top-level API calls. Other AMD environments don't.
+- `errorMessage` / `errorName` over `instanceof Error` — works around NetSuite's AMD `Error` prototype not matching TypeScript's lib `Error`. Drop in environments where `instanceof` is reliable.
+- The `-sb` hostname check in `layout.html` for the production-banner red header.
+- `record-types.ts`, `record-loader.ts`, `field-setters.ts`, `sublist.ts` — wrappers around `N/record` and `N/search`. Specific to this project's domain.
+
+### When NOT to apply this layout
+
+- **One-page Suitelet** with no POST callback and no client-side JS: keep it a single file. The dispatcher, envelope, and import map are dead weight.
+- **Scheduled / Map-Reduce / RESTlet scripts**: no UI, no dispatch — most of `app/` is irrelevant. The `lib/`/`server/` split is still useful, but `pages/` and `client/` won't apply.
+- **Suitelet that's a thin wrapper around one SuiteQL query or one record action**: a `PageDef` registry is overkill. The envelope helper is still worth copying though, since clients always benefit from a uniform response shape.

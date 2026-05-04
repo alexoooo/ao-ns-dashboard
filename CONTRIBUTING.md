@@ -29,22 +29,22 @@ Quick fixes:
 1. Create `src/pages/<name>/{server.ts, template.html}`. If the page needs interactive UI beyond the shared `<bulk-runner>`, also create `page.client.ts`.
 2. Append the import + entry to `src/pages/index.ts`.
 3. If you added a `page.client.ts`:
-   - Register it in `src/client-modules.ts` (`clientModules` map).
+   - Register it in `src/app/client-modules.ts` (`clientModules` map).
    - Add the matching id to `tsconfig.json`'s `paths` field so other client modules can import it as a bare specifier with proper types.
 4. The page's `template.html` just needs `<script type="module">import "<id>"</script>` at the top.
 5. `npm run check && npm run build`, deploy, exercise.
 
-Each `server.ts` exports a `PageDef`. Its `commands` map uses `success(data)` / `failure(message, code?)` from `src/command.ts` to build `CommandResponse<T>` envelopes — the dispatcher handles JSON serialisation and converts thrown errors via `fromError(e)`.
+Each `server.ts` exports a `PageDef`. Its `commands` map uses `success(data)` / `failure(message, code?)` from `src/app/command.ts` to build `CommandResponse<T>` envelopes — the dispatcher handles JSON serialisation and converts thrown errors via `fromError(e)`.
 
 ## Adding a new client module
 
 1. Create `src/client/<name>.client.ts` with bare-specifier imports (e.g. `from "lit"`, `from "csv"`).
-2. Add the entry to `src/client-modules.ts` and the `paths` mapping in `tsconfig.json`. That's it — no other files to touch.
+2. Add the entry to `src/app/client-modules.ts` and the `paths` mapping in `tsconfig.json`. That's it — no other files to touch.
 3. Pages that use it: `<script type="module">import "<id>"</script>`.
 
 ## Bumping the version
 
-Edit `src/constants.ts` `version` — that's what shows in the page header. The version in `package.json` is unused (this project isn't published to npm); keep it at `1.0.0`.
+Edit `src/app/constants.ts` `version` — that's what shows in the page header. The version in `package.json` is unused (this project isn't published to npm); keep it at `1.0.0`.
 
 ## Manual sandbox checklist
 

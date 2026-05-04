@@ -86,7 +86,7 @@ function scriptDeployParam(context) {
     const deploy = context.request.parameters["deploy"];
     if (!/^\d+$/.test(script || "") || !/^\d+$/.test(deploy || "")) {
         throw new Error("Invalid script/deploy parameters");
-    }
+}
     return "?script=" + script + "&deploy=" + deploy;
 }
 function setPageParam(context, page) {
