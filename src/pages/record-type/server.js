@@ -9,10 +9,6 @@ import {
 	undocumentedRecordTypes,
 	getRecordType,
 } from "../../record-types.js";
-import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
-// IMPORTANT: in template.html, bulkRunnerJs must be inlined before clientJs —
-// the subclass references the BulkRunner class declared in bulkRunnerJs.
-import clientJs from "./client.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -30,8 +26,6 @@ export default {
 			.join("\n");
 
 		return interpolate(templateHtml, {
-			bulkRunnerJs,
-			clientJs,
 			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			paramRecordId,
 			documentationHtml: documentationSection(`

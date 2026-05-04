@@ -8,11 +8,6 @@ import { parseFieldAssignmentList } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import { getSublistLine } from "../lookup-fields/server.js";
 import lookupFieldsPage from "../lookup-fields/server.js";
-import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
-// IMPORTANT: in template.html the bulkRunnerJs fragment must be inlined
-// before clientJs — the subclass references the BulkRunner class declared
-// in bulkRunnerJs's module scope.
-import clientJs from "./client.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -29,8 +24,6 @@ export default {
 
 	render(context) {
 		return interpolate(templateHtml, {
-			bulkRunnerJs,
-			clientJs,
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type/Internal ID/Location, see [${lookupFieldsPage.label}] page (left menu)</h3>

@@ -86,15 +86,34 @@ Use the appropriate suffix for placeholders inside `<script>` tags or wherever H
 
 ### Client-side code (`*.client.js`)
 
-`*.client.js` files are [Lit](https://lit.dev) custom elements written as **module fragments**. The page's server.js imports them via `?raw` and the page template inlines them inside a `<script type="module">` block. The template provides the Lit `import` once at the top of the script; the inlined fragments themselves do **not** carry their own `import` statements (those would clash when fragments are concatenated).
+`*.client.js` files are [Lit](https://lit.dev) custom elements delivered as native ES modules via **`data:` URLs in an HTML import map**. Each module's source is bundled into the Suitelet via Rollup's `?raw` plugin, then embedded directly into every page's import map as a `data:text/javascript;...` URL. Pages just do `<script type="module">import "<id>"</script>` to register the custom element they need; the browser decodes the data URL and runs the module. (We tried serving the modules from a `?clientJs=<id>` Suitelet route, but NetSuite's Content-Type handling on Suitelet responses makes that path unreliable for module loads — embedding sidesteps it entirely.)
 
-Each module fragment defines a class extending `LitElement` and registers it with `customElements.define(...)`. Components use **light DOM** (`createRenderRoot() { return this; }`) so MDL CSS classes still apply. Use `componentHandler.upgradeElements(this)` in `updated()` to re-init MDL on freshly rendered nodes.
+Each module:
 
-Lit is loaded as native ESM from a CDN (`https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm`) — same pattern as MDL/jQuery/Select2. No bundling step required.
+- Has real `import` / `export` statements (e.g. `import { LitElement, html } from "lit"`, `import { csvEncode } from "csv"`)
+- Defines a class extending `LitElement` and registers it with `customElements.define(...)` at the bottom (side effect of the module load)
+- Uses **light DOM** (`createRenderRoot() { return this; }`) so MDL CSS classes still apply
+- Calls `componentHandler.upgradeElements(this)` in `updated()` to re-init MDL on freshly rendered nodes
+
+Module ids are stable bare specifiers and are listed in two places that must stay in sync:
+
+- `src/client-modules.js` — `?raw` source map from id → module source
+- `src/layout.html` — the `<script type="importmap">` block (per-request, populated by `main.js#renderPage` via `moduleDataUrl(id)`)
+
+Lit (`"lit"`) is loaded from a CDN (`https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm`) — declared in the same import map.
 
 The shared bulk-task component is `client/bulk-runner.client.js` (`<bulk-runner>`). Properties: `task-type-label`, `command-post-url`. Override `groupKey(task)` in a subclass to enable batching — see `pages/edit-records/client.client.js` (`<bulk-runner-edit-records>`) which groups by record type + ID. Pages that don't need batching (lookup-fields, create-records, mass-save, mass-delete) use the base `<bulk-runner>` directly. SuiteQL has its own component `<suiteql-page>`.
 
-For a page that subclasses, the template inlines the base fragment **before** the subclass fragment so the base class is in scope when the subclass declaration runs.
+`client/csv.client.js` exports `csvEncode(value)` — used by both `bulk-runner.client.js#downloadStatus` and `suiteql/client.client.js#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
+
+### Adding a new client module
+
+1. Create `src/client/<name>.client.js` (or `src/pages/<page>/client.client.js`) with `import`/`export` as needed.
+2. Add an entry to `src/client-modules.js` mapping the bare specifier id → `?raw` source.
+3. Add the id → placeholder pair to `src/layout.html`'s import map and to `src/main.js#renderPage`'s `interpolate(...)` call (use a `Js`-suffixed key so the data URL isn't HTML-escaped).
+4. The page's template just needs `<script type="module">import "<id>"</script>`.
+
+Browser support: the import map needs Chrome ≥89 / Firefox ≥108 / Safari ≥16.4. NetSuite admin UI generally tracks evergreen browsers.
 
 ### Task input format
 

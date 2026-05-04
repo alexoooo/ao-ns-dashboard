@@ -8,7 +8,6 @@ import { parseFieldAssignmentList } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import editRecordsPage, { setRecordField } from "../edit-records/server.js";
 import lookupFieldsPage from "../lookup-fields/server.js";
-import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -21,7 +20,6 @@ export default {
 
 	render(context) {
 		return interpolate(templateHtml, {
-			bulkRunnerJs,
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For Record Type, see [${lookupFieldsPage.label}] page (left menu)</h3>

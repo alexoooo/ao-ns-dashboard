@@ -3,9 +3,9 @@
 // Adds an Internal ID input above the bulk-runner scaffold and rebuilds the
 // command URL whenever it changes. Each row in the textarea is a Record Type
 // to probe against the entered Internal ID.
-//
-// Module fragment — see bulk-runner.client.js for composition rules.
-// IMPORTANT: bulk-runner.client.js MUST be inlined before this file.
+
+import { html } from "lit";
+import { BulkRunner } from "bulk-runner";
 
 class RecordTypeBulkRunner extends BulkRunner {
 	static properties = {

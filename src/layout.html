@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <head>
 	<title>{{title}}</title>
+	<script type="importmap">
+	{
+		"imports": {
+			"lit": "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm",
+			"csv": "{{clientCsvUrlJs}}",
+			"bulk-runner": "{{clientBulkRunnerUrlJs}}",
+			"edit-records": "{{clientEditRecordsUrlJs}}",
+			"record-type": "{{clientRecordTypeUrlJs}}",
+			"suiteql": "{{clientSuiteqlUrlJs}}"
+		}
+	}
+	</script>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
 	<link rel="stylesheet" href="{{mdlCssUrl}}"/>
 	<script defer src="{{mdlJsUrl}}"></script>

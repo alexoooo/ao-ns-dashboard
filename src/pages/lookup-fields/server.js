@@ -7,7 +7,6 @@ import { normalizeKey, splitAmpersand, splitVerticalBar, splitSlash } from "../.
 import { parseFieldAssignment } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import recordDetailsPage from "../record-details/server.js";
-import bulkRunnerJs from "../../client/bulk-runner.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -20,7 +19,6 @@ export default {
 
 	render(context) {
 		return interpolate(templateHtml, {
-			bulkRunnerJs,
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· For valid Record Types and Field IDs, see [${recordDetailsPage.label}] page (left menu)</h3>

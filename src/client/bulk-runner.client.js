@@ -1,22 +1,19 @@
 // Lit base component for the bulk-task pages
 // (lookup-fields, edit-records, create-records, mass-save, mass-delete).
-//
-// This file is a "module fragment": it is concatenated into a <script type="module">
-// block by the page template, which provides the lit imports. Do NOT add an
-// `import` line for lit here — it would clash with the template's import when
-// fragments are concatenated together.
-//
 // Subclass to enable batching by overriding `groupKey(task)`.
+
+import { LitElement, html } from "lit";
+import { csvEncode } from "csv";
 
 // Mirrors src/utils.js#splitVerticalBar for client-side use (subclass groupKey
 // implementations). Keep both copies in sync if escape semantics change.
-function splitVerticalBar(value) {
+export function splitVerticalBar(value) {
 	const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
 	const withSentinel = value.replaceAll("\\|", sentinel);
 	return withSentinel.split("|").map(i => i.replaceAll(sentinel, "|"));
 }
 
-class BulkRunner extends LitElement {
+export class BulkRunner extends LitElement {
 	static properties = {
 		taskTypeLabel: { type: String, attribute: "task-type-label" },
 		commandPostUrl: { type: String, attribute: "command-post-url" },
@@ -216,15 +213,11 @@ class BulkRunner extends LitElement {
 		request.send(JSON.stringify(nextBatch.map(i => i.task)));
 	}
 
-	csvEncode(value) {
-		return String(value).replaceAll('"', '""');
-	}
-
 	downloadStatus() {
 		const rows = ["Number,Task,Result"];
 		for (let i = 0; i < this.model.length; i++) {
 			const item = this.model[i];
-			rows.push((i + 1) + ',"' + this.csvEncode(item.task) + '","' + this.csvEncode(item.status) + '"');
+			rows.push((i + 1) + ',"' + csvEncode(item.task) + '","' + csvEncode(item.status) + '"');
 		}
 		const csv = rows.join("\r\n");
 		const a = document.createElement("a");

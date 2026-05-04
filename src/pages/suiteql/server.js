@@ -3,7 +3,6 @@ import query from "N/query";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import clientJs from "./client.client.js?raw";
 import templateHtml from "./template.html";
 
 
@@ -16,7 +15,6 @@ export default {
 
 	render(context) {
 		return interpolate(templateHtml, {
-			clientJs,
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
 				<h3>· Enter a SuiteQL query and click Run.</h3>

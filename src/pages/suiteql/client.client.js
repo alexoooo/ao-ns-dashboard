@@ -1,7 +1,8 @@
 // SuiteQL Query page Lit component. Tracks the current page index, POSTs the
 // query + page index to the server, renders the returned rows into a table.
-//
-// Module fragment — see bulk-runner.client.js for composition rules.
+
+import { LitElement, html } from "lit";
+import { csvEncode } from "csv";
 
 class SuiteqlPage extends LitElement {
 	static properties = {
@@ -50,15 +51,22 @@ class SuiteqlPage extends LitElement {
 				<span style="margin-left: 1em">${this.statusText}</span>
 			</div>
 			<hr/>
-			${showPagination ? html`
+			${showResults ? html`
 				<div style="margin-bottom: 0.5em">
-					<button class="mdl-button mdl-js-button"
-							@click=${this.prevPage}
-							?disabled=${resp.pageIndex === 0}>Previous</button>
-					<span style="margin: 0 1em">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>
-					<button class="mdl-button mdl-js-button"
-							@click=${this.nextPage}
-							?disabled=${resp.pageIndex >= resp.pageCount - 1}>Next</button>
+					${showPagination ? html`
+						<button class="mdl-button mdl-js-button"
+								@click=${this.prevPage}
+								?disabled=${resp.pageIndex === 0}>Previous</button>
+						<span style="margin: 0 1em">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>
+						<button class="mdl-button mdl-js-button"
+								@click=${this.nextPage}
+								?disabled=${resp.pageIndex >= resp.pageCount - 1}>Next</button>
+					` : ""}
+					<button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+							style="margin-left: 1em"
+							@click=${this.downloadCsv}>
+						<span class="material-icons md-18">download</span> Download
+					</button>
 				</div>
 			` : ""}
 			${showResults ? html`
@@ -135,6 +143,28 @@ class SuiteqlPage extends LitElement {
 			pageIndex: this.currentPageIndex,
 			pageSize: 1000,
 		}));
+	}
+
+	downloadCsv() {
+		// Exports the current page only. SuiteQL pages server-side; cross-page
+		// export would require iterating fetchPage and accumulating.
+		const resp = this.lastResponse;
+		if (resp == null || resp.columns == null) {
+			return;
+		}
+		const lines = [];
+		lines.push(resp.columns.map(c => '"' + csvEncode(c) + '"').join(","));
+		for (const row of resp.rows) {
+			lines.push(row.map(v => '"' + csvEncode(v) + '"').join(","));
+		}
+		const csv = lines.join("\r\n");
+		const a = document.createElement("a");
+		a.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(csv));
+		a.setAttribute("download", "suiteql.csv");
+		a.style.display = "none";
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
 	}
 }
 

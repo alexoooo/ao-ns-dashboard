@@ -4,6 +4,7 @@ import { interpolate } from "./html.js";
 import layoutHtml from "./layout.html";
 import { version, mdlCssUrl, mdlJsUrl, paramPage, paramCommand } from "./constants.js";
 import { setPageParam } from "./url.js";
+import { clientModules } from "./client-modules.js";
 import pages from "./pages/index.js";
 
 
@@ -14,6 +15,14 @@ export function main(context) {
 		return;
 	}
 	renderPage(context);
+}
+
+
+// Embeds the module source as a data: URL so the browser can load it without
+// hitting NetSuite's Content-Type restrictions on Suitelet responses.
+function moduleDataUrl(id) {
+	const source = clientModules[id];
+	return "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
 }
 
 
@@ -57,6 +66,11 @@ function renderPage(context) {
 		version,
 		nsVersion: runtime.version || "[unknown version]",
 		navHtml,
+		clientCsvUrlJs: moduleDataUrl("csv"),
+		clientBulkRunnerUrlJs: moduleDataUrl("bulk-runner"),
+		clientEditRecordsUrlJs: moduleDataUrl("edit-records"),
+		clientRecordTypeUrlJs: moduleDataUrl("record-type"),
+		clientSuiteqlUrlJs: moduleDataUrl("suiteql"),
 		bodyHtml: page.render(context),
 	}));
 }
