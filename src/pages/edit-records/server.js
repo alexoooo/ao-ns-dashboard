@@ -2,6 +2,7 @@ import record from "N/record";
 
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
+import { pageLink, taskInputFormatHelp } from "../../help.js";
 import { scriptDeployParam } from "../../url.js";
 import { normalizeKey, splitVerticalBar, splitSlash, listsEqual } from "../../utils.js";
 import { parseFieldAssignmentList } from "../../field-assignments.js";
@@ -26,15 +27,18 @@ export default {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· For Record Type/Internal ID/Location, see [${lookupFieldsPage.label}] page (left menu)</h3>
-				<h3>· Field Values have the following format:</h3>
-				<h4>&nbsp; &nbsp; · &lt;Field ID&gt;=&lt;Field Text&gt; (for 'select' fields, the option number can be specified)</h4>
-				<h4>&nbsp; &nbsp; · Can specify multiple field values, separated by &amp;</h4>
-				<h4>&nbsp; &nbsp; · Multiple values can be used with ${actionSet}/${actionInsertLine}</h4>
-				<h3>· The following Actions are available:</h3>
-				<h4>&nbsp; &nbsp; · ${actionSet}: assign new value to one or more fields</h4>
-				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line (before given Location, use line=-0 to insert at end)</h4>
-				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
+				<ul>
+					<li>For Record Type / Internal ID / Location, see ${pageLink(context, lookupFieldsPage)}.</li>
+					<li><strong>Field Values</strong> are <code>fieldId=value</code> pairs joined by <code>&amp;</code>. For <code>select</code> fields the option number can be used in place of the text. Multiple values can be passed to <code>${actionSet}</code> and <code>${actionInsertLine}</code>.</li>
+					<li><strong>Actions</strong>:
+						<ul>
+							<li><code>${actionSet}</code> &mdash; assign new value to one or more fields.</li>
+							<li><code>${actionInsertLine}</code> &mdash; add new sublist line before the given Location; use line <code>-0</code> to insert at the end.</li>
+							<li><code>${actionRemoveLine}</code> &mdash; remove existing sublist line.</li>
+						</ul>
+					</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},

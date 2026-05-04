@@ -2,6 +2,7 @@ import record from "N/record";
 
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
+import { pageLink, taskInputFormatHelp } from "../../help.js";
 import { scriptDeployParam } from "../../url.js";
 import { normalizeKey, splitVerticalBar } from "../../utils.js";
 import { getRecordType } from "../../record-types.js";
@@ -20,11 +21,17 @@ export default {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· For Record Type/Internal ID, see [${lookupFieldsPage.label}] page (left menu)</h3>
-				<h2>· Each Record by Internal ID:</h2>
-				<h2>&nbsp; &nbsp; 1) EDIT Record (load)</h2>
-				<h2>&nbsp; &nbsp; 2) SAVE Record</h2>
-				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
+				<ul>
+					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
+					<li>For each record listed, the page loads it and saves it without modification:
+						<ol>
+							<li>Load the record.</li>
+							<li>Save the record.</li>
+						</ol>
+					</li>
+					<li>The save triggers any associated events (e.g. workflows). Use this to retroactively re-run automation.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},

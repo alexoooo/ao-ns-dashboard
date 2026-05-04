@@ -31,21 +31,14 @@ export function interpolate(template, vars) {
 
 export function documentationSection(documentationHtml) {
 	return `
-		<script>
-			var documentationShowing = false;
-			function toggleDocumentation() {
-				documentationShowing = ! documentationShowing;
-				document.getElementById('docBody').style.display =
-					documentationShowing ? "block" : "none";
-			}
-		</script>
-		<div style="margin-bottom: 1em"><button
-				class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-				onclick="toggleDocumentation()">
-			<span class="material-icons md-18">help</span> Help
-		</button></div>
-		<div id="docBody" style="display:none">
-			${documentationHtml}
-		</div>
+		<details style="margin-bottom: 1em">
+			<summary style="cursor: pointer; padding: 0.4em 1em; background: #eee; border: 1px solid #ccc; border-radius: 2px; display: inline-block; user-select: none">
+				<span class="material-icons md-18" style="vertical-align: middle">help</span>
+				Help
+			</summary>
+			<div style="padding: 1em 0 0 0; max-width: 60em">
+				${documentationHtml}
+			</div>
+		</details>
 	`;
 }

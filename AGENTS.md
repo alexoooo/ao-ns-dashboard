@@ -102,13 +102,13 @@ Module ids are stable bare specifiers and are listed in two places that must sta
 
 Lit (`"lit"`) is loaded from a CDN (`https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm`) — declared in the same import map.
 
-The shared bulk-task component is `client/bulk-runner.client.js` (`<bulk-runner>`). Properties: `task-type-label`, `command-post-url`. Override `groupKey(task)` in a subclass to enable batching — see `pages/edit-records/client.client.js` (`<bulk-runner-edit-records>`) which groups by record type + ID. Pages that don't need batching (lookup-fields, create-records, mass-save, mass-delete) use the base `<bulk-runner>` directly. SuiteQL has its own component `<suiteql-page>`.
+The shared bulk-task component is `client/bulk-runner.client.js` (`<bulk-runner>`). Properties: `task-type-label`, `command-post-url`. Override `groupKey(task)` in a subclass to enable batching — see `pages/edit-records/page.client.js` (`<bulk-runner-edit-records>`) which groups by record type + ID. Pages that don't need batching (lookup-fields, create-records, mass-save, mass-delete) use the base `<bulk-runner>` directly. SuiteQL has its own component `<suiteql-page>`.
 
-`client/csv.client.js` exports `csvEncode(value)` — used by both `bulk-runner.client.js#downloadStatus` and `suiteql/client.client.js#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
+`client/csv.client.js` exports `csvEncode(value)` — used by both `bulk-runner.client.js#downloadStatus` and `suiteql/page.client.js#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
 
 ### Sticky pinned-bar pattern (controls + thead above a results table)
 
-Pages with a controls row above a results table (`suiteql/client.client.js`, `client/bulk-runner.client.js`) use a single convention so the controls and column headers stay visible while scrolling:
+Pages with a controls row above a results table (`suiteql/page.client.js`, `client/bulk-runner.client.js`) use a single convention so the controls and column headers stay visible while scrolling:
 
 - All primary controls (run, download, pagination, status) live on a **single** action row above the table — no nested rows or `<hr>` separators.
 - Action row: `position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)`.
@@ -140,7 +140,7 @@ See `src/pages/suiteql/template.html` for an example. The override is per-reques
 
 ### Adding a new client module
 
-1. Create `src/client/<name>.client.js` (or `src/pages/<page>/client.client.js`) with `import`/`export` as needed.
+1. Create `src/client/<name>.client.js` (or `src/pages/<page>/page.client.js`) with `import`/`export` as needed.
 2. Add an entry to `src/client-modules.js` mapping the bare specifier id → `?raw` source.
 3. Add the id → placeholder pair to `src/layout.html`'s import map and to `src/main.js#renderPage`'s `interpolate(...)` call (use a `Js`-suffixed key so the data URL isn't HTML-escaped).
 4. The page's template just needs `<script type="module">import "<id>"</script>`.
@@ -172,3 +172,4 @@ NetSuite throws `SUITESCRIPT_API_UNAVAILABLE_IN_DEFINE` if a SuiteScript API mod
 - External CSS/JS is loaded from cdnjs.cloudflare.com (Material Design Lite, jQuery, Select2).
 - Indentation: tabs. Preserve indentation in template literals — leading whitespace in `<script>` tags shows up in the rendered HTML.
 - Cross-page references use the imported page def's `.label` (e.g. `${lookupFieldsPage.label}`) so renaming a page is a single-file edit.
+- **Page documentation** is rendered by `documentationSection(html)` in `src/html.js`, which wraps the body in a native `<details>/<summary>` disclosure. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/help.js` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).

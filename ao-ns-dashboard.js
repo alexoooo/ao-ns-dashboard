@@ -61,28 +61,21 @@ function interpolate(template, vars) {
 
 function documentationSection(documentationHtml) {
 	return `
-		<script>
-			var documentationShowing = false;
-			function toggleDocumentation() {
-				documentationShowing = ! documentationShowing;
-				document.getElementById('docBody').style.display =
-					documentationShowing ? "block" : "none";
-			}
-		</script>
-		<div style="margin-bottom: 1em"><button
-				class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-				onclick="toggleDocumentation()">
-			<span class="material-icons md-18">help</span> Help
-		</button></div>
-		<div id="docBody" style="display:none">
-			${documentationHtml}
-		</div>
+		<details style="margin-bottom: 1em">
+			<summary style="cursor: pointer; padding: 0.4em 1em; background: #eee; border: 1px solid #ccc; border-radius: 2px; display: inline-block; user-select: none">
+				<span class="material-icons md-18" style="vertical-align: middle">help</span>
+				Help
+			</summary>
+			<div style="padding: 1em 0 0 0; max-width: 60em">
+				${documentationHtml}
+			</div>
+		</details>
 	`;
 }
 
 var layoutHtml = "<!DOCTYPE html>\n<head>\n\t<title>{{title}}</title>\n\t<script type=\"importmap\">\n\t{\n\t\t\"imports\": {\n\t\t\t\"lit\": \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\",\n\t\t\t\"csv\": \"{{clientCsvUrlJs}}\",\n\t\t\t\"bulk-runner\": \"{{clientBulkRunnerUrlJs}}\",\n\t\t\t\"edit-records\": \"{{clientEditRecordsUrlJs}}\",\n\t\t\t\"record-type\": \"{{clientRecordTypeUrlJs}}\",\n\t\t\t\"suiteql\": \"{{clientSuiteqlUrlJs}}\"\n\t\t}\n\t}\n\t</script>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\"/>\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\"/>\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\n\t<script src=\"https://code.jquery.com/jquery-3.6.0.js\" integrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\" crossorigin=\"anonymous\"></script>\n\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\" integrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n\t<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\" integrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"/>\n\t<script>\n\t\t$(document).on('select2:open', () => {\n\t\t\tdocument.querySelector('.select2-search__field').focus();\n\t\t});\n\t\t$(function() {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split('.')[0];\n\t\t\tif (! env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName('mdl-layout__header-row')[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\tdocument.getElementById('env').innerHTML = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body>\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%;\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%;\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br/>\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">\n\t\t\t\t{{navHtml}}\n\t\t\t</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">\n\t\t\t\t{{bodyHtml}}\n\t\t\t</div>\n\t\t</main>\n\t</div>\n</body>\n";
 
-const version = "2026.05.03i";
+const version = "2026.05.04b";
 
 const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
@@ -231,11 +224,12 @@ var recordType = {
 			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
 			paramRecordId,
 			documentationHtml: documentationSection(`
-				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
-				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· The same Internal ID can exist in multiple Record Types</h3>
-				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
-				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
+				<ul>
+					<li>Record Type names here may differ from what NetSuite shows in its UI &mdash; e.g. NetSuite "Customer Payment" is just <code>Payment</code> here.</li>
+					<li>The same Internal ID can exist under multiple Record Types &mdash; results show every type the ID was found under.</li>
+					<li>Undocumented Record Types currently mapped: ${Object.keys(undocumentedRecordTypes).map(k => `<code>${k}</code>`).join(", ")}.</li>
+					<li>Custom Record Types are not auto-populated in the input but can be typed in manually below.</li>
+				</ul>
 			`),
 			defaultTasks,
 			defaultPageCount: Object.keys(all).length,
@@ -311,6 +305,32 @@ function handleTypeListing(context) {
 	return JSON.stringify([message]);
 }
 
+// Shared helpers for building per-page Help section content.
+
+
+
+// Hyperlink to another page in this Suitelet. Use inside documentationSection
+// content instead of `[Page Label] (left menu)` plain-text references.
+function pageLink(context, pageDef) {
+	return `<a href="${setPageParam(context, pageDef.name)}">${pageDef.label}</a>`;
+}
+
+
+// Shared spec for the bulk-task pipe-delimited input format. Used by
+// lookup-fields, edit-records, create-records, mass-save, mass-delete — any
+// page whose textarea is parsed via splitVerticalBar / splitAmpersand /
+// splitSlash from utils.js. Embed inside documentationSection content.
+function taskInputFormatHelp() {
+	return `
+		<p><strong>Input format</strong> — each line is one task; columns are separated by <code>|</code> (the exact columns depend on the page, see above).</p>
+		<ul>
+			<li><strong>Field values</strong>: <code>fieldId=value</code> pairs joined by <code>&amp;</code>. Example: <code>memo=Hello&amp;trandate=2025-01-15</code>.</li>
+			<li><strong>Sublist paths</strong>: joined by <code>/</code>. Example: <code>item/0</code> = line 0 of the <code>item</code> sublist.</li>
+			<li><strong>Escapes</strong>: a literal <code>|</code>, <code>&amp;</code>, or <code>/</code> inside a value must be prefixed with <code>\\</code>. Example: <code>memo=Acme \\&amp; Co.</code>.</li>
+		</ul>
+	`;
+}
+
 function normalizeKey(value) {
 	return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();
 }
@@ -353,7 +373,7 @@ function listsEqual(a, b) {
 	return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
-var templateHtml$6 = "<script type=\"text/javascript\">\n\t$(document).ready(() => {\n\t\t$(\".record-type-select\").select2({\n\t\t\tplaceholder: \"Please make a selection\"\n\t\t});\n\t});\n\tfunction showLoading() {\n\t\tdocument.getElementById('spinner').style.display = \"block\";\n\t\tdocument.getElementById('details').style.display = \"none\";\n\t}\n\tfunction onSearch(value) {\n\t\tdocument.getElementById('recordType').value = value;\n\t}\n</script>\n<div>\n\t<h2>Retrieve all info about a particular record</h2>\n\t{{documentationHtml}}\n</div>\n<form method=\"post\">\n\t<fieldset>\n\t\t<legend>Record Type Search</legend>\n\t\t<select\n\t\t\t\tclass=\"record-type-select\"\n\t\t\t\tid=\"record-type-search\"\n\t\t\t\tonchange=\"onSearch(this.value);\">\n\t\t\t<option></option>\n\t\t\t{{recordTypeOptionsHtml}}\n\t\t</select>\n\t</fieldset>\n\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t<legend>Record Type</legend>\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordType\"\n\t\t\tname=\"{{paramRecordType}}\"\n\t\t\tvalue=\"{{recordType}}\"/>\n\t</fieldset>\n\t<br/>\n\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordId\"\n\t\t\tname=\"{{paramRecordId}}\"\n\t\t\tvalue=\"{{recordId}}\"\n\t\t\tautofocus/>\n\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t</div>\n\t<br/>\n\t<button\n\t\t\ttype=\"submit\"\n\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\tonclick=\"showLoading()\">\n\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t</button>\n\t<hr/>\n\t<div id=\"spinner\" class=\"mdl-spinner mdl-js-spinner is-active\" style=\"display: none\"></div>\n\t<div id=\"details\">\n\t\t{{detailsHtml}}\n\t</div>\n</form>\n";
+var templateHtml$6 = "<script type=\"text/javascript\">\n\t$(document).ready(() => {\n\t\t$(\".record-type-select\").select2({\n\t\t\tplaceholder: \"Please make a selection\"\n\t\t});\n\t});\n\tfunction showLoading() {\n\t\tdocument.getElementById('spinner').style.display = \"block\";\n\t\tdocument.getElementById('details').style.display = \"none\";\n\t}\n\tfunction onSearch(value) {\n\t\tdocument.getElementById('recordType').value = value;\n\t}\n</script>\n<div>\n\t<h2>Retrieve all info about a particular record</h2>\n\t{{documentationHtml}}\n\t<hr/>\n</div>\n<form method=\"post\">\n\t<fieldset>\n\t\t<legend>Record Type Search</legend>\n\t\t<select\n\t\t\t\tclass=\"record-type-select\"\n\t\t\t\tid=\"record-type-search\"\n\t\t\t\tonchange=\"onSearch(this.value);\">\n\t\t\t<option></option>\n\t\t\t{{recordTypeOptionsHtml}}\n\t\t</select>\n\t</fieldset>\n\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t<legend>Record Type</legend>\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordType\"\n\t\t\tname=\"{{paramRecordType}}\"\n\t\t\tvalue=\"{{recordType}}\"/>\n\t</fieldset>\n\t<br/>\n\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordId\"\n\t\t\tname=\"{{paramRecordId}}\"\n\t\t\tvalue=\"{{recordId}}\"\n\t\t\tautofocus/>\n\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t</div>\n\t<br/>\n\t<button\n\t\t\ttype=\"submit\"\n\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\tonclick=\"showLoading()\">\n\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t</button>\n\t<hr/>\n\t<div id=\"spinner\" class=\"mdl-spinner mdl-js-spinner is-active\" style=\"display: none\"></div>\n\t<div id=\"details\">\n\t\t{{detailsHtml}}\n\t</div>\n</form>\n";
 
 var recordDetails = {
 	name: "record-details",
@@ -373,7 +393,11 @@ var recordDetails = {
 
 		return interpolate(templateHtml$6, {
 			documentationHtml: documentationSection(`
-				<h3>· To detect the Record Type(s) for a particular Internal ID, see [${recordType.label}] page (left menu)</h3>
+				<ul>
+					<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
+					<li>The Field ID and Sublist ID values shown here are what to use on the other pages (Lookup Fields, Edit Records, etc.).</li>
+					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordType)} first.</li>
+				</ul>
 			`),
 			recordTypeOptionsHtml: recordTypeOptions(recordType$1),
 			paramRecordType,
@@ -609,17 +633,21 @@ var lookupFields = {
 		return interpolate(templateHtml$5, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$5,
 			documentationHtml: documentationSection(`
-				<h3>· For valid Record Types and Field IDs, see [${recordDetails.label}] page (left menu)</h3>
-				<h3>· Internal ID for the Record (different from External ID on NetSuite page)</h3>
-				<h3>· Location has format:</h3>
-				<h4>&nbsp; &nbsp; · Empty, field directly in record</h4>
-				<h4>&nbsp; &nbsp; · &lt;Sublist ID&gt;/&lt;Line Number&gt; (e.g. plannedrevenue/0)</h4>
-				<h4>&nbsp; &nbsp; · &lt;Sublist ID&gt;/&lt;Sublist Field ID&gt;=&lt;Find Text&gt; (e.g. plannedrevenue/plannedperiod=Jun 2022)</h4>
-				<h4>&nbsp; &nbsp; · Combine multiple Sublist Field ID queries and nested Line Number using &amp; (e.g. plannedrevenue/Amount=737.79&amp;-1)</h4>
-				<h3>· Can specify multiple Field IDs, separated by &amp;</h3>
-				<h3>· To get Sublist line count, use 'count' as the Field ID</h3>
-				<h3>· The following are special characters: | / &amp;</h3>
-				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
+				<ul>
+					<li>For valid Record Types and Field IDs, see ${pageLink(context, recordDetails)}.</li>
+					<li>Internal ID is the NetSuite-internal numeric ID for the record (different from External ID).</li>
+					<li><strong>Location</strong> identifies where the field lives on the record:
+						<ul>
+							<li>Empty &mdash; field is directly on the record.</li>
+							<li><code>&lt;Sublist ID&gt;/&lt;Line Number&gt;</code> &mdash; e.g. <code>plannedrevenue/0</code>.</li>
+							<li><code>&lt;Sublist ID&gt;/&lt;Sublist Field ID&gt;=&lt;Find Text&gt;</code> &mdash; e.g. <code>plannedrevenue/plannedperiod=Jun 2022</code>.</li>
+							<li>Combine multiple sublist-field queries and a nested line number with <code>&amp;</code> &mdash; e.g. <code>plannedrevenue/Amount=737.79&amp;-1</code>.</li>
+						</ul>
+					</li>
+					<li>Multiple Field IDs can be requested at once, separated by <code>&amp;</code>.</li>
+					<li>To get a sublist's line count, use <code>count</code> as the Field ID.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},
@@ -821,15 +849,18 @@ var editRecords = {
 		return interpolate(templateHtml$4, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$4,
 			documentationHtml: documentationSection(`
-				<h3>· For Record Type/Internal ID/Location, see [${lookupFields.label}] page (left menu)</h3>
-				<h3>· Field Values have the following format:</h3>
-				<h4>&nbsp; &nbsp; · &lt;Field ID&gt;=&lt;Field Text&gt; (for 'select' fields, the option number can be specified)</h4>
-				<h4>&nbsp; &nbsp; · Can specify multiple field values, separated by &amp;</h4>
-				<h4>&nbsp; &nbsp; · Multiple values can be used with ${actionSet}/${actionInsertLine}</h4>
-				<h3>· The following Actions are available:</h3>
-				<h4>&nbsp; &nbsp; · ${actionSet}: assign new value to one or more fields</h4>
-				<h4>&nbsp; &nbsp; · ${actionInsertLine}: add new Sublist line (before given Location, use line=-0 to insert at end)</h4>
-				<h4>&nbsp; &nbsp; · ${actionRemoveLine}: remove existing Sublist line</h4>
+				<ul>
+					<li>For Record Type / Internal ID / Location, see ${pageLink(context, lookupFields)}.</li>
+					<li><strong>Field Values</strong> are <code>fieldId=value</code> pairs joined by <code>&amp;</code>. For <code>select</code> fields the option number can be used in place of the text. Multiple values can be passed to <code>${actionSet}</code> and <code>${actionInsertLine}</code>.</li>
+					<li><strong>Actions</strong>:
+						<ul>
+							<li><code>${actionSet}</code> &mdash; assign new value to one or more fields.</li>
+							<li><code>${actionInsertLine}</code> &mdash; add new sublist line before the given Location; use line <code>-0</code> to insert at the end.</li>
+							<li><code>${actionRemoveLine}</code> &mdash; remove existing sublist line.</li>
+						</ul>
+					</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},
@@ -1257,19 +1288,14 @@ var createRecords = {
 		return interpolate(templateHtml$3, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$3,
 			documentationHtml: documentationSection(`
-				<h3>· For Record Type, see [${lookupFields.label}] page (left menu)</h3>
-				<h3>· Default Values and Field Values have the following format:</h3>
-				<h4>&nbsp; &nbsp; · &lt;Field ID&gt;=&lt;Field Value&gt;</h4>
-				<h4>&nbsp; &nbsp; · Can specify multiple field values, separated by &amp;</h4>
-				<h3>· To determine which values are "Default Values" (vs Field Values):</h3>
-				<h4>&nbsp; &nbsp; · Refer to SuiteScript documentation (incomplete):
-					<a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4267255811.html#bridgehead_4423371543">
-						"N/record Default Values"
-					</a>
-				</h4>
-				<h4>&nbsp; &nbsp; · For some Records Types, certain Default Values are mandatory</h4>
-				<h3>· Result contains the new Internal ID that is automatically generated by NetSuite</h3>
-				<h3>· Sublists are not supported during creation (use [${editRecords.label}] after)</h3>
+				<ul>
+					<li>For valid Record Types, see ${pageLink(context, lookupFields)}.</li>
+					<li>Both <strong>Default Values</strong> and <strong>Field Values</strong> use <code>fieldId=value</code> pairs joined by <code>&amp;</code>.</li>
+					<li>To know which values must go in <strong>Default Values</strong> (vs Field Values), refer to SuiteScript's <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4267255811.html#bridgehead_4423371543">"N/record Default Values"</a> docs (incomplete). For some record types, certain Default Values are mandatory.</li>
+					<li>The result line includes the new Internal ID that NetSuite assigned.</li>
+					<li>Sublists are not supported during creation &mdash; create the record first, then use ${pageLink(context, editRecords)} to populate sublists.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},
@@ -1427,11 +1453,17 @@ var massSave = {
 		return interpolate(templateHtml$2, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$2,
 			documentationHtml: documentationSection(`
-				<h3>· For Record Type/Internal ID, see [${lookupFields.label}] page (left menu)</h3>
-				<h2>· Each Record by Internal ID:</h2>
-				<h2>&nbsp; &nbsp; 1) EDIT Record (load)</h2>
-				<h2>&nbsp; &nbsp; 2) SAVE Record</h2>
-				<h2>· Result: trigger any associated events (e.g. run workflows)</h2>
+				<ul>
+					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFields)}.</li>
+					<li>For each record listed, the page loads it and saves it without modification:
+						<ol>
+							<li>Load the record.</li>
+							<li>Save the record.</li>
+						</ol>
+					</li>
+					<li>The save triggers any associated events (e.g. workflows). Use this to retroactively re-run automation.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},
@@ -1478,7 +1510,13 @@ var massDelete = {
 		return interpolate(templateHtml$1, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$1,
 			documentationHtml: documentationSection(`
-				<h3>· DELETE each Record by Record Type/Internal ID, see [${lookupFields.label}] page (left menu)</h3>
+				<p style="color: #b00"><strong>Warning:</strong> deletion is permanent and cannot be undone from this page. Verify your input list before running.</p>
+				<ul>
+					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFields)}.</li>
+					<li>Each line is a single record to delete, identified by Record Type and Internal ID.</li>
+					<li>The page reloads the record after the delete to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},
@@ -1562,13 +1600,18 @@ var suiteql = {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· Enter a SuiteQL query and click Run.</h3>
-				<h3>· Results are paged in chunks of up to 1000 rows (NetSuite max page size).</h3>
-				<h4>&nbsp; &nbsp; · Use Previous / Next to navigate pages when the result set is larger than one page.</h4>
-				<h3>· Examples:</h3>
-				<h4>&nbsp; &nbsp; · <code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></h4>
-				<h4>&nbsp; &nbsp; · <code>SELECT COUNT(*) AS n FROM customer</code></h4>
-				<h3>· Errors (e.g. invalid SQL) are reported in the status line below.</h3>
+				<ul>
+					<li>Enter a SuiteQL query and click <strong>Run Query</strong>.</li>
+					<li>Results are paged in chunks of up to 1000 rows (NetSuite's max page size). Use <strong>Previous</strong> / <strong>Next</strong> to navigate when the result set is larger than one page.</li>
+					<li>Click <strong>Download</strong> to export the current page as CSV.</li>
+					<li>Examples:
+						<ul>
+							<li><code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></li>
+							<li><code>SELECT COUNT(*) AS n FROM customer</code></li>
+						</ul>
+					</li>
+					<li>Errors (e.g. invalid SQL) are reported in the status line next to the buttons.</li>
+				</ul>
 			`),
 		});
 	},

@@ -5,9 +5,9 @@
 
 import csvSource from "./client/csv.client.js?raw";
 import bulkRunnerSource from "./client/bulk-runner.client.js?raw";
-import editRecordsSource from "./pages/edit-records/client.client.js?raw";
-import recordTypeSource from "./pages/record-type/client.client.js?raw";
-import suiteqlSource from "./pages/suiteql/client.client.js?raw";
+import editRecordsSource from "./pages/edit-records/page.client.js?raw";
+import recordTypeSource from "./pages/record-type/page.client.js?raw";
+import suiteqlSource from "./pages/suiteql/page.client.js?raw";
 
 
 export const clientModules = {

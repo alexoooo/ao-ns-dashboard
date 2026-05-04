@@ -2,6 +2,7 @@ import record from "N/record";
 
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
+import { pageLink, taskInputFormatHelp } from "../../help.js";
 import { scriptDeployParam } from "../../url.js";
 import { normalizeKey, splitVerticalBar } from "../../utils.js";
 import { getRecordType } from "../../record-types.js";
@@ -20,7 +21,13 @@ export default {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· DELETE each Record by Record Type/Internal ID, see [${lookupFieldsPage.label}] page (left menu)</h3>
+				<p style="color: #b00"><strong>Warning:</strong> deletion is permanent and cannot be undone from this page. Verify your input list before running.</p>
+				<ul>
+					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
+					<li>Each line is a single record to delete, identified by Record Type and Internal ID.</li>
+					<li>The page reloads the record after the delete to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},

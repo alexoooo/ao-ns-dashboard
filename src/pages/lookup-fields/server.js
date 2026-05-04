@@ -2,6 +2,7 @@ import record from "N/record";
 
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
+import { pageLink, taskInputFormatHelp } from "../../help.js";
 import { scriptDeployParam } from "../../url.js";
 import { normalizeKey, splitAmpersand, splitVerticalBar, splitSlash } from "../../utils.js";
 import { parseFieldAssignment } from "../../field-assignments.js";
@@ -21,17 +22,21 @@ export default {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· For valid Record Types and Field IDs, see [${recordDetailsPage.label}] page (left menu)</h3>
-				<h3>· Internal ID for the Record (different from External ID on NetSuite page)</h3>
-				<h3>· Location has format:</h3>
-				<h4>&nbsp; &nbsp; · Empty, field directly in record</h4>
-				<h4>&nbsp; &nbsp; · &lt;Sublist ID&gt;/&lt;Line Number&gt; (e.g. plannedrevenue/0)</h4>
-				<h4>&nbsp; &nbsp; · &lt;Sublist ID&gt;/&lt;Sublist Field ID&gt;=&lt;Find Text&gt; (e.g. plannedrevenue/plannedperiod=Jun 2022)</h4>
-				<h4>&nbsp; &nbsp; · Combine multiple Sublist Field ID queries and nested Line Number using &amp; (e.g. plannedrevenue/Amount=737.79&amp;-1)</h4>
-				<h3>· Can specify multiple Field IDs, separated by &amp;</h3>
-				<h3>· To get Sublist line count, use 'count' as the Field ID</h3>
-				<h3>· The following are special characters: | / &amp;</h3>
-				<h4>&nbsp; &nbsp; · To use them literally (e.g. as part of a department name), preface with \\ (backslash): \\| \\/ \\&amp;</h4>
+				<ul>
+					<li>For valid Record Types and Field IDs, see ${pageLink(context, recordDetailsPage)}.</li>
+					<li>Internal ID is the NetSuite-internal numeric ID for the record (different from External ID).</li>
+					<li><strong>Location</strong> identifies where the field lives on the record:
+						<ul>
+							<li>Empty &mdash; field is directly on the record.</li>
+							<li><code>&lt;Sublist ID&gt;/&lt;Line Number&gt;</code> &mdash; e.g. <code>plannedrevenue/0</code>.</li>
+							<li><code>&lt;Sublist ID&gt;/&lt;Sublist Field ID&gt;=&lt;Find Text&gt;</code> &mdash; e.g. <code>plannedrevenue/plannedperiod=Jun 2022</code>.</li>
+							<li>Combine multiple sublist-field queries and a nested line number with <code>&amp;</code> &mdash; e.g. <code>plannedrevenue/Amount=737.79&amp;-1</code>.</li>
+						</ul>
+					</li>
+					<li>Multiple Field IDs can be requested at once, separated by <code>&amp;</code>.</li>
+					<li>To get a sublist's line count, use <code>count</code> as the Field ID.</li>
+				</ul>
+				${taskInputFormatHelp()}
 			`),
 		});
 	},

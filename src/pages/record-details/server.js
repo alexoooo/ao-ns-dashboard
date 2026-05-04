@@ -2,6 +2,7 @@ import record from "N/record";
 
 import { paramRecordType, paramRecordId } from "../../constants.js";
 import { interpolate, documentationSection, escapeHtml } from "../../html.js";
+import { pageLink } from "../../help.js";
 import { normalizeKey } from "../../utils.js";
 import { recordTypeOptions } from "../../record-types.js";
 import recordTypePage from "../record-type/server.js";
@@ -26,7 +27,11 @@ export default {
 
 		return interpolate(templateHtml, {
 			documentationHtml: documentationSection(`
-				<h3>· To detect the Record Type(s) for a particular Internal ID, see [${recordTypePage.label}] page (left menu)</h3>
+				<ul>
+					<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
+					<li>The Field ID and Sublist ID values shown here are what to use on the other pages (Lookup Fields, Edit Records, etc.).</li>
+					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
+				</ul>
 			`),
 			recordTypeOptionsHtml: recordTypeOptions(recordType),
 			paramRecordType,

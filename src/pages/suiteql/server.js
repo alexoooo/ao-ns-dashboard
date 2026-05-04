@@ -17,13 +17,18 @@ export default {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
-				<h3>· Enter a SuiteQL query and click Run.</h3>
-				<h3>· Results are paged in chunks of up to 1000 rows (NetSuite max page size).</h3>
-				<h4>&nbsp; &nbsp; · Use Previous / Next to navigate pages when the result set is larger than one page.</h4>
-				<h3>· Examples:</h3>
-				<h4>&nbsp; &nbsp; · <code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></h4>
-				<h4>&nbsp; &nbsp; · <code>SELECT COUNT(*) AS n FROM customer</code></h4>
-				<h3>· Errors (e.g. invalid SQL) are reported in the status line below.</h3>
+				<ul>
+					<li>Enter a SuiteQL query and click <strong>Run Query</strong>.</li>
+					<li>Results are paged in chunks of up to 1000 rows (NetSuite's max page size). Use <strong>Previous</strong> / <strong>Next</strong> to navigate when the result set is larger than one page.</li>
+					<li>Click <strong>Download</strong> to export the current page as CSV.</li>
+					<li>Examples:
+						<ul>
+							<li><code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></li>
+							<li><code>SELECT COUNT(*) AS n FROM customer</code></li>
+						</ul>
+					</li>
+					<li>Errors (e.g. invalid SQL) are reported in the status line next to the buttons.</li>
+				</ul>
 			`),
 		});
 	},

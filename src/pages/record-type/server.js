@@ -29,11 +29,12 @@ export default {
 			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			paramRecordId,
 			documentationHtml: documentationSection(`
-				<h3>· Record Types in NetSuite pages may differ from what they are called here:</h3>
-				<h4>&nbsp; &nbsp; · "Payment" is "Customer Payment"</h4>
-				<h3>· The same Internal ID can exist in multiple Record Types</h3>
-				<h3>· Some Record Types are undocumented: ${Object.keys(undocumentedRecordTypes).join(", ")}</h3>
-				<h3>· Custom Record Types are not automatically populated, but you can manually type them in below</h3>
+				<ul>
+					<li>Record Type names here may differ from what NetSuite shows in its UI &mdash; e.g. NetSuite "Customer Payment" is just <code>Payment</code> here.</li>
+					<li>The same Internal ID can exist under multiple Record Types &mdash; results show every type the ID was found under.</li>
+					<li>Undocumented Record Types currently mapped: ${Object.keys(undocumentedRecordTypes).map(k => `<code>${k}</code>`).join(", ")}.</li>
+					<li>Custom Record Types are not auto-populated in the input but can be typed in manually below.</li>
+				</ul>
 			`),
 			defaultTasks,
 			defaultPageCount: Object.keys(all).length,
