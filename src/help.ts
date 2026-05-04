@@ -1,20 +1,19 @@
 // Shared helpers for building per-page Help section content.
 
-import { setPageParam } from "./url.js";
-
+import {setPageParam} from "./url";
+import type {PageDef, SuiteletContext} from "./types";
 
 // Hyperlink to another page in this Suitelet. Use inside documentationSection
 // content instead of `[Page Label] (left menu)` plain-text references.
-export function pageLink(context, pageDef) {
+export function pageLink(context: SuiteletContext, pageDef: Pick<PageDef, "name" | "label">): string {
 	return `<a href="${setPageParam(context, pageDef.name)}">${pageDef.label}</a>`;
 }
-
 
 // Shared spec for the bulk-task pipe-delimited input format. Used by
 // lookup-fields, edit-records, create-records, mass-save, mass-delete — any
 // page whose textarea is parsed via splitVerticalBar / splitAmpersand /
-// splitSlash from utils.js. Embed inside documentationSection content.
-export function taskInputFormatHelp() {
+// splitSlash from utils. Embed inside documentationSection content.
+export function taskInputFormatHelp(): string {
 	return `
 		<p><strong>Input format</strong> — each line is one task; columns are separated by <code>|</code> (the exact columns depend on the page, see above).</p>
 		<ul>

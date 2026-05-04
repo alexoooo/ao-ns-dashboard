@@ -1,9 +1,12 @@
-<script type="module">import "edit-records";</script>
+<script type="module">
+	import "edit-records";
+</script>
 
 <h2>Edit one or more records</h2>
 {{documentationHtml}}
-<hr/>
+<hr />
 <bulk-runner-edit-records
-		task-type-label="Record Type|Internal ID|Location|Field Values|Action"
-		command-post-url="{{commandUrl}}">
+	task-type-label="Record Type|Internal ID|Location|Field Values|Action"
+	command-post-url="{{commandUrl}}"
+>
 </bulk-runner-edit-records>

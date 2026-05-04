@@ -52,6 +52,7 @@ src/
 ### Request dispatch
 
 `main(context)` reads two query parameters:
+
 - `page=<name>` — selects which page to render. Defaults to the first entry in `pages/index.js` (welcome).
 - `command=<name>` — when present, treats the request as a JSON-body POST callback; response is plain text written via `context.response.write`.
 
@@ -117,7 +118,7 @@ Pages with a controls row above a results table (`suiteql/page.client.js`, `clie
   ```js
   const actions = this.querySelector(".<scope>-actions");
   if (actions) {
-      this.style.setProperty("--<scope>-actions-height", actions.offsetHeight + "px");
+    this.style.setProperty("--<scope>-actions-height", actions.offsetHeight + "px");
   }
   ```
 - **Z-index ordering matters**: action row `z-index: 1`, thead `z-index: 2`. The thead's white background then occludes the action row's bottom shadow where they meet — without the swap you get a double shadow line.
@@ -132,7 +133,9 @@ For pages that need both horizontal scroll and page-level sticky elements, overr
 
 ```html
 <style>
-    .mdl-layout__content { overflow-x: auto !important; }
+  .mdl-layout__content {
+    overflow-x: auto !important;
+  }
 </style>
 ```
 

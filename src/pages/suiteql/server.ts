@@ -1,19 +1,25 @@
 import query from "N/query";
 
-import { paramCommand } from "../../constants.js";
-import { interpolate, documentationSection } from "../../html.js";
-import { scriptDeployParam } from "../../url.js";
+import {paramCommand} from "../../constants";
+import {interpolate, documentationSection} from "../../html";
+import {scriptDeployParam} from "../../url";
+import {errorMessage} from "../../error-utils";
 import templateHtml from "./template.html";
-
+import type {PageDef, SuiteletContext} from "../../types";
 
 const commandName = "suiteql";
 
+interface SuiteqlBody {
+	query?: string;
+	pageIndex?: number;
+	pageSize?: number;
+}
 
-export default {
+const suiteqlPage: PageDef = {
 	name: "suiteql",
 	label: "SuiteQL Query",
 
-	render(context) {
+	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
@@ -38,23 +44,23 @@ export default {
 	},
 };
 
+export default suiteqlPage;
 
-function handleSuiteQl(context) {
-	let body;
+function handleSuiteQl(context: SuiteletContext): string {
+	let body: SuiteqlBody;
 	try {
-		body = JSON.parse(context.request.body);
-	}
-	catch (e) {
-		return JSON.stringify({ error: "Invalid request body: " + e.message });
-	}
-
-	const sql = (body.query || "").trim();
-	if (! sql) {
-		return JSON.stringify({ error: "Empty query" });
+		body = JSON.parse(context.request.body) as SuiteqlBody;
+	} catch (e) {
+		return JSON.stringify({error: "Invalid request body: " + errorMessage(e)});
 	}
 
-	const pageIndex = Number.isInteger(body.pageIndex) ? body.pageIndex : 0;
-	const pageSize = Number.isInteger(body.pageSize) ? body.pageSize : 1000;
+	const sql = (body.query ?? "").trim();
+	if (!sql) {
+		return JSON.stringify({error: "Empty query"});
+	}
+
+	const pageIndex = Number.isInteger(body.pageIndex) ? (body.pageIndex as number) : 0;
+	const pageSize = Number.isInteger(body.pageSize) ? (body.pageSize as number) : 1000;
 
 	try {
 		const paged = query.runSuiteQLPaged({
@@ -75,11 +81,11 @@ function handleSuiteQl(context) {
 			});
 		}
 
-		const page = paged.fetch({ index: pageIndex });
+		const page = paged.fetch({index: pageIndex});
 		// page.data is a ResultSet (not a plain array). asMappedResults() gives
 		// plain objects keyed by column alias — easiest to serialize.
 		const mapped = page.data.asMappedResults();
-		const columns = mapped.length > 0 ? Object.keys(mapped[0]) : [];
+		const columns = mapped.length > 0 ? Object.keys(mapped[0]!) : [];
 		const rows = mapped.map(m => columns.map(c => m[c]));
 
 		return JSON.stringify({
@@ -90,8 +96,7 @@ function handleSuiteQl(context) {
 			columns,
 			rows,
 		});
-	}
-	catch (e) {
-		return JSON.stringify({ error: e.message });
+	} catch (e) {
+		return JSON.stringify({error: errorMessage(e)});
 	}
 }

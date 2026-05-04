@@ -1,24 +1,25 @@
 import record from "N/record";
+import type {Record as NsRecord} from "N/record";
 
-import { paramCommand } from "../../constants.js";
-import { interpolate, documentationSection } from "../../html.js";
-import { pageLink, taskInputFormatHelp } from "../../help.js";
-import { scriptDeployParam } from "../../url.js";
-import { normalizeKey, splitAmpersand, splitVerticalBar, splitSlash } from "../../utils.js";
-import { parseFieldAssignment } from "../../field-assignments.js";
-import { getRecordType } from "../../record-types.js";
-import recordDetailsPage from "../record-details/server.js";
+import {paramCommand} from "../../constants";
+import {interpolate, documentationSection} from "../../html";
+import {pageLink, taskInputFormatHelp} from "../../help";
+import {scriptDeployParam} from "../../url";
+import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash} from "../../utils";
+import {parseFieldAssignment} from "../../field-assignments";
+import {getRecordType} from "../../record-types";
+import {errorMessage} from "../../error-utils";
+import recordDetailsPage from "../record-details/server";
 import templateHtml from "./template.html";
-
+import type {PageDef, SuiteletContext} from "../../types";
 
 const commandName = "lookup-fields";
 
-
-export default {
+const lookupFieldsPage: PageDef = {
 	name: "lookup-fields",
 	label: "Lookup Fields",
 
-	render(context) {
+	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
@@ -46,20 +47,21 @@ export default {
 	},
 };
 
+export default lookupFieldsPage;
 
-function handleLookupFields(context) {
-	const tabDelimitedRows = JSON.parse(context.request.body);
+function handleLookupFields(context: SuiteletContext): string {
+	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
 	const tabDelimitedRow = tabDelimitedRows[0];
-	if (! tabDelimitedRow) {
+	if (!tabDelimitedRow) {
 		return JSON.stringify(["Empty"]);
 	}
 
 	const parts = splitVerticalBar(tabDelimitedRow);
 
-	const recordType = getRecordType(parts[0]);
-	const recordId = normalizeKey(parts[1]);
-	const pathParts = splitSlash(parts[2]);
-	const fieldIds = splitAmpersand(parts[3]).map(i => normalizeKey(i.split("=")[0]));
+	const recordType = getRecordType(parts[0] ?? "");
+	const recordId = normalizeKey(parts[1] ?? "");
+	const pathParts = splitSlash(parts[2] ?? "");
+	const fieldIds = splitAmpersand(parts[3] ?? "").map(i => normalizeKey(i.split("=")[0] ?? ""));
 
 	const rec = record.load({
 		type: recordType,
@@ -70,7 +72,7 @@ function handleLookupFields(context) {
 		return JSON.stringify(["Please specify Field ID"]);
 	}
 
-	const fieldTexts = [];
+	const fieldTexts: string[] = [];
 	for (const fieldId of fieldIds) {
 		const fieldText = pathLookupFields(rec, fieldId, pathParts);
 		fieldTexts.push(fieldText);
@@ -78,55 +80,55 @@ function handleLookupFields(context) {
 	return JSON.stringify([fieldTexts.join(" | ")]);
 }
 
-
-function pathLookupFields(rec, fieldId, remainingPath) {
+function pathLookupFields(rec: NsRecord, fieldId: string, remainingPath: string[]): string {
 	if (remainingPath.length === 0) {
-		let fieldText;
+		let fieldText: string;
 		try {
-			fieldText = rec.getText({fieldId});
-		}
-		catch (e) {
-			fieldText = "Error: " + e.message;
+			const raw = rec.getText({fieldId});
+			fieldText = Array.isArray(raw) ? raw.join(",") : raw;
+		} catch (e) {
+			fieldText = "Error: " + errorMessage(e);
 		}
 
 		const fieldValue = rec.getValue({fieldId});
-		const fieldValueSuffix =
-			"" + fieldValue !== fieldText && fieldValue
-			? ` (${fieldValue})`: "";
+		const fieldValueSuffix = "" + String(fieldValue) !== fieldText && fieldValue ? ` (${String(fieldValue)})` : "";
 
 		return `${fieldId}=${fieldText}${fieldValueSuffix}`;
 	}
-	const sublistOrSubrecord = remainingPath[0];
+	const sublistOrSubrecord = remainingPath[0]!;
 
 	const sublistNames = rec.getSublists();
-	if (! sublistNames.includes(sublistOrSubrecord)) {
+	if (!sublistNames.includes(sublistOrSubrecord)) {
 		throw new Error("Sublist not found: " + sublistOrSubrecord);
 	}
 
-	if (remainingPath.length === 1 &&
-			(fieldId === "count" || fieldId === "linecount")) {
-		return `${sublistOrSubrecord}.${fieldId}=` + rec.getLineCount({
-			sublistId: sublistOrSubrecord,
-		});
+	if (remainingPath.length === 1 && (fieldId === "count" || fieldId === "linecount")) {
+		return (
+			`${sublistOrSubrecord}.${fieldId}=` +
+			rec.getLineCount({
+				sublistId: sublistOrSubrecord,
+			})
+		);
 	}
 
-	const sublistLineQuery = remainingPath[1] || "";
+	const sublistLineQuery = remainingPath[1] ?? "";
 	const sublistLine = getSublistLine(rec, sublistOrSubrecord, sublistLineQuery);
 
 	if (remainingPath.length !== 2) {
-		throw new Error("Sublist subrecord not supported: " + sublistOrSubrecord + " - " + JSON.stringify(remainingPath));
+		throw new Error(
+			"Sublist subrecord not supported: " + sublistOrSubrecord + " - " + JSON.stringify(remainingPath)
+		);
 	}
 
-	let sublistText;
+	let sublistText: string;
 	try {
 		sublistText = rec.getSublistText({
 			sublistId: sublistOrSubrecord,
 			fieldId,
 			line: sublistLine,
 		});
-	}
-	catch (e) {
-		sublistText = "Error: " + e.message;
+	} catch (e) {
+		sublistText = "Error: " + errorMessage(e);
 	}
 
 	const sublistValue = rec.getSublistValue({
@@ -135,28 +137,23 @@ function pathLookupFields(rec, fieldId, remainingPath) {
 		line: sublistLine,
 	});
 	const sublistValueSuffix =
-		"" + sublistValue !== sublistText && sublistValue
-		? ` (${sublistValue})`: "";
+		"" + String(sublistValue) !== sublistText && sublistValue ? ` (${String(sublistValue)})` : "";
 
 	return `${sublistOrSubrecord}.${sublistLine}.${fieldId}=${sublistText}${sublistValueSuffix}`;
 }
 
-
-export function getSublistLine(rec, sublistId, sublistLineQuery) {
+export function getSublistLine(rec: NsRecord, sublistId: string, sublistLineQuery: string): number {
 	const matches = findSublistLines(rec, sublistId, sublistLineQuery);
 	if (matches.length === 0) {
-		throw new Error(
-			"Sublist line not found: " + sublistLineQuery);
+		throw new Error("Sublist line not found: " + sublistLineQuery);
 	}
 	if (matches.length > 1) {
-		throw new Error(
-			`Multiple matching sublist lines (${matches}): ${sublistLineQuery}`);
+		throw new Error(`Multiple matching sublist lines (${matches.join(",")}): ${sublistLineQuery}`);
 	}
-	return matches[0];
+	return matches[0]!;
 }
 
-
-export function findSublistLines(rec, sublistId, sublistLineQuery) {
+export function findSublistLines(rec: NsRecord, sublistId: string, sublistLineQuery: string): number[] {
 	const count = rec.getLineCount({sublistId});
 
 	const conjunctions = splitAmpersand(sublistLineQuery);
@@ -172,33 +169,32 @@ export function findSublistLines(rec, sublistId, sublistLineQuery) {
 			// NB: handle -0 for inserting last
 			if (!conjunction.startsWith("-")) {
 				if (asNumber >= candidates.length) {
-					throw new Error(`Line ${asNumber} is too big: ${candidates}`);
+					throw new Error(`Line ${asNumber} is too big: ${candidates.join(",")}`);
 				}
-				return [candidates[asNumber]];
-			}
-			else {
+				return [candidates[asNumber]!];
+			} else {
 				if (-asNumber > candidates.length) {
-					throw new Error(`Line ${asNumber} is too small: ${candidates}`);
+					throw new Error(`Line ${asNumber} is too small: ${candidates.join(",")}`);
+				} else if (asNumber === 0) {
+					// negative zero
+					return [candidates[candidates.length - 1]! + 1];
 				}
-				else if (asNumber === 0) { // negative zero
-					return [candidates[candidates.length - 1] + 1];
-				}
-				return [candidates[candidates.length + asNumber]];
+				return [candidates[candidates.length + asNumber]!];
 			}
 		}
 
 		const queryField = parseFieldAssignment(conjunction);
 
-		const remainingCandidates = [];
+		const remainingCandidates: number[] = [];
 		for (let i = 0; i < candidates.length; i++) {
 			const sublistFieldText = rec.getSublistText({
 				sublistId,
 				fieldId: queryField.fieldId,
-				line: candidates[i],
+				line: candidates[i]!,
 			});
 
 			if (sublistFieldText === queryField.fieldText) {
-				remainingCandidates.push(candidates[i]);
+				remainingCandidates.push(candidates[i]!);
 				continue;
 			}
 
@@ -206,11 +202,11 @@ export function findSublistLines(rec, sublistId, sublistLineQuery) {
 				const sublistValue = rec.getSublistValue({
 					sublistId,
 					fieldId: queryField.fieldId,
-					line: candidates[i],
+					line: candidates[i]!,
 				});
 
-				if (Number(queryField.fieldText) === Number("" + sublistValue)) {
-					remainingCandidates.push(candidates[i]);
+				if (Number(queryField.fieldText) === Number("" + String(sublistValue))) {
+					remainingCandidates.push(candidates[i]!);
 					continue;
 				}
 			}

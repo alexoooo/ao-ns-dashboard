@@ -1,0 +1,11 @@
+# Normalize line endings in the repo: source files use LF on disk and in the
+# index, regardless of OS. Prevents CRLF/LF churn from Windows checkouts.
+* text=auto eol=lf
+
+# Binary blobs (don't try to normalize)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

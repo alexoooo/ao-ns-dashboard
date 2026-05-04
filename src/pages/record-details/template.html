@@ -1,29 +1,26 @@
 <script type="text/javascript">
 	$(document).ready(() => {
 		$(".record-type-select").select2({
-			placeholder: "Please make a selection"
+			placeholder: "Please make a selection",
 		});
 	});
 	function showLoading() {
-		document.getElementById('spinner').style.display = "block";
-		document.getElementById('details').style.display = "none";
+		document.getElementById("spinner").style.display = "block";
+		document.getElementById("details").style.display = "none";
 	}
 	function onSearch(value) {
-		document.getElementById('recordType').value = value;
+		document.getElementById("recordType").value = value;
 	}
 </script>
 <div>
 	<h2>Retrieve all info about a particular record</h2>
 	{{documentationHtml}}
-	<hr/>
+	<hr />
 </div>
 <form method="post">
 	<fieldset>
 		<legend>Record Type Search</legend>
-		<select
-				class="record-type-select"
-				id="record-type-search"
-				onchange="onSearch(this.value);">
+		<select class="record-type-select" id="record-type-search" onchange="onSearch(this.value)">
 			<option></option>
 			{{recordTypeOptionsHtml}}
 		</select>
@@ -36,9 +33,10 @@
 			type="text"
 			id="recordType"
 			name="{{paramRecordType}}"
-			value="{{recordType}}"/>
+			value="{{recordType}}"
+		/>
 	</fieldset>
-	<br/>
+	<br />
 	<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
 		<input
 			class="mdl-textfield__input"
@@ -46,19 +44,19 @@
 			id="recordId"
 			name="{{paramRecordId}}"
 			value="{{recordId}}"
-			autofocus/>
+			autofocus
+		/>
 		<label class="mdl-textfield__label" for="recordId">Internal ID</label>
 	</div>
-	<br/>
+	<br />
 	<button
-			type="submit"
-			class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
-			onclick="showLoading()">
+		type="submit"
+		class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
+		onclick="showLoading()"
+	>
 		<span class="material-icons md-18">search</span> Get Details
 	</button>
-	<hr/>
+	<hr />
 	<div id="spinner" class="mdl-spinner mdl-js-spinner is-active" style="display: none"></div>
-	<div id="details">
-		{{detailsHtml}}
-	</div>
+	<div id="details">{{detailsHtml}}</div>
 </form>

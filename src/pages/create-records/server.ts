@@ -1,25 +1,26 @@
 import record from "N/record";
+import type {Record as NsRecord, FieldValue} from "N/record";
 
-import { paramCommand } from "../../constants.js";
-import { interpolate, documentationSection } from "../../html.js";
-import { pageLink, taskInputFormatHelp } from "../../help.js";
-import { scriptDeployParam } from "../../url.js";
-import { splitVerticalBar, listsEqual } from "../../utils.js";
-import { parseFieldAssignmentList } from "../../field-assignments.js";
-import { getRecordType } from "../../record-types.js";
-import editRecordsPage, { setRecordField } from "../edit-records/server.js";
-import lookupFieldsPage from "../lookup-fields/server.js";
+import {paramCommand} from "../../constants";
+import {interpolate, documentationSection} from "../../html";
+import {pageLink, taskInputFormatHelp} from "../../help";
+import {scriptDeployParam} from "../../url";
+import {splitVerticalBar, listsEqual} from "../../utils";
+import {parseFieldAssignmentList} from "../../field-assignments";
+import {getRecordType} from "../../record-types";
+import {errorMessage} from "../../error-utils";
+import editRecordsPage, {setRecordField, type Validator} from "../edit-records/server";
+import lookupFieldsPage from "../lookup-fields/server";
 import templateHtml from "./template.html";
-
+import type {PageDef, SuiteletContext} from "../../types";
 
 const commandName = "create";
 
-
-export default {
+const createRecordsPage: PageDef = {
 	name: "create-records",
 	label: "Create Records",
 
-	render(context) {
+	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			documentationHtml: documentationSection(`
@@ -40,20 +41,21 @@ export default {
 	},
 };
 
+export default createRecordsPage;
 
-function handleCreateRecord(context) {
-	let recordId;
+function handleCreateRecord(context: SuiteletContext): string {
+	let recordId: number | undefined;
 	try {
-		const tabDelimitedRows = JSON.parse(context.request.body);
-		const firstTabDelimitedRow = tabDelimitedRows[0];
+		const tabDelimitedRows = JSON.parse(context.request.body) as string[];
+		const firstTabDelimitedRow = tabDelimitedRows[0] ?? "";
 		const firstParts = splitVerticalBar(firstTabDelimitedRow);
-		const recordType = getRecordType(firstParts[0]);
-		const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
-		const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
+		const recordType = getRecordType(firstParts[0] ?? "");
+		const defaultFieldValues = parseFieldAssignmentList(firstParts[1] ?? "");
+		const fieldValues = parseFieldAssignmentList(firstParts[2] ?? "");
 
-		const allValidators = [];
+		const allValidators: Validator[] = [];
 
-		const defaultValues = {};
+		const defaultValues: Record<string, unknown> = {};
 
 		const rec = record.create({
 			type: recordType,
@@ -84,38 +86,33 @@ function handleCreateRecord(context) {
 			id: recordId,
 		});
 
-		const messages = [];
+		const messages: string[] = [];
 		for (const validator of allValidators) {
 			try {
 				messages.push(validator(reload));
-			}
-			catch (e) {
-				messages.push(`Unable to validate: ${e.message}`);
+			} catch (e) {
+				messages.push(`Unable to validate: ${errorMessage(e)}`);
 			}
 		}
 
-		return JSON.stringify([
-			`Internal ID: ${recordId} | ${messages.join(" | ")}`,
-		]);
-	}
-	catch (e) {
-		const prefix = recordId == null
-			? "Error: "
-			: `Error after creating Internal ID ${recordId}: `;
-		return JSON.stringify([prefix + e.message]);
+		return JSON.stringify([`Internal ID: ${recordId} | ${messages.join(" | ")}`]);
+	} catch (e) {
+		const prefix = recordId == null ? "Error: " : `Error after creating Internal ID ${recordId}: `;
+		return JSON.stringify([prefix + errorMessage(e)]);
 	}
 }
 
-
-function setDefaultRecordField(rec, fieldId, fieldText) {
+function setDefaultRecordField(rec: NsRecord, fieldId: string, fieldText: string | string[]): Validator {
 	const field = rec.getField({fieldId});
+	if (field == null) {
+		throw new Error("Field not found: " + fieldId);
+	}
 	if (field.type === "select" || field.type === "multiselect") {
 		return setDefaultRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
 	}
 
 	if (Array.isArray(fieldText)) {
-		throw new Error(
-			"Single value expected (" + fieldId + "): " + fieldText);
+		throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
 	}
 
 	rec.setText({
@@ -124,53 +121,58 @@ function setDefaultRecordField(rec, fieldId, fieldText) {
 	});
 
 	return reload => {
-		const afterSave = reload.getText({fieldId});
+		const afterSaveRaw = reload.getText({fieldId});
+		const afterSave = Array.isArray(afterSaveRaw) ? afterSaveRaw.join(",") : afterSaveRaw;
 		return afterSave === fieldText
 			? `Default ${fieldId} to '${fieldText}'`
 			: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 	};
 }
 
-
-function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
+function setDefaultRecordSelect(
+	rec: NsRecord,
+	fieldId: string,
+	fieldText: string | string[],
+	multi: boolean
+): Validator {
 	const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-	if (! multi && asList.length > 1) {
-		throw new Error(
-			"Single value expected (" + fieldId + "): " + fieldText);
+	if (!multi && asList.length > 1) {
+		throw new Error("Single value expected (" + fieldId + "): " + asList.join(","));
 	}
 
 	const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
 	const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-	if (someIds && ! allIds) {
-		throw new Error(
-			"All must be text or all must be IDs (" + fieldId + "): " + fieldText);
+	if (someIds && !allIds) {
+		throw new Error("All must be text or all must be IDs (" + fieldId + "): " + asList.join(","));
 	}
+
+	const renderedFieldText = typeof fieldText === "string" ? fieldText : fieldText.join(",");
 
 	if (allIds) {
 		const fieldValues = asList.map(i => parseInt(i));
 		rec.setValue({
 			fieldId,
-			value: (multi ? fieldValues : fieldValues[0]),
+			value: (multi ? fieldValues : fieldValues[0]) as FieldValue,
 		});
 		return reload => {
 			const afterSave = reload.getValue({fieldId});
-			const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
+			const afterSaveList = Array.isArray(afterSave) ? (afterSave as unknown[]) : [afterSave];
 			return listsEqual(asList, afterSaveList)
-				? `Default ${fieldId} to '${fieldText}'`
-				: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
+				? `Default ${fieldId} to '${renderedFieldText}'`
+				: `Unexpected ${fieldId} default, tried '${renderedFieldText}' but got '${String(afterSave)}'`;
 		};
 	}
 
 	rec.setText({
 		fieldId,
-		text: (multi ? asList : asList[0]),
+		text: (multi ? asList : asList[0]) as string,
 	});
 
 	return reload => {
 		const afterSave = reload.getText({fieldId});
 		const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
 		return listsEqual(asList, afterSaveList)
-			? `Default ${fieldId} to '${fieldText}'`
-			: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
+			? `Default ${fieldId} to '${renderedFieldText}'`
+			: `Unexpected ${fieldId} default, tried '${renderedFieldText}' but got '${String(afterSave)}'`;
 	};
 }

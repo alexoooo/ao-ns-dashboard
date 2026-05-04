@@ -1,3 +1,15 @@
 .idea
 .claude
 node_modules
+
+# Tooling
+coverage
+*.tsbuildinfo
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode
+*.swp
+*.swo
+*~

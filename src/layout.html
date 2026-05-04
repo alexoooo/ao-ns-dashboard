@@ -1,48 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <head>
 	<title>{{title}}</title>
 	<script type="importmap">
-	{
-		"imports": {
-			"lit": "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm",
-			"csv": "{{clientCsvUrlJs}}",
-			"bulk-runner": "{{clientBulkRunnerUrlJs}}",
-			"edit-records": "{{clientEditRecordsUrlJs}}",
-			"record-type": "{{clientRecordTypeUrlJs}}",
-			"suiteql": "{{clientSuiteqlUrlJs}}"
+		{
+			"imports": {
+				"lit": "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm",
+				"csv": "{{clientCsvUrlJs}}",
+				"bulk-runner": "{{clientBulkRunnerUrlJs}}",
+				"edit-records": "{{clientEditRecordsUrlJs}}",
+				"record-type": "{{clientRecordTypeUrlJs}}",
+				"suiteql": "{{clientSuiteqlUrlJs}}"
+			}
 		}
-	}
 	</script>
-	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"/>
-	<link rel="stylesheet" href="{{mdlCssUrl}}"/>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+	<link rel="stylesheet" href="{{mdlCssUrl}}" />
 	<script defer src="{{mdlJsUrl}}"></script>
 
-	<script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js" integrity="sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css" integrity="sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+	<script
+		src="https://code.jquery.com/jquery-3.6.0.js"
+		integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+		crossorigin="anonymous"
+	></script>
+	<script
+		src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js"
+		integrity="sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A=="
+		crossorigin="anonymous"
+		referrerpolicy="no-referrer"
+	></script>
+	<link
+		rel="stylesheet"
+		href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css"
+		integrity="sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA=="
+		crossorigin="anonymous"
+		referrerpolicy="no-referrer"
+	/>
 	<script>
-		$(document).on('select2:open', () => {
-			document.querySelector('.select2-search__field').focus();
+		$(document).on("select2:open", () => {
+			document.querySelector(".select2-search__field").focus();
 		});
-		$(function() {
+		$(function () {
 			const host = window.location.hostname;
-			const env = host.split('.')[0];
-			if (! env.includes("-sb")) {
-				document.getElementsByClassName('mdl-layout__header-row')[0].style = "background-color: red";
+			const env = host.split(".")[0];
+			if (!env.includes("-sb")) {
+				document.getElementsByClassName("mdl-layout__header-row")[0].style = "background-color: red";
 			}
-			document.getElementById('env').innerHTML = "[" + env + "]";
+			document.getElementById("env").innerHTML = "[" + env + "]";
 		});
 	</script>
 </head>
 <body>
-	<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer" style="width: 100%;">
+	<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer" style="width: 100%">
 		<header class="mdl-layout__header">
 			<div class="mdl-layout__header-row">
-				<span class="mdl-layout-title" style="width: 100%;">
+				<span class="mdl-layout-title" style="width: 100%">
 					{{title}}
 					<span style="float: right; text-align: right" title="version">
 						<span id="env" title="Environment" style="font-family: monospace">...</span>
-						v{{version}} <br/>
+						v{{version}} <br />
 						NetSuite {{nsVersion}}
 					</span>
 				</span>
@@ -50,15 +65,11 @@
 		</header>
 
 		<div class="mdl-layout__drawer">
-			<nav class="mdl-navigation">
-				{{navHtml}}
-			</nav>
+			<nav class="mdl-navigation">{{navHtml}}</nav>
 		</div>
 
 		<main class="mdl-layout__content">
-			<div class="page-content" style="padding: 1em">
-				{{bodyHtml}}
-			</div>
+			<div class="page-content" style="padding: 1em">{{bodyHtml}}</div>
 		</main>
 	</div>
 </body>
