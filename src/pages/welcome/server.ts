@@ -1,8 +1,8 @@
 import runtime from "N/runtime";
 
-import {interpolate} from "../../html";
+import {interpolate} from "../../lib/html";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {PageDef, SuiteletContext} from "../../app/types";
 
 const welcomePage: PageDef = {
 	name: "welcome",

@@ -75,4 +75,4 @@ NetSuite has no test harness, so end-to-end verification is manual. After deploy
 - `node_modules` and `coverage` are ignored — never commit them.
 - `.idea` (JetBrains) and `.vscode` are ignored. Don't commit IDE config.
 - The build artifact `ao-ns-dashboard.js` **is** committed — re-run `npm run build` and stage it as part of any commit that touches `src/`. The README install instructions point users to the file.
-- LICENSE and `src/banner.txt` should both reflect the current copyright year range.
+- LICENSE and `src/app/banner.txt` should both reflect the current copyright year range.

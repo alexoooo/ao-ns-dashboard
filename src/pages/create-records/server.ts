@@ -1,19 +1,19 @@
 import record from "N/record";
 
-import {paramCommand} from "../../constants";
-import {interpolate, documentationSection} from "../../html";
-import {pageLink, taskInputFormatHelp} from "../../help";
-import {scriptDeployParam} from "../../url";
-import {splitVerticalBar} from "../../utils";
-import {parseFieldAssignmentList} from "../../field-assignments";
-import {getRecordType} from "../../record-types";
-import {errorMessage} from "../../error-utils";
-import {failure, success} from "../../command";
+import {paramCommand} from "../../app/constants";
+import {interpolate, documentationSection} from "../../lib/html";
+import {pageLink, taskInputFormatHelp} from "../../lib/help";
+import {scriptDeployParam} from "../../lib/url";
+import {splitVerticalBar} from "../../lib/utils";
+import {parseFieldAssignmentList} from "../../lib/field-assignments";
+import {getRecordType} from "../../server/record-types";
+import {errorMessage} from "../../lib/error-utils";
+import {failure, success} from "../../app/command";
 import {setRecordField, setRecordFieldDefault, type Validator} from "../../server/field-setters";
 import editRecordsPage from "../edit-records/server";
 import lookupFieldsPage from "../lookup-fields/server";
 import templateHtml from "./template.html";
-import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../app/types";
 
 const commandName = "create";
 

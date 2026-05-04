@@ -1,7 +1,7 @@
 // Shared helpers for building per-page Help section content.
 
 import {setPageParam} from "./url";
-import type {PageDef, SuiteletContext} from "./types";
+import type {PageDef, SuiteletContext} from "../app/types";
 
 // Hyperlink to another page in this Suitelet. Use inside documentationSection
 // content instead of `[Page Label] (left menu)` plain-text references.

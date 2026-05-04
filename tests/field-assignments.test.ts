@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import {parseFieldAssignment, parseFieldAssignmentList} from "../src/field-assignments";
+import {parseFieldAssignment, parseFieldAssignmentList} from "../src/lib/field-assignments";
 
 describe("parseFieldAssignment", () => {
 	it("splits on first =", () => {

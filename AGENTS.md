@@ -24,33 +24,35 @@ End-to-end verification is manual — deploy the bundle to a NetSuite sandbox an
 
 ```
 src/
-├─ index.ts                       Entry — exports default { onRequest: main }
-├─ main.ts                        Dispatcher: routes ?page= and ?command=
-├─ banner.txt                     License + @NApiVersion/@NScriptType comment prepended to the bundle
-├─ layout.html                    Outer page shell (drawer, header, body wrapper, importmap placeholder)
-├─ types.ts                       Core types: PageDef, CommandHandler, CommandResponse<T>, SuiteletContext
-├─ command.ts                     success() / failure() / fromError() — CommandResponse builders
-├─ html.ts                        interpolate(tpl, vars), escapeHtml, documentationSection
-├─ help.ts                        pageLink(context, pageDef), taskInputFormatHelp()
-├─ url.ts                         scriptDeployParam, setPageParam, getCommandParam
-├─ utils.ts                       normalizeKey, listsEqual; re-exports splitters from shared/separators
-├─ constants.ts                   param names, version, MDL URLs
-├─ field-assignments.ts           parseFieldAssignment[List] (used by lookup/edit/create pages)
-├─ record-types.ts                allRecordTypes (lazy), getRecordType, recordTypeOptions
-├─ error-utils.ts                 errorMessage(e) / errorName(e) — duck-typed error narrowing
-├─ client-modules.ts              Single source of truth for client-side ES modules (id → source map)
-├─ globals.d.ts                   Ambient declarations for ?raw imports + window.componentHandler
-├─ shared/
-│  └─ separators.ts               splitAmpersand / splitVerticalBar / splitSlash (used both server- and client-side)
-├─ server/
+├─ app/                           Suitelet entry, layout, dispatcher + cross-cutting contracts
+│  ├─ index.ts                    Entry — exports default { onRequest: main }
+│  ├─ main.ts                     Dispatcher: routes ?page= and ?command=
+│  ├─ banner.txt                  License + @NApiVersion/@NScriptType comment prepended to the bundle
+│  ├─ layout.html                 Outer page shell (drawer, header, body wrapper, importmap placeholder)
+│  ├─ globals.d.ts                Ambient declarations for ?raw imports + window.componentHandler
+│  ├─ client-modules.ts           Single source of truth for client-side ES modules (id → source map)
+│  ├─ constants.ts                param names, version, MDL URLs
+│  ├─ types.ts                    Core types: PageDef, CommandHandler, CommandResponse<T>, SuiteletContext
+│  └─ command.ts                  success() / failure() / fromError() — CommandResponse builders
+├─ lib/                           Generic helpers — no NetSuite imports, fully testable
+│  ├─ html.ts                     interpolate(tpl, vars), escapeHtml, documentationSection
+│  ├─ url.ts                      scriptDeployParam, setPageParam, getCommandParam
+│  ├─ error-utils.ts              errorMessage(e) / errorName(e) — duck-typed error narrowing
+│  ├─ help.ts                     pageLink(context, pageDef), taskInputFormatHelp()
+│  ├─ field-assignments.ts        parseFieldAssignment[List] (used by lookup/edit/create pages)
+│  └─ utils.ts                    normalizeKey, listsEqual; re-exports splitters from shared/separators
+├─ shared/                        Code that runs on both client + server
+│  └─ separators.ts               splitAmpersand / splitVerticalBar / splitSlash
+├─ server/                        Server-only helpers (NetSuite N/* imports allowed)
+│  ├─ record-types.ts             allRecordTypes (lazy), getRecordType, recordTypeOptions
 │  ├─ sublist.ts                  getSublistLine / findSublistLines (sublist line resolution)
 │  ├─ field-setters.ts            setRecordField / setSublistField / setRecordFieldDefault — shared by edit/create
 │  └─ record-loader.ts            loadRecord / deleteRecord wrappers + error code constants
-├─ client/
+├─ client/                        Client-side modules embedded into the import map
 │  ├─ api.client.ts               postJson<T>(url, body, signal?) — shared CommandResponse fetch
 │  ├─ csv.client.ts               csvEncode (formula-injection-safe CSV encoder)
 │  └─ bulk-runner.client.ts       <bulk-runner> Lit component for bulk-task pages
-└─ pages/
+└─ pages/                         One folder per Suitelet page
    ├─ index.ts                    Ordered array of page defs (drawer order; element 0 is default)
    ├─ welcome/{server.ts, template.html}
    ├─ record-type/{server.ts, template.html, page.client.ts}
@@ -67,7 +69,7 @@ src/
 
 ### Request dispatch
 
-`main(context)` in `src/main.ts` reads two query parameters:
+`main(context)` in `src/app/main.ts` reads two query parameters:
 
 - `page=<name>` — selects which page to render. Defaults to the first entry in `pages/index.ts` (welcome).
 - `command=<name>` — when present, treats the request as a JSON-body POST callback. The dispatcher invokes the matching `CommandHandler`, wraps thrown errors via `fromError()`, and writes the JSON-serialized `CommandResponse<T>` envelope to the response body.
@@ -95,7 +97,7 @@ Every `?command=` response is a JSON-serialised `CommandResponse<T>`:
 type CommandResponse<T> = {ok: true; data: T} | {ok: false; error: {code?: string; message: string}};
 ```
 
-Build envelopes inside a handler with `success(data)` / `failure(message, code?)` from `src/command.ts`. Thrown errors are caught by the dispatcher and turned into `failure` envelopes via `fromError(e)` (which preserves `e.name` as the error `code`, e.g. `RCRD_DSNT_EXIST`).
+Build envelopes inside a handler with `success(data)` / `failure(message, code?)` from `src/app/command.ts`. Thrown errors are caught by the dispatcher and turned into `failure` envelopes via `fromError(e)` (which preserves `e.name` as the error `code`, e.g. `RCRD_DSNT_EXIST`).
 
 Bulk-task pages return `CommandResponse<string[]>` — one message per task in the batch. `<bulk-runner>` reads `data` and renders each entry into the result table; on `ok: false` it marks the whole batch with the error message. SuiteQL returns `CommandResponse<SuiteqlResultPage>`.
 
@@ -103,12 +105,12 @@ Bulk-task pages return `CommandResponse<string[]>` — one message per task in t
 
 1. Create `src/pages/<name>/{server.ts, template.html}` (and `page.client.ts` if it needs interactive UI beyond the shared `<bulk-runner>`).
 2. Append the import + entry to `src/pages/index.ts`.
-3. If you added a `page.client.ts`, register it in `src/client-modules.ts` and `tsconfig.json` `paths` (single edit each — see "Adding a new client module").
+3. If you added a `page.client.ts`, register it in `src/app/client-modules.ts` and `tsconfig.json` `paths` (single edit each — see "Adding a new client module").
 4. `npm run check && npm run build`.
 
 ### Templates and HTML escaping
 
-`src/html.ts` exports `interpolate(template, vars)` which substitutes `{{key}}` markers in a template string with values from `vars`:
+`src/lib/html.ts` exports `interpolate(template, vars)` which substitutes `{{key}}` markers in a template string with values from `vars`:
 
 - Default: HTML-escape the value (safe for body text, attribute values).
 - Keys ending in `Html`: insert verbatim (caller already produced safe markup).
@@ -138,14 +140,14 @@ The shared bulk-task component is `client/bulk-runner.client.ts` (`<bulk-runner>
 
 `client/csv.client.ts` exports `csvEncode(value)` — used by `bulk-runner.client.ts#downloadStatus` and `suiteql/page.client.ts#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
 
-`shared/separators.ts` is loaded both ways — server modules import it via `src/utils.ts` re-exports, client modules import it as `from "separators"` — so the escape semantics in `splitVerticalBar` / `splitAmpersand` / `splitSlash` can never drift between sides.
+`shared/separators.ts` is loaded both ways — server modules import it via `src/lib/utils.ts` re-exports, client modules import it as `from "separators"` — so the escape semantics in `splitVerticalBar` / `splitAmpersand` / `splitSlash` can never drift between sides.
 
 ### Adding a new client module
 
-`src/client-modules.ts` is the single source of truth — adding a new module is **one file edit** (plus the new file itself):
+`src/app/client-modules.ts` is the single source of truth — adding a new module is **one file edit** (plus the new file itself):
 
 1. Create `src/client/<name>.client.ts` (or `src/pages/<page>/page.client.ts`).
-2. Import it in `src/client-modules.ts` and add an entry to the `clientModules` map.
+2. Import it in `src/app/client-modules.ts` and add an entry to the `clientModules` map.
 3. Add the same id to the `paths` field of `tsconfig.json` so other client modules can reference it as a bare specifier with proper types.
 4. The page's template just needs `<script type="module">import "<id>"</script>`.
 
@@ -155,7 +157,7 @@ Browser support: the import map needs Chrome ≥89 / Firefox ≥108 / Safari ≥
 
 ### Layout-level overrides (`bodyClass`)
 
-Pages that need page-wide CSS overrides set `bodyClass: "<class>"` on their `PageDef`. The class is applied to the `<body>` element via the `{{bodyClassesHtml}}` placeholder, and the rule lives once in `src/layout.html`'s `<style>` block. Currently:
+Pages that need page-wide CSS overrides set `bodyClass: "<class>"` on their `PageDef`. The class is applied to the `<body>` element via the `{{bodyClassesHtml}}` placeholder, and the rule lives once in `src/app/layout.html`'s `<style>` block. Currently:
 
 - `page-wide` — overrides MDL's default `overflow-x: hidden` on `.mdl-layout__content` so wide tables can scroll horizontally without breaking page-level sticky elements (used by the SuiteQL page; see "MDL horizontal-scroll gotcha" below).
 
@@ -191,7 +193,7 @@ Pipe-delimited per line, e.g. `Record Type|Internal ID|Location|Field Values|Act
 - Location (sublist path): `/`-separated. Escape with `\/`.
 - Pipe inside a segment: escape with `\|`.
 
-Always use `splitVerticalBar` / `splitAmpersand` / `splitSlash` from `src/shared/separators.ts` (re-exported by `src/utils.ts`) rather than `String.split`. The helpers handle the escapes via random-sentinel substitution. The same module is loaded as the `"separators"` client module so client code uses the exact same implementation.
+Always use `splitVerticalBar` / `splitAmpersand` / `splitSlash` from `src/shared/separators.ts` (re-exported by `src/lib/utils.ts`) rather than `String.split`. The helpers handle the escapes via random-sentinel substitution. The same module is loaded as the `"separators"` client module so client code uses the exact same implementation.
 
 ### NetSuite API constraint: lazy module init
 
@@ -205,7 +207,7 @@ This is enforced mechanically by an ESLint rule in `eslint.config.js` (`no-restr
 
 ### Error narrowing
 
-NetSuite's `SuiteScriptError` doesn't reliably pass `e instanceof Error` in the AMD bundle context (different `Error` prototype than TypeScript's lib references). Use `errorMessage(e)` / `errorName(e)` from `src/error-utils.ts` — they duck-type on `.message` / `.name`. **Never** fall back to `String(e)` for an unknown error: it serialises the whole error object including the stack trace.
+NetSuite's `SuiteScriptError` doesn't reliably pass `e instanceof Error` in the AMD bundle context (different `Error` prototype than TypeScript's lib references). Use `errorMessage(e)` / `errorName(e)` from `src/lib/error-utils.ts` — they duck-type on `.message` / `.name`. **Never** fall back to `String(e)` for an unknown error: it serialises the whole error object including the stack trace.
 
 ### Type system
 
@@ -220,4 +222,4 @@ Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, e
 - External CSS/JS is loaded from cdnjs.cloudflare.com (Material Design Lite, jQuery, Select2).
 - Indentation: tabs, width 4 (enforced by Prettier + `.editorconfig`). Preserve indentation in template literals — leading whitespace in `<script>` tags shows up in the rendered HTML.
 - Cross-page references use the imported page def's `.label` (e.g. `${lookupFieldsPage.label}`) so renaming a page is a single-file edit. Importing a page def for `pageLink(context, pageDef)` is the only legitimate cross-page server import — internal helper logic belongs in `src/server/`, not in another page's `server.ts`.
-- **Page documentation** is rendered by `documentationSection(html)` in `src/html.ts`, which wraps the body in a native `<details>/<summary>` disclosure. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/help.ts` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).
+- **Page documentation** is rendered by `documentationSection(html)` in `src/lib/html.ts`, which wraps the body in a native `<details>/<summary>` disclosure. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/lib/help.ts` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).

@@ -6,7 +6,7 @@ import path from "node:path";
 import ts from "typescript";
 import typescript from "@rollup/plugin-typescript";
 
-const banner = fs.readFileSync("src/banner.txt", "utf8");
+const banner = fs.readFileSync("src/app/banner.txt", "utf8");
 
 // Custom plugin: certain imports resolve to a file's source text exported
 // as the default export, so it can be embedded into the bundle.
@@ -80,7 +80,7 @@ function transpileClientModule(source, fileName) {
 }
 
 export default {
-	input: "src/index.ts",
+	input: "src/app/index.ts",
 	output: {
 		file: "ao-ns-dashboard.js",
 		format: "amd",

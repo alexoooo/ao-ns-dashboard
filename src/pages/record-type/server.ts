@@ -1,14 +1,14 @@
 import record from "N/record";
 import search from "N/search";
 
-import {paramCommand, paramRecordId} from "../../constants";
-import {interpolate, documentationSection} from "../../html";
-import {scriptDeployParam} from "../../url";
-import {allRecordTypes, undocumentedRecordTypes, getRecordType} from "../../record-types";
-import {errorMessage} from "../../error-utils";
-import {failure, success} from "../../command";
+import {paramCommand, paramRecordId} from "../../app/constants";
+import {interpolate, documentationSection} from "../../lib/html";
+import {scriptDeployParam} from "../../lib/url";
+import {allRecordTypes, undocumentedRecordTypes, getRecordType} from "../../server/record-types";
+import {errorMessage} from "../../lib/error-utils";
+import {failure, success} from "../../app/command";
 import templateHtml from "./template.html";
-import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../app/types";
 
 const commandName = "record-type";
 

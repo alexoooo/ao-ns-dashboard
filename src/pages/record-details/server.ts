@@ -1,14 +1,14 @@
 import record from "N/record";
 
-import {paramRecordType, paramRecordId} from "../../constants";
-import {interpolate, documentationSection, escapeHtml} from "../../html";
-import {pageLink} from "../../help";
-import {normalizeKey} from "../../utils";
-import {recordTypeOptions} from "../../record-types";
-import {errorMessage} from "../../error-utils";
+import {paramRecordType, paramRecordId} from "../../app/constants";
+import {interpolate, documentationSection, escapeHtml} from "../../lib/html";
+import {pageLink} from "../../lib/help";
+import {normalizeKey} from "../../lib/utils";
+import {recordTypeOptions} from "../../server/record-types";
+import {errorMessage} from "../../lib/error-utils";
 import recordTypePage from "../record-type/server";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {PageDef, SuiteletContext} from "../../app/types";
 
 const recordDetailsPage: PageDef = {
 	name: "record-details",

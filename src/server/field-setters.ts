@@ -14,7 +14,7 @@
 
 import type {Record as NsRecord, FieldValue} from "N/record";
 
-import {listsEqual} from "../utils";
+import {listsEqual} from "../lib/utils";
 import {getSublistLine} from "./sublist";
 
 // Returned by every set-* function: a thunk that takes the reloaded record

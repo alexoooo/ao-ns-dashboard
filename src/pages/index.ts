@@ -10,7 +10,7 @@ import createRecords from "./create-records/server";
 import massSave from "./mass-save/server";
 import massDelete from "./mass-delete/server";
 import suiteql from "./suiteql/server";
-import type {PageDef} from "../types";
+import type {PageDef} from "../app/types";
 
 const pages: PageDef[] = [
 	welcome,

@@ -4,7 +4,7 @@
 // them. Use `AbortController` to cancel an in-flight request (see Lit's
 // `disconnectedCallback` to clean up when a component unmounts).
 
-import type {CommandResponse} from "../types";
+import type {CommandResponse} from "../app/types";
 
 export async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Promise<CommandResponse<T>> {
 	const init: RequestInit = {

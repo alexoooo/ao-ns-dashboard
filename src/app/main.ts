@@ -1,12 +1,12 @@
 import runtime from "N/runtime";
 
-import {interpolate, escapeHtml} from "./html";
+import {interpolate, escapeHtml} from "../lib/html";
 import layoutHtml from "./layout.html";
 import {version, mdlCssUrl, mdlJsUrl, paramPage, paramCommand} from "./constants";
-import {setPageParam} from "./url";
+import {setPageParam} from "../lib/url";
 import {buildImportMapJson} from "./client-modules";
 import {failure, fromError} from "./command";
-import pages from "./pages/index";
+import pages from "../pages/index";
 import type {CommandResponse, PageDef, SuiteletContext} from "./types";
 
 export function main(context: SuiteletContext): void {

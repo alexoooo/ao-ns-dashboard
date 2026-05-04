@@ -1,5 +1,5 @@
 import {describe, it, expect} from "vitest";
-import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash, listsEqual} from "../src/utils";
+import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash, listsEqual} from "../src/lib/utils";
 
 describe("normalizeKey", () => {
 	it("strips non-alphanumeric/underscore/dash", () => {

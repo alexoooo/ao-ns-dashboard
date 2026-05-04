@@ -11,14 +11,14 @@
 // touch. `layout.html` consumes the import map via the `{{importMapJsonJs}}`
 // placeholder.
 
-import separatorsSource from "./shared/separators.ts?raw";
-import apiSource from "./client/api.client.ts?raw";
-import csvSource from "./client/csv.client.ts?raw";
-import bulkRunnerSource from "./client/bulk-runner.client.ts?raw";
-import editRecordsSource from "./pages/edit-records/page.client.ts?raw";
-import recordTypeSource from "./pages/record-type/page.client.ts?raw";
-import suiteqlSource from "./pages/suiteql/page.client.ts?raw";
-import recordDetailsSource from "./pages/record-details/page.client.ts?raw";
+import separatorsSource from "../shared/separators.ts?raw";
+import apiSource from "../client/api.client.ts?raw";
+import csvSource from "../client/csv.client.ts?raw";
+import bulkRunnerSource from "../client/bulk-runner.client.ts?raw";
+import editRecordsSource from "../pages/edit-records/page.client.ts?raw";
+import recordTypeSource from "../pages/record-type/page.client.ts?raw";
+import suiteqlSource from "../pages/suiteql/page.client.ts?raw";
+import recordDetailsSource from "../pages/record-details/page.client.ts?raw";
 
 // Bare-specifier → module source. Order matches the import map output for
 // readability in the rendered HTML; it doesn't affect resolution.

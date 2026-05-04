@@ -6,8 +6,8 @@
 
 import type {Record as NsRecord} from "N/record";
 
-import {splitAmpersand} from "../utils";
-import {parseFieldAssignment} from "../field-assignments";
+import {splitAmpersand} from "../lib/utils";
+import {parseFieldAssignment} from "../lib/field-assignments";
 
 // Resolve a sublist-line query that must match exactly one line. Throws if
 // zero or more-than-one lines match.

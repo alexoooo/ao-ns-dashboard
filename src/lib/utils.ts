@@ -4,7 +4,7 @@
 // they can also be `?raw`-loaded into client modules. Server code imports
 // them from here for convenience.
 
-export {splitAmpersand, splitVerticalBar, splitSlash} from "./shared/separators";
+export {splitAmpersand, splitVerticalBar, splitSlash} from "../shared/separators";
 
 export function normalizeKey(value: string): string {
 	return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();

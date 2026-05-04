@@ -1,18 +1,18 @@
 import record from "N/record";
 import type {Record as NsRecord} from "N/record";
 
-import {paramCommand} from "../../constants";
-import {interpolate, documentationSection} from "../../html";
-import {pageLink, taskInputFormatHelp} from "../../help";
-import {scriptDeployParam} from "../../url";
-import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash} from "../../utils";
-import {getRecordType} from "../../record-types";
-import {errorMessage} from "../../error-utils";
-import {failure, success} from "../../command";
+import {paramCommand} from "../../app/constants";
+import {interpolate, documentationSection} from "../../lib/html";
+import {pageLink, taskInputFormatHelp} from "../../lib/help";
+import {scriptDeployParam} from "../../lib/url";
+import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash} from "../../lib/utils";
+import {getRecordType} from "../../server/record-types";
+import {errorMessage} from "../../lib/error-utils";
+import {failure, success} from "../../app/command";
 import {getSublistLine} from "../../server/sublist";
 import recordDetailsPage from "../record-details/server";
 import templateHtml from "./template.html";
-import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../app/types";
 
 const commandName = "lookup-fields";
 

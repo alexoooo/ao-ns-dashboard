@@ -5,7 +5,7 @@
 // handlers don't have to. Use `success(data)` / `failure(message, code?)` from
 // inside a handler; the dispatcher will JSON-stringify the result.
 
-import {errorMessage, errorName} from "./error-utils";
+import {errorMessage, errorName} from "../lib/error-utils";
 import type {CommandResponse} from "./types";
 
 export function success<T>(data: T): CommandResponse<T> {

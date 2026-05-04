@@ -1,5 +1,5 @@
-import {paramCommand, paramPage} from "./constants";
-import type {SuiteletContext} from "./types";
+import {paramCommand, paramPage} from "../app/constants";
+import type {SuiteletContext} from "../app/types";
 
 export function getCommandParam(context: SuiteletContext): string {
 	return (context.request.parameters[paramCommand] as string | undefined) || "";
