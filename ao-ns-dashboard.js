@@ -68,7 +68,7 @@ function documentationSection(documentationHtml) {
 	`;
 }
 
-var layoutHtml = "<!doctype html>\n<head>\n\t<title>{{title}}</title>\n\t<script type=\"importmap\">\n\t\t{\n\t\t\t\"imports\": {\n\t\t\t\t\"lit\": \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\",\n\t\t\t\t\"csv\": \"{{clientCsvUrlJs}}\",\n\t\t\t\t\"bulk-runner\": \"{{clientBulkRunnerUrlJs}}\",\n\t\t\t\t\"edit-records\": \"{{clientEditRecordsUrlJs}}\",\n\t\t\t\t\"record-type\": \"{{clientRecordTypeUrlJs}}\",\n\t\t\t\t\"suiteql\": \"{{clientSuiteqlUrlJs}}\"\n\t\t\t}\n\t\t}\n\t</script>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" />\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\" />\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\n\t<script\n\t\tsrc=\"https://code.jquery.com/jquery-3.6.0.js\"\n\t\tintegrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\"\n\t\tcrossorigin=\"anonymous\"\n\t></script>\n\t<script\n\t\tsrc=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\"\n\t\tintegrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t></script>\n\t<link\n\t\trel=\"stylesheet\"\n\t\thref=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\"\n\t\tintegrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t/>\n\t<script>\n\t\t$(document).on(\"select2:open\", () => {\n\t\t\tdocument.querySelector(\".select2-search__field\").focus();\n\t\t});\n\t\t$(function () {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split(\".\")[0];\n\t\t\tif (!env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName(\"mdl-layout__header-row\")[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\tdocument.getElementById(\"env\").innerHTML = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body>\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br />\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">{{navHtml}}</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">{{bodyHtml}}</div>\n\t\t</main>\n\t</div>\n</body>\n";
+var layoutHtml = "<!doctype html>\n<head>\n\t<title>{{title}}</title>\n\t<script type=\"importmap\">\n\t\t{{importMapJsonJs}}\n\t</script>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" />\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\" />\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\t<style>\n\t\t/* MDL's default is overflow-x: hidden, which clips wide tables. Pages\n\t\t   that need horizontal scroll opt in via PageDef.bodyClass = \"page-wide\".\n\t\t   Wrapping the table in an overflow-x: auto div would create a scroll\n\t\t   container that breaks the page-level sticky thead, so let the page\n\t\t   itself scroll horizontally instead. */\n\t\tbody.page-wide .mdl-layout__content {\n\t\t\toverflow-x: auto !important;\n\t\t}\n\t</style>\n\n\t<script\n\t\tsrc=\"https://code.jquery.com/jquery-3.6.0.js\"\n\t\tintegrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\"\n\t\tcrossorigin=\"anonymous\"\n\t></script>\n\t<script\n\t\tsrc=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\"\n\t\tintegrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t></script>\n\t<link\n\t\trel=\"stylesheet\"\n\t\thref=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\"\n\t\tintegrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t/>\n\t<script>\n\t\t$(document).on(\"select2:open\", () => {\n\t\t\tdocument.querySelector(\".select2-search__field\").focus();\n\t\t});\n\t\t$(function () {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split(\".\")[0];\n\t\t\tif (!env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName(\"mdl-layout__header-row\")[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\t// textContent (not innerHTML): hostname is browser-controlled but\n\t\t\t// nothing in this codepath should ever interpret it as markup.\n\t\t\tdocument.getElementById(\"env\").textContent = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body class=\"{{bodyClassesHtml}}\">\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br />\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">{{navHtml}}</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">{{bodyHtml}}</div>\n\t\t</main>\n\t</div>\n</body>\n";
 
 const version = "2026.05.04b";
 const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
@@ -93,28 +93,105 @@ function setPageParam(context, page) {
     return scriptDeployParam(context) + "&" + paramPage + "=" + page;
 }
 
+var separatorsSource = "// Shared separator-splitter helpers — used by both server-side parsing and\n// client-side `groupKey` implementations. Pure code with no NetSuite imports\n// so it can be `?raw`-loaded into a client module *and* statically imported\n// by server modules from `src/utils.ts` (which re-exports from here).\n//\n// Each function splits on its delimiter while honouring `\\<delim>` as an\n// escape. Implementation uses a random sentinel to round-trip escapes\n// without the cost of a stateful parser.\nexport function splitAmpersand(value) {\n    const sentinel = \"__AMPERSAND_ESCAPE__\" + Math.random().toString(36).substring(2);\n    const withSentinel = value.replaceAll(\"\\\\&\", sentinel);\n    return withSentinel.split(\"&\").map(i => i.replaceAll(sentinel, \"&\"));\n}\nexport function splitVerticalBar(value) {\n    const sentinel = \"__VERTICAL_BAR_ESCAPE__\" + Math.random().toString(36).substring(2);\n    const withSentinel = value.replaceAll(\"\\\\|\", sentinel);\n    return withSentinel.split(\"|\").map(i => i.replaceAll(sentinel, \"|\"));\n}\nexport function splitSlash(value) {\n    if (value === \"\") {\n        return [];\n    }\n    const sentinel = \"__SLASH_ESCAPE__\" + Math.random().toString(36).substring(2);\n    const withSentinel = value.replaceAll(\"\\\\/\", sentinel);\n    return withSentinel.split(\"/\").map(i => i.replaceAll(sentinel, \"/\"));\n}\n";
+
+var apiSource = "// Shared client helper: POST JSON to a `?command=<name>` endpoint and parse\n// the `CommandResponse<T>` envelope. Centralises serialisation, status-code\n// handling, and JSON-parse fallbacks so each Lit component doesn't reimplement\n// them. Use `AbortController` to cancel an in-flight request (see Lit's\n// `disconnectedCallback` to clean up when a component unmounts).\nexport async function postJson(url, body, signal) {\n    const init = {\n        method: \"POST\",\n        headers: { \"Content-Type\": \"application/json\" },\n        body: JSON.stringify(body),\n    };\n    if (signal !== undefined) {\n        init.signal = signal;\n    }\n    let response;\n    try {\n        response = await fetch(url, init);\n    }\n    catch (e) {\n        // Caller distinguishes cancellation from real failures; let it through.\n        if (e instanceof DOMException && e.name === \"AbortError\") {\n            throw e;\n        }\n        return wrapFailure(\"Network error: \" + (e instanceof Error ? e.message : String(e)));\n    }\n    const text = await response.text();\n    if (!response.ok) {\n        return wrapFailure(`HTTP ${response.status}: ${text}`, `HTTP_${response.status}`);\n    }\n    try {\n        return JSON.parse(text);\n    }\n    catch (_e) {\n        return wrapFailure(\"Invalid JSON response: \" + text);\n    }\n}\nfunction wrapFailure(message, code) {\n    return { ok: false, error: code !== undefined ? { code, message } : { message } };\n}\n";
+
 var csvSource = "// Shared CSV encoder for client-side download buttons.\n// Prevents CSV formula injection: spreadsheets evaluate cells starting with\n// =, +, -, @, tab, or CR as formulas even when wrapped in quotes. Also doubles\n// internal double-quotes so the cell can be safely wrapped in \"...\".\nexport function csvEncode(value) {\n    let str = stringify(value);\n    if (/^[=+\\-@\\t\\r]/.test(str)) {\n        str = \"'\" + str;\n    }\n    return str.replaceAll('\"', '\"\"');\n}\nfunction stringify(value) {\n    if (value == null)\n        return \"\";\n    if (typeof value === \"string\")\n        return value;\n    if (typeof value === \"number\" || typeof value === \"boolean\")\n        return String(value);\n    // Plain objects and arrays would otherwise stringify as \"[object Object]\"\n    // or comma-joined; JSON gives a useful, deterministic representation.\n    return JSON.stringify(value);\n}\n";
 
-var bulkRunnerSource = "// Lit base component for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n// Subclass to enable batching by overriding `groupKey(task)`.\nimport { LitElement, html } from \"lit\";\nimport { csvEncode } from \"csv\";\n// Mirrors src/utils.ts#splitVerticalBar for client-side use (subclass groupKey\n// implementations). Keep both copies in sync if escape semantics change.\nexport function splitVerticalBar(value) {\n    const sentinel = \"__VERTICAL_BAR_ESCAPE__\" + Math.random().toString(36).substring(2);\n    const withSentinel = value.replaceAll(\"\\\\|\", sentinel);\n    return withSentinel.split(\"|\").map(i => i.replaceAll(sentinel, \"|\"));\n}\nexport class BulkRunner extends LitElement {\n    constructor() {\n        super();\n        this.taskTypeLabel = \"\";\n        this.commandPostUrl = \"\";\n        this.phase = \"input\";\n        this.model = [];\n        this.pageStart = 0;\n        this.pageCount = 100;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    groupKey(_task) {\n        return \"\";\n    }\n    render() {\n        return this.phase === \"input\" ? this.renderInput() : this.renderStatus();\n    }\n    renderInput() {\n        return html `\n\t\t\t<div>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" autofocus></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button\n\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t@click=${this.runAll}\n\t\t\t\t\t>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n    }\n    renderStatus() {\n        const startedCount = this.model.filter(i => i.status !== \"\").length;\n        const visibleStart = this.pageStart;\n        const visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);\n        const visible = this.model.slice(visibleStart, visibleEnd);\n        return html `\n\t\t\t<div>\n\t\t\t\t<div\n\t\t\t\t\tclass=\"bulk-runner-actions\"\n\t\t\t\t\tstyle=\"position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em\">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t.value=${String(this.pageStart + 1)}\n\t\t\t\t\t\t\t@change=${this.onPageStartChange}\n\t\t\t\t\t\t/>\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Start</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span\n\t\t\t\t\t\tclass=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\"\n\t\t\t\t\t\tstyle=\"width: 5em; margin-left: 1em\"\n\t\t\t\t\t>\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t.value=${String(this.pageCount)}\n\t\t\t\t\t\t\t@change=${this.onPageCountChange}\n\t\t\t\t\t\t/>\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Count</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">\n\t\t\t\t\t\t<button\n\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t@click=${this.downloadStatus}\n\t\t\t\t\t\t>\n\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">Progress: ${startedCount} of ${this.model.length}</span>\n\t\t\t\t</div>\n\t\t\t\t<div>\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell\"\n\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tNumber\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tTask\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\tstyle=\"width: 100%; position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tResult\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t${visible.map((item, i) => {\n            const isError = item.status.toLowerCase().includes(\"error\");\n            const cellStyle = isError ? \"color: red; white-space: normal\" : \"white-space: normal\";\n            return html `\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${visibleStart + i + 1}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${item.task}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=${cellStyle}>\n\t\t\t\t\t\t\t\t\t\t\t${item.status}\n\t\t\t\t\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t`;\n        })}\n\t\t\t\t\t\t</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n    }\n    updated() {\n        // MDL classes need re-upgrading after re-render so freshly created\n        // buttons/inputs pick up ripple/floating-label behavior.\n        window.componentHandler?.upgradeElements(this);\n        // Sync the thead's sticky offset with the actual height of the actions\n        // row so the column headers freeze just below it instead of overlapping.\n        const actions = this.querySelector(\".bulk-runner-actions\");\n        if (actions) {\n            this.style.setProperty(\"--bulk-runner-actions-height\", actions.offsetHeight + \"px\");\n        }\n    }\n    onPageStartChange(e) {\n        const target = e.target;\n        const parsed = parseInt(target.value);\n        this.pageStart = Number.isFinite(parsed) ? Math.max(0, parsed - 1) : 0;\n    }\n    onPageCountChange(e) {\n        const target = e.target;\n        const parsed = parseInt(target.value);\n        this.pageCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 100;\n    }\n    runAll() {\n        const taskValues = this.querySelector(\"#tasks\").value;\n        const tasks = taskValues.split(/\\r?\\n/);\n        const newModel = [];\n        for (const task of tasks) {\n            const trimmed = task.trim();\n            if (trimmed !== \"\") {\n                newModel.push({\n                    task,\n                    status: \"\",\n                    group: this.groupKey(task) || \"\",\n                });\n            }\n        }\n        this.model = newModel;\n        this.phase = \"running\";\n        this.runNext();\n    }\n    runNext() {\n        const nextIndex = this.model.findIndex(e => e.status === \"\");\n        if (nextIndex === -1) {\n            this.requestUpdate();\n            return;\n        }\n        const first = this.model[nextIndex];\n        const batch = first.group === \"\" ? [first] : this.model.filter(i => i.group === first.group);\n        for (const next of batch) {\n            next.status = \"Running\";\n        }\n        this.requestUpdate();\n        this.runCommand(batch);\n    }\n    runCommand(nextBatch) {\n        const request = new XMLHttpRequest();\n        request.onreadystatechange = () => {\n            if (request.readyState !== 4) {\n                return;\n            }\n            const status = request.status;\n            if (status !== 200) {\n                nextBatch[0].status = \"Error \" + status + \": \" + request.responseText;\n                for (let i = 1; i < nextBatch.length; i++) {\n                    nextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n                }\n            }\n            else {\n                try {\n                    const responses = JSON.parse(request.responseText);\n                    for (let i = 0; i < responses.length; i++) {\n                        const value = responses[i];\n                        const adjustedStatus = value === \"\" ? \"(blank)\" : \"\" + String(value);\n                        nextBatch[i].status = adjustedStatus;\n                    }\n                }\n                catch (_e) {\n                    nextBatch[0].status = \"\" + request.responseText;\n                    for (let i = 1; i < nextBatch.length; i++) {\n                        nextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n                    }\n                }\n            }\n            this.requestUpdate();\n            this.runNext();\n        };\n        request.open(\"POST\", this.commandPostUrl);\n        request.setRequestHeader(\"Content-type\", \"application/json\");\n        request.send(JSON.stringify(nextBatch.map(i => i.task)));\n    }\n    downloadStatus() {\n        const rows = [\"Number,Task,Result\"];\n        for (let i = 0; i < this.model.length; i++) {\n            const item = this.model[i];\n            rows.push(i + 1 + ',\"' + csvEncode(item.task) + '\",\"' + csvEncode(item.status) + '\"');\n        }\n        const csv = rows.join(\"\\r\\n\");\n        const a = document.createElement(\"a\");\n        a.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n        a.setAttribute(\"download\", \"result.csv\");\n        a.style.display = \"none\";\n        document.body.appendChild(a);\n        a.click();\n        document.body.removeChild(a);\n    }\n}\nObject.defineProperty(BulkRunner, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        taskTypeLabel: { type: String, attribute: \"task-type-label\" },\n        commandPostUrl: { type: String, attribute: \"command-post-url\" },\n        phase: { state: true },\n        model: { state: true },\n        pageStart: { state: true },\n        pageCount: { state: true },\n    }\n});\ncustomElements.define(\"bulk-runner\", BulkRunner);\n";
+var bulkRunnerSource = "// Lit base component for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n// Subclass to enable batching by overriding `groupKey(task)`.\nimport { LitElement, html } from \"lit\";\nimport { csvEncode } from \"csv\";\nimport { postJson } from \"api\";\nexport class BulkRunner extends LitElement {\n    constructor() {\n        super();\n        // Aborts any in-flight request when the component is removed (e.g. user\n        // navigates to another page mid-batch). Avoids \"set state on detached\n        // element\" warnings and stops the run loop cleanly.\n        Object.defineProperty(this, \"abortController\", {\n            enumerable: true,\n            configurable: true,\n            writable: true,\n            value: null\n        });\n        this.taskTypeLabel = \"\";\n        this.commandPostUrl = \"\";\n        this.phase = \"input\";\n        this.model = [];\n        this.pageStart = 0;\n        this.pageCount = 100;\n    }\n    disconnectedCallback() {\n        super.disconnectedCallback();\n        this.abortController?.abort();\n        this.abortController = null;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    groupKey(_task) {\n        return \"\";\n    }\n    render() {\n        return this.phase === \"input\" ? this.renderInput() : this.renderStatus();\n    }\n    renderInput() {\n        return html `\n\t\t\t<div>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" autofocus></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button\n\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t@click=${this.runAll}\n\t\t\t\t\t>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n    }\n    renderStatus() {\n        const startedCount = this.model.filter(i => i.status !== \"\").length;\n        const visibleStart = this.pageStart;\n        const visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);\n        const visible = this.model.slice(visibleStart, visibleEnd);\n        return html `\n\t\t\t<div>\n\t\t\t\t<div\n\t\t\t\t\tclass=\"bulk-runner-actions\"\n\t\t\t\t\tstyle=\"position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em\">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t.value=${String(this.pageStart + 1)}\n\t\t\t\t\t\t\t@change=${this.onPageStartChange}\n\t\t\t\t\t\t/>\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Start</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span\n\t\t\t\t\t\tclass=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\"\n\t\t\t\t\t\tstyle=\"width: 5em; margin-left: 1em\"\n\t\t\t\t\t>\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t.value=${String(this.pageCount)}\n\t\t\t\t\t\t\t@change=${this.onPageCountChange}\n\t\t\t\t\t\t/>\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Count</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">\n\t\t\t\t\t\t<button\n\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t@click=${this.downloadStatus}\n\t\t\t\t\t\t>\n\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">Progress: ${startedCount} of ${this.model.length}</span>\n\t\t\t\t</div>\n\t\t\t\t<div>\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell\"\n\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tNumber\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tTask\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\tstyle=\"width: 100%; position: sticky; top: var(--bulk-runner-actions-height, 64px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tResult\n\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t${visible.map((item, i) => {\n            const isError = item.status.toLowerCase().includes(\"error\");\n            const cellStyle = isError ? \"color: red; white-space: normal\" : \"white-space: normal\";\n            return html `\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${visibleStart + i + 1}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${item.task}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=${cellStyle}>\n\t\t\t\t\t\t\t\t\t\t\t${item.status}\n\t\t\t\t\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t`;\n        })}\n\t\t\t\t\t\t</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n    }\n    updated() {\n        // MDL classes need re-upgrading after re-render so freshly created\n        // buttons/inputs pick up ripple/floating-label behavior.\n        window.componentHandler?.upgradeElements(this);\n        // Sync the thead's sticky offset with the actual height of the actions\n        // row so the column headers freeze just below it instead of overlapping.\n        const actions = this.querySelector(\".bulk-runner-actions\");\n        if (actions) {\n            this.style.setProperty(\"--bulk-runner-actions-height\", actions.offsetHeight + \"px\");\n        }\n    }\n    onPageStartChange(e) {\n        const target = e.target;\n        const parsed = parseInt(target.value);\n        this.pageStart = Number.isFinite(parsed) ? Math.max(0, parsed - 1) : 0;\n    }\n    onPageCountChange(e) {\n        const target = e.target;\n        const parsed = parseInt(target.value);\n        this.pageCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 100;\n    }\n    runAll() {\n        const taskValues = this.querySelector(\"#tasks\").value;\n        const tasks = taskValues.split(/\\r?\\n/);\n        const newModel = [];\n        for (const task of tasks) {\n            const trimmed = task.trim();\n            if (trimmed !== \"\") {\n                newModel.push({\n                    task,\n                    status: \"\",\n                    group: this.groupKey(task) || \"\",\n                });\n            }\n        }\n        this.model = newModel;\n        this.phase = \"running\";\n        this.runNext();\n    }\n    runNext() {\n        const nextIndex = this.model.findIndex(e => e.status === \"\");\n        if (nextIndex === -1) {\n            this.requestUpdate();\n            return;\n        }\n        const first = this.model[nextIndex];\n        const batch = first.group === \"\" ? [first] : this.model.filter(i => i.group === first.group);\n        for (const next of batch) {\n            next.status = \"Running\";\n        }\n        this.requestUpdate();\n        void this.runCommand(batch);\n    }\n    async runCommand(nextBatch) {\n        const markBatchError = (message) => {\n            nextBatch[0].status = message;\n            for (let i = 1; i < nextBatch.length; i++) {\n                nextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n            }\n        };\n        this.abortController = new AbortController();\n        let envelope;\n        try {\n            envelope = await postJson(this.commandPostUrl, nextBatch.map(i => i.task), this.abortController.signal);\n        }\n        catch (e) {\n            // AbortError — component was disconnected; bail without state changes.\n            if (e instanceof DOMException && e.name === \"AbortError\") {\n                return;\n            }\n            markBatchError(\"Error: \" + (e instanceof Error ? e.message : String(e)));\n            this.requestUpdate();\n            this.runNext();\n            return;\n        }\n        if (!envelope.ok) {\n            markBatchError(\"Error: \" + envelope.error.message);\n        }\n        else {\n            for (let i = 0; i < envelope.data.length; i++) {\n                const value = envelope.data[i];\n                nextBatch[i].status = value === \"\" || value === undefined ? \"(blank)\" : value;\n            }\n        }\n        this.requestUpdate();\n        this.runNext();\n    }\n    downloadStatus() {\n        const rows = [\"Number,Task,Result\"];\n        for (let i = 0; i < this.model.length; i++) {\n            const item = this.model[i];\n            rows.push(i + 1 + ',\"' + csvEncode(item.task) + '\",\"' + csvEncode(item.status) + '\"');\n        }\n        const csv = rows.join(\"\\r\\n\");\n        const a = document.createElement(\"a\");\n        a.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n        a.setAttribute(\"download\", \"result.csv\");\n        a.style.display = \"none\";\n        document.body.appendChild(a);\n        a.click();\n        document.body.removeChild(a);\n    }\n}\nObject.defineProperty(BulkRunner, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        taskTypeLabel: { type: String, attribute: \"task-type-label\" },\n        commandPostUrl: { type: String, attribute: \"command-post-url\" },\n        phase: { state: true },\n        model: { state: true },\n        pageStart: { state: true },\n        pageCount: { state: true },\n    }\n});\ncustomElements.define(\"bulk-runner\", BulkRunner);\n";
 
-var editRecordsSource = "// Edit-records subclass of BulkRunner: groups tasks by record type + ID so\n// multiple edits to the same record are saved as a single transaction.\nimport { BulkRunner, splitVerticalBar } from \"bulk-runner\";\nclass EditRecordsBulkRunner extends BulkRunner {\n    groupKey(task) {\n        const parts = splitVerticalBar(task).map(part => part.replace(/\\W/g, \"\").toLowerCase());\n        return (parts[0] ?? \"\") + \"|\" + (parts[1] ?? \"\");\n    }\n}\ncustomElements.define(\"bulk-runner-edit-records\", EditRecordsBulkRunner);\n";
+var editRecordsSource = "// Edit-records subclass of BulkRunner: groups tasks by record type + ID so\n// multiple edits to the same record are saved as a single transaction.\nimport { BulkRunner } from \"bulk-runner\";\nimport { splitVerticalBar } from \"separators\";\nclass EditRecordsBulkRunner extends BulkRunner {\n    groupKey(task) {\n        const parts = splitVerticalBar(task).map(part => part.replace(/\\W/g, \"\").toLowerCase());\n        return (parts[0] ?? \"\") + \"|\" + (parts[1] ?? \"\");\n    }\n}\ncustomElements.define(\"bulk-runner-edit-records\", EditRecordsBulkRunner);\n";
 
 var recordTypeSource = "// Record-type subclass of BulkRunner.\n//\n// Adds an Internal ID input above the bulk-runner scaffold and rebuilds the\n// command URL whenever it changes. Each row in the textarea is a Record Type\n// to probe against the entered Internal ID.\nimport { html } from \"lit\";\nimport { BulkRunner } from \"bulk-runner\";\nclass RecordTypeBulkRunner extends BulkRunner {\n    constructor() {\n        super();\n        this.commandPrefix = \"\";\n        this.recordIdParam = \"\";\n        this.defaultTasks = \"\";\n        this.defaultPageCount = 100;\n    }\n    connectedCallback() {\n        super.connectedCallback();\n        this.pageCount = this.defaultPageCount;\n    }\n    onRecordIdChange(e) {\n        const target = e.target;\n        const id = encodeURIComponent(target.value);\n        this.commandPostUrl = this.commandPrefix + \"&\" + this.recordIdParam + \"=\" + id;\n    }\n    renderInput() {\n        return html `\n\t\t\t<div>\n\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t\t\t\t<input\n\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\tid=\"recordId\"\n\t\t\t\t\t\tautofocus\n\t\t\t\t\t\t@change=${this.onRecordIdChange}\n\t\t\t\t\t/>\n\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID or External ID</label>\n\t\t\t\t</div>\n\t\t\t\t<hr />\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" .value=${this.defaultTasks}></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button\n\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t@click=${this.runAll}\n\t\t\t\t\t>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n    }\n}\nObject.defineProperty(RecordTypeBulkRunner, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        ...BulkRunner.properties,\n        commandPrefix: { type: String, attribute: \"command-prefix\" },\n        recordIdParam: { type: String, attribute: \"record-id-param\" },\n        defaultTasks: { type: String, attribute: \"default-tasks\" },\n        defaultPageCount: { type: Number, attribute: \"default-page-count\" },\n    }\n});\ncustomElements.define(\"bulk-runner-record-type\", RecordTypeBulkRunner);\n";
 
-var suiteqlSource = "// SuiteQL Query page Lit component. Tracks the current page index, POSTs the\n// query + page index to the server, renders the returned rows into a table.\nimport { LitElement, html } from \"lit\";\nimport { csvEncode } from \"csv\";\nfunction isError(resp) {\n    return typeof resp.error === \"string\";\n}\nfunction formatCell(value) {\n    if (value == null)\n        return \"\";\n    if (typeof value === \"string\")\n        return value;\n    if (typeof value === \"number\" || typeof value === \"boolean\")\n        return String(value);\n    return JSON.stringify(value);\n}\nclass SuiteqlPage extends LitElement {\n    constructor() {\n        super();\n        this.commandPostUrl = \"\";\n        this.currentPageIndex = 0;\n        this.lastResponse = null;\n        this.statusText = \"\";\n        this.running = false;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    updated() {\n        window.componentHandler?.upgradeElements(this);\n        // Sync the thead's sticky offset with the actual height of the actions row\n        // so the column headers freeze just below it instead of overlapping.\n        const actions = this.querySelector(\".suiteql-actions\");\n        if (actions) {\n            this.style.setProperty(\"--suiteql-actions-height\", actions.offsetHeight + \"px\");\n        }\n    }\n    render() {\n        const resp = this.lastResponse;\n        const showPagination = resp !== null && resp.pageCount > 1;\n        const showResults = resp !== null && resp.columns !== null;\n        return html `\n\t\t\t<fieldset style=\"width: 60em\">\n\t\t\t\t<legend>SQL</legend>\n\t\t\t\t<textarea class=\"mdl-textfield__input\" id=\"sql\" rows=\"8\" autofocus></textarea>\n\t\t\t</fieldset>\n\t\t\t<div\n\t\t\t\tclass=\"suiteql-actions\"\n\t\t\t\tstyle=\"position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t>\n\t\t\t\t<button\n\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t@click=${this.runQuery}\n\t\t\t\t\t?disabled=${this.running}\n\t\t\t\t>\n\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run Query\n\t\t\t\t</button>\n\t\t\t\t${showResults\n            ? html `\n\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t\t@click=${this.downloadCsv}\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t`\n            : \"\"}\n\t\t\t\t${showPagination && resp\n            ? html `\n\t\t\t\t\t\t\t<span style=\"margin-left: 2em\">\n\t\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t\t\t@click=${this.prevPage}\n\t\t\t\t\t\t\t\t\t?disabled=${resp.pageIndex === 0}\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tPrevious\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<span style=\"margin: 0 0.5em\">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>\n\t\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t\t\t@click=${this.nextPage}\n\t\t\t\t\t\t\t\t\t?disabled=${resp.pageIndex >= resp.pageCount - 1}\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tNext\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t`\n            : \"\"}\n\t\t\t\t<span style=\"margin-left: 1em\">${this.statusText}</span>\n\t\t\t</div>\n\t\t\t${showResults && resp\n            ? html `\n\t\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"white-space: nowrap\">\n\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t${resp.columns.map(c => html `\n\t\t\t\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--suiteql-actions-height, 52px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\t\t\t\t${c}\n\t\t\t\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t${resp.rows.map(r => html `\n\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t${r.map(v => html `\n\t\t\t\t\t\t\t\t\t\t\t\t\t<td\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tstyle=\"font-family: monospace\"\n\t\t\t\t\t\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t${formatCell(v)}\n\t\t\t\t\t\t\t\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t`\n            : \"\"}\n\t\t`;\n    }\n    runQuery() {\n        this.currentPageIndex = 0;\n        this.fetchPage();\n    }\n    prevPage() {\n        if (this.currentPageIndex > 0) {\n            this.currentPageIndex--;\n            this.fetchPage();\n        }\n    }\n    nextPage() {\n        if (this.lastResponse && this.currentPageIndex < this.lastResponse.pageCount - 1) {\n            this.currentPageIndex++;\n            this.fetchPage();\n        }\n    }\n    fetchPage() {\n        const sql = this.querySelector(\"#sql\").value;\n        this.statusText = \"Running...\";\n        this.running = true;\n        const xhr = new XMLHttpRequest();\n        xhr.onreadystatechange = () => {\n            if (xhr.readyState !== 4)\n                return;\n            this.running = false;\n            if (xhr.status !== 200) {\n                this.statusText = \"HTTP \" + xhr.status + \": \" + xhr.responseText;\n                return;\n            }\n            let resp;\n            try {\n                resp = JSON.parse(xhr.responseText);\n            }\n            catch (_e) {\n                this.statusText = \"Bad response: \" + xhr.responseText;\n                return;\n            }\n            if (isError(resp)) {\n                this.statusText = \"Error: \" + resp.error;\n                return;\n            }\n            this.lastResponse = resp;\n            this.statusText =\n                \"Page \" +\n                    (resp.pageIndex + 1) +\n                    \" of \" +\n                    Math.max(resp.pageCount, 1) +\n                    \" · \" +\n                    resp.totalCount +\n                    \" rows total\";\n        };\n        xhr.open(\"POST\", this.commandPostUrl);\n        xhr.setRequestHeader(\"Content-type\", \"application/json\");\n        xhr.send(JSON.stringify({\n            query: sql,\n            pageIndex: this.currentPageIndex,\n            pageSize: 1000,\n        }));\n    }\n    downloadCsv() {\n        // Exports the current page only. SuiteQL pages server-side; cross-page\n        // export would require iterating fetchPage and accumulating.\n        const resp = this.lastResponse;\n        if (resp === null || resp.columns === null) {\n            return;\n        }\n        const lines = [];\n        lines.push(resp.columns.map(c => '\"' + csvEncode(c) + '\"').join(\",\"));\n        for (const row of resp.rows) {\n            lines.push(row.map(v => '\"' + csvEncode(v) + '\"').join(\",\"));\n        }\n        const csv = lines.join(\"\\r\\n\");\n        const a = document.createElement(\"a\");\n        a.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n        a.setAttribute(\"download\", \"suiteql.csv\");\n        a.style.display = \"none\";\n        document.body.appendChild(a);\n        a.click();\n        document.body.removeChild(a);\n    }\n}\nObject.defineProperty(SuiteqlPage, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        commandPostUrl: { type: String, attribute: \"command-post-url\" },\n        currentPageIndex: { state: true },\n        lastResponse: { state: true },\n        statusText: { state: true },\n        running: { state: true },\n    }\n});\ncustomElements.define(\"suiteql-page\", SuiteqlPage);\n";
+var suiteqlSource = "// SuiteQL Query page Lit component. Tracks the current page index, POSTs the\n// query + page index to the server, renders the returned rows into a table.\nimport { LitElement, html } from \"lit\";\nimport { csvEncode } from \"csv\";\nimport { postJson } from \"api\";\nfunction formatCell(value) {\n    if (value == null)\n        return \"\";\n    if (typeof value === \"string\")\n        return value;\n    if (typeof value === \"number\" || typeof value === \"boolean\")\n        return String(value);\n    return JSON.stringify(value);\n}\nclass SuiteqlPage extends LitElement {\n    constructor() {\n        super();\n        Object.defineProperty(this, \"abortController\", {\n            enumerable: true,\n            configurable: true,\n            writable: true,\n            value: null\n        });\n        this.commandPostUrl = \"\";\n        this.currentPageIndex = 0;\n        this.lastResponse = null;\n        this.statusText = \"\";\n        this.running = false;\n    }\n    disconnectedCallback() {\n        super.disconnectedCallback();\n        this.abortController?.abort();\n        this.abortController = null;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    updated() {\n        window.componentHandler?.upgradeElements(this);\n        // Sync the thead's sticky offset with the actual height of the actions row\n        // so the column headers freeze just below it instead of overlapping.\n        const actions = this.querySelector(\".suiteql-actions\");\n        if (actions) {\n            this.style.setProperty(\"--suiteql-actions-height\", actions.offsetHeight + \"px\");\n        }\n    }\n    render() {\n        const resp = this.lastResponse;\n        const showPagination = resp !== null && resp.pageCount > 1;\n        const showResults = resp !== null && resp.columns !== null;\n        return html `\n\t\t\t<fieldset style=\"width: 60em\">\n\t\t\t\t<legend>SQL</legend>\n\t\t\t\t<textarea class=\"mdl-textfield__input\" id=\"sql\" rows=\"8\" autofocus></textarea>\n\t\t\t</fieldset>\n\t\t\t<div\n\t\t\t\tclass=\"suiteql-actions\"\n\t\t\t\tstyle=\"position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t>\n\t\t\t\t<button\n\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t@click=${this.runQuery}\n\t\t\t\t\t?disabled=${this.running}\n\t\t\t\t>\n\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run Query\n\t\t\t\t</button>\n\t\t\t\t${showResults\n            ? html `\n\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t\t@click=${this.downloadCsv}\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t`\n            : \"\"}\n\t\t\t\t${showPagination && resp\n            ? html `\n\t\t\t\t\t\t\t<span style=\"margin-left: 2em\">\n\t\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t\t\t@click=${this.prevPage}\n\t\t\t\t\t\t\t\t\t?disabled=${resp.pageIndex === 0}\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tPrevious\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t\t<span style=\"margin: 0 0.5em\">Page ${resp.pageIndex + 1} / ${resp.pageCount}</span>\n\t\t\t\t\t\t\t\t<button\n\t\t\t\t\t\t\t\t\tclass=\"mdl-button mdl-js-button\"\n\t\t\t\t\t\t\t\t\t@click=${this.nextPage}\n\t\t\t\t\t\t\t\t\t?disabled=${resp.pageIndex >= resp.pageCount - 1}\n\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\tNext\n\t\t\t\t\t\t\t\t</button>\n\t\t\t\t\t\t\t</span>\n\t\t\t\t\t\t`\n            : \"\"}\n\t\t\t\t<span style=\"margin-left: 1em\">${this.statusText}</span>\n\t\t\t</div>\n\t\t\t${showResults && resp\n            ? html `\n\t\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"white-space: nowrap\">\n\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t${resp.columns.map(c => html `\n\t\t\t\t\t\t\t\t\t\t\t<th\n\t\t\t\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\t\t\t\tstyle=\"position: sticky; top: var(--suiteql-actions-height, 52px); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)\"\n\t\t\t\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\t\t\t\t${c}\n\t\t\t\t\t\t\t\t\t\t\t</th>\n\t\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t${resp.rows.map(r => html `\n\t\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t\t${r.map(v => html `\n\t\t\t\t\t\t\t\t\t\t\t\t\t<td\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\t\t\t\t\t\t\t\tstyle=\"font-family: monospace\"\n\t\t\t\t\t\t\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t${formatCell(v)}\n\t\t\t\t\t\t\t\t\t\t\t\t\t</td>\n\t\t\t\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t\t`)}\n\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t</table>\n\t\t\t\t\t`\n            : \"\"}\n\t\t`;\n    }\n    runQuery() {\n        this.currentPageIndex = 0;\n        void this.fetchPage();\n    }\n    prevPage() {\n        if (this.currentPageIndex > 0) {\n            this.currentPageIndex--;\n            void this.fetchPage();\n        }\n    }\n    nextPage() {\n        if (this.lastResponse && this.currentPageIndex < this.lastResponse.pageCount - 1) {\n            this.currentPageIndex++;\n            void this.fetchPage();\n        }\n    }\n    async fetchPage() {\n        const sql = this.querySelector(\"#sql\").value;\n        this.statusText = \"Running...\";\n        this.running = true;\n        // Cancel any in-flight request so rapid Run-Query / pagination clicks\n        // don't race; only the latest response wins.\n        this.abortController?.abort();\n        this.abortController = new AbortController();\n        let envelope;\n        try {\n            envelope = await postJson(this.commandPostUrl, { query: sql, pageIndex: this.currentPageIndex, pageSize: 1000 }, this.abortController.signal);\n        }\n        catch (e) {\n            if (e instanceof DOMException && e.name === \"AbortError\") {\n                return;\n            }\n            this.running = false;\n            this.statusText = \"Error: \" + (e instanceof Error ? e.message : String(e));\n            return;\n        }\n        this.running = false;\n        if (!envelope.ok) {\n            this.statusText = \"Error: \" + envelope.error.message;\n            return;\n        }\n        const data = envelope.data;\n        this.lastResponse = data;\n        this.statusText =\n            \"Page \" +\n                (data.pageIndex + 1) +\n                \" of \" +\n                Math.max(data.pageCount, 1) +\n                \" · \" +\n                data.totalCount +\n                \" rows total\";\n    }\n    downloadCsv() {\n        // Exports the current page only. SuiteQL pages server-side; cross-page\n        // export would require iterating fetchPage and accumulating.\n        const resp = this.lastResponse;\n        if (resp === null || resp.columns === null) {\n            return;\n        }\n        const lines = [];\n        lines.push(resp.columns.map(c => '\"' + csvEncode(c) + '\"').join(\",\"));\n        for (const row of resp.rows) {\n            lines.push(row.map(v => '\"' + csvEncode(v) + '\"').join(\",\"));\n        }\n        const csv = lines.join(\"\\r\\n\");\n        const a = document.createElement(\"a\");\n        a.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n        a.setAttribute(\"download\", \"suiteql.csv\");\n        a.style.display = \"none\";\n        document.body.appendChild(a);\n        a.click();\n        document.body.removeChild(a);\n    }\n}\nObject.defineProperty(SuiteqlPage, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        commandPostUrl: { type: String, attribute: \"command-post-url\" },\n        currentPageIndex: { state: true },\n        lastResponse: { state: true },\n        statusText: { state: true },\n        running: { state: true },\n    }\n});\ncustomElements.define(\"suiteql-page\", SuiteqlPage);\n";
 
-// Map of client-side ES module ids to their source text. Loaded into the
-// Suitelet bundle via Rollup's ?raw plugin (which transpiles `.client.ts`
-// to JS), then embedded into each rendered page as data: URLs in the
-// import map (see main.ts#renderPage and layout.html). Ids correspond to
-// bare specifiers in that import map.
+var recordDetailsSource = "// Record Details page Lit component.\n//\n// Wraps the Select2-driven record-type dropdown and the record-id form in a\n// custom element so the page follows the same component model as every other\n// page (no inline jQuery / global functions). The server still renders the\n// `detailsHtml` block server-side and passes it as an attribute; this\n// component just owns the form chrome and the loading-spinner state.\n//\n// We deliberately do NOT use `lit/directives/unsafe-html.js` to inject the\n// server-rendered HTML chunks — that submodule isn't in the import map (only\n// the bundled `\"lit\"` entry-point is) and we don't want to manage transitive\n// CDN paths just for one directive. Instead, we reserve empty hosts in the\n// Lit template (no bindings inside), then set their `innerHTML` directly.\n// lit-html doesn't reconcile children of elements with no internal template\n// parts, so the injected DOM stays put across re-renders.\nimport { LitElement, html } from \"lit\";\nclass RecordDetailsPage extends LitElement {\n    constructor() {\n        super();\n        this.paramRecordType = \"\";\n        this.paramRecordId = \"\";\n        this.recordType = \"\";\n        this.recordId = \"\";\n        this.recordTypeOptionsHtml = \"\";\n        this.detailsHtml = \"\";\n        this.loading = false;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    firstUpdated() {\n        // Populate the <select>'s option list BEFORE Select2 initialises —\n        // Select2 reads existing <option> children when it builds its UI.\n        // Includes the empty placeholder option so Select2's \"placeholder\"\n        // behaviour works correctly.\n        const select = this.querySelector(\".record-type-select\");\n        if (select) {\n            select.innerHTML = \"<option></option>\" + this.recordTypeOptionsHtml;\n        }\n        // Using jQuery directly because Select2 is a jQuery plugin and that's\n        // how it's loaded site-wide (see layout.html).\n        $(select).select2({ placeholder: \"Please make a selection\" });\n    }\n    updated(_changed) {\n        // MDL classes need re-upgrading after each render so freshly created\n        // inputs/buttons pick up ripple/floating-label behavior.\n        window.componentHandler?.upgradeElements(this);\n        // Server-rendered detailsHtml only changes once per page load (the\n        // server re-renders on form submit, which is a fresh request), so\n        // we just inject every time the host is present and not loading.\n        const host = this.querySelector(\".details-host\");\n        if (host && this.detailsHtml !== \"\") {\n            host.innerHTML = this.detailsHtml;\n        }\n    }\n    onTypeSelectChange(e) {\n        const target = e.target;\n        this.recordType = target.value;\n    }\n    onSubmit() {\n        // Show the spinner immediately; the page reload that follows will\n        // replace this state with the server-rendered detailsHtml.\n        this.loading = true;\n    }\n    render() {\n        return html `\n\t\t\t<div>\n\t\t\t\t<h2>Retrieve all info about a particular record</h2>\n\t\t\t\t<hr />\n\t\t\t</div>\n\t\t\t<form method=\"post\" @submit=${this.onSubmit}>\n\t\t\t\t<fieldset>\n\t\t\t\t\t<legend>Record Type Search</legend>\n\t\t\t\t\t<!-- options injected via firstUpdated() before Select2 initialises -->\n\t\t\t\t\t<select\n\t\t\t\t\t\tclass=\"record-type-select\"\n\t\t\t\t\t\tid=\"record-type-search\"\n\t\t\t\t\t\t@change=${this.onTypeSelectChange}\n\t\t\t\t\t></select>\n\t\t\t\t</fieldset>\n\t\t\t\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t\t\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t\t\t\t<legend>Record Type</legend>\n\t\t\t\t\t<input\n\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\tid=\"recordType\"\n\t\t\t\t\t\tname=${this.paramRecordType}\n\t\t\t\t\t\t.value=${this.recordType}\n\t\t\t\t\t/>\n\t\t\t\t</fieldset>\n\t\t\t\t<br />\n\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t\t\t\t<input\n\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\tid=\"recordId\"\n\t\t\t\t\t\tname=${this.paramRecordId}\n\t\t\t\t\t\t.value=${this.recordId}\n\t\t\t\t\t\tautofocus\n\t\t\t\t\t/>\n\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t\t\t\t</div>\n\t\t\t\t<br />\n\t\t\t\t<button type=\"submit\" class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\">\n\t\t\t\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t\t\t\t</button>\n\t\t\t\t<hr />\n\t\t\t\t${this.loading\n            ? html `<div class=\"mdl-spinner mdl-js-spinner is-active\"></div>`\n            : html `<div class=\"details-host\"></div>`}\n\t\t\t</form>\n\t\t`;\n    }\n}\nObject.defineProperty(RecordDetailsPage, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        paramRecordType: { type: String, attribute: \"param-record-type\" },\n        paramRecordId: { type: String, attribute: \"param-record-id\" },\n        recordType: { type: String, attribute: \"record-type\" },\n        recordId: { type: String, attribute: \"record-id\" },\n        recordTypeOptionsHtml: { type: String, attribute: \"record-type-options-html\" },\n        detailsHtml: { type: String, attribute: \"details-html\" },\n        loading: { state: true },\n    }\n});\ncustomElements.define(\"record-details-page\", RecordDetailsPage);\n";
+
+// Single source of truth for client-side ES modules.
+//
+// Each entry maps a bare specifier (the import name used by `*.client.ts`
+// files) to the source text for that module. Rollup's `?raw` plugin loads
+// each `.client.ts` file as a string, transpiling TS → JS first so the
+// browser can execute it directly. At request time, `main.ts` wraps each
+// source string in a `data:text/javascript;` URL and writes the full
+// `<script type="importmap">` JSON into the rendered page.
+//
+// Adding a new client module is a single edit here — no other files to
+// touch. `layout.html` consumes the import map via the `{{importMapJsonJs}}`
+// placeholder.
+// Bare-specifier → module source. Order matches the import map output for
+// readability in the rendered HTML; it doesn't affect resolution.
 const clientModules = {
+    separators: separatorsSource,
+    api: apiSource,
     csv: csvSource,
     "bulk-runner": bulkRunnerSource,
     "edit-records": editRecordsSource,
     "record-type": recordTypeSource,
+    "record-details": recordDetailsSource,
     suiteql: suiteqlSource,
 };
+// External (non-data:) entries kept in the import map alongside the bundled
+// modules. Lit is loaded from a CDN at runtime — bundling would inflate the
+// per-page bundle by ~20 KB and Lit 3 is stable on jsdelivr. Pinned to match
+// the version installed locally for type checking (see package.json).
+const externalImports = {
+    lit: "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm",
+};
+// Build the JSON for `<script type="importmap">…</script>`. The `lit` CDN
+// URL passes through verbatim; bundled modules become `data:` URLs.
+function buildImportMapJson() {
+    const imports = { ...externalImports };
+    for (const [id, source] of Object.entries(clientModules)) {
+        imports[id] = "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
+    }
+    return JSON.stringify({ imports }, null, "\t");
+}
+
+// In strict mode, `catch (e)` types `e` as `unknown`. NetSuite throws
+// SuiteScriptError instances which behave like Error (have `name`/`message`)
+// but `e instanceof Error` is unreliable in the AMD bundle context — different
+// realm / different Error prototype than the one TypeScript's lib references.
+// Duck-type on `.message` / `.name` instead so we never fall back to
+// `String(e)`, which would JSON-serialize the whole error (including the
+// stack trace) into something like `{"name":"...","message":"...","stack":...}`.
+function asPropString(e, prop) {
+    if (e == null || typeof e !== "object")
+        return undefined;
+    const value = e[prop];
+    return typeof value === "string" ? value : undefined;
+}
+function errorMessage(e) {
+    if (typeof e === "string")
+        return e;
+    const msg = asPropString(e, "message");
+    if (msg !== undefined)
+        return msg;
+    return String(e);
+}
+function errorName(e) {
+    return asPropString(e, "name") ?? "";
+}
+
+// Command response envelope helpers.
+//
+// Every `?command=<name>` POST returns a JSON-serialized `CommandResponse<T>`
+// (see types.ts). The dispatcher wraps invocations in a try/catch so individual
+// handlers don't have to. Use `success(data)` / `failure(message, code?)` from
+// inside a handler; the dispatcher will JSON-stringify the result.
+function success(data) {
+    return { ok: true, data };
+}
+function failure(message, code) {
+    return { ok: false, error: code !== undefined && code !== "" ? { code, message } : { message } };
+}
+// Wrap a thrown error as a `failure` envelope, preserving its `.name` as the
+// error code where available (e.g. NetSuite's `RCRD_DSNT_EXIST`).
+function fromError(e) {
+    return failure(errorMessage(e), errorName(e));
+}
 
 var templateHtml$8 = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>\n\tGet the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a>\n</h4>\n<br />\n";
 
@@ -183,31 +260,6 @@ function recordTypeOptions(selectedRecordType) {
         .join("");
 }
 
-// In strict mode, `catch (e)` types `e` as `unknown`. NetSuite throws
-// SuiteScriptError instances which behave like Error (have `name`/`message`)
-// but `e instanceof Error` is unreliable in the AMD bundle context — different
-// realm / different Error prototype than the one TypeScript's lib references.
-// Duck-type on `.message` / `.name` instead so we never fall back to
-// `String(e)`, which would JSON-serialize the whole error (including the
-// stack trace) into something like `{"name":"...","message":"...","stack":...}`.
-function asPropString(e, prop) {
-    if (e == null || typeof e !== "object")
-        return undefined;
-    const value = e[prop];
-    return typeof value === "string" ? value : undefined;
-}
-function errorMessage(e) {
-    if (typeof e === "string")
-        return e;
-    const msg = asPropString(e, "message");
-    if (msg !== undefined)
-        return msg;
-    return String(e);
-}
-function errorName(e) {
-    return asPropString(e, "name") ?? "";
-}
-
 var templateHtml$7 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
 
 const commandName$6 = "record-type";
@@ -247,21 +299,18 @@ function handleTypeListing(context) {
     const recordTypes = JSON.parse(context.request.body);
     const recordTypeName = recordTypes[0];
     if (!recordTypeName) {
-        return "Record Type not specified";
+        return failure("Record Type not specified");
     }
     const recordId = context.request.parameters[paramRecordId];
     if (!recordId) {
-        return "Record ID not specified";
+        return failure("Record ID not specified");
     }
     const recordType = getRecordType(recordTypeName);
     const canBeInternal = /^-?\d+$/.test(recordId.trim());
     let internalMessage;
     if (canBeInternal) {
         try {
-            record.load({
-                type: recordType,
-                id: recordId,
-            });
+            record.load({ type: recordType, id: recordId });
             internalMessage = "*** Internal ID found";
         }
         catch (e) {
@@ -296,8 +345,7 @@ function handleTypeListing(context) {
     catch (e) {
         externalMessage = "External ID not found: " + errorMessage(e);
     }
-    const message = internalMessage + " | " + externalMessage;
-    return JSON.stringify([message]);
+    return success([internalMessage + " | " + externalMessage]);
 }
 
 // Shared helpers for building per-page Help section content.
@@ -321,17 +369,19 @@ function taskInputFormatHelp() {
 	`;
 }
 
-// Generic helpers — no NetSuite dependencies, fully testable.
-function normalizeKey(value) {
-    return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();
-}
+// Shared separator-splitter helpers — used by both server-side parsing and
+// client-side `groupKey` implementations. Pure code with no NetSuite imports
+// so it can be `?raw`-loaded into a client module *and* statically imported
+// by server modules from `src/utils.ts` (which re-exports from here).
+//
+// Each function splits on its delimiter while honouring `\<delim>` as an
+// escape. Implementation uses a random sentinel to round-trip escapes
+// without the cost of a stateful parser.
 function splitAmpersand(value) {
     const sentinel = "__AMPERSAND_ESCAPE__" + Math.random().toString(36).substring(2);
     const withSentinel = value.replaceAll("\\&", sentinel);
     return withSentinel.split("&").map(i => i.replaceAll(sentinel, "&"));
 }
-// Also mirrored in src/client/bulk-runner.client.ts for client-side groupKey
-// use. Keep both copies in sync if escape semantics change.
 function splitVerticalBar(value) {
     const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
     const withSentinel = value.replaceAll("\\|", sentinel);
@@ -345,6 +395,15 @@ function splitSlash(value) {
     const withSentinel = value.replaceAll("\\/", sentinel);
     return withSentinel.split("/").map(i => i.replaceAll(sentinel, "/"));
 }
+
+// Generic helpers — no NetSuite dependencies, fully testable.
+//
+// The pipe / ampersand / slash splitters live in src/shared/separators.ts so
+// they can also be `?raw`-loaded into client modules. Server code imports
+// them from here for convenience.
+function normalizeKey(value) {
+    return value.replace(/[^A-Za-z0-9_-]/g, "").toLowerCase();
+}
 // Set-equality for lists. Used for multiselect comparisons where NetSuite may
 // return values in a different order than they were set.
 function listsEqual(a, b) {
@@ -356,7 +415,7 @@ function listsEqual(a, b) {
     return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
-var templateHtml$6 = "<script type=\"text/javascript\">\n\t$(document).ready(() => {\n\t\t$(\".record-type-select\").select2({\n\t\t\tplaceholder: \"Please make a selection\",\n\t\t});\n\t});\n\tfunction showLoading() {\n\t\tdocument.getElementById(\"spinner\").style.display = \"block\";\n\t\tdocument.getElementById(\"details\").style.display = \"none\";\n\t}\n\tfunction onSearch(value) {\n\t\tdocument.getElementById(\"recordType\").value = value;\n\t}\n</script>\n<div>\n\t<h2>Retrieve all info about a particular record</h2>\n\t{{documentationHtml}}\n\t<hr />\n</div>\n<form method=\"post\">\n\t<fieldset>\n\t\t<legend>Record Type Search</legend>\n\t\t<select class=\"record-type-select\" id=\"record-type-search\" onchange=\"onSearch(this.value)\">\n\t\t\t<option></option>\n\t\t\t{{recordTypeOptionsHtml}}\n\t\t</select>\n\t</fieldset>\n\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t<legend>Record Type</legend>\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordType\"\n\t\t\tname=\"{{paramRecordType}}\"\n\t\t\tvalue=\"{{recordType}}\"\n\t\t/>\n\t</fieldset>\n\t<br />\n\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordId\"\n\t\t\tname=\"{{paramRecordId}}\"\n\t\t\tvalue=\"{{recordId}}\"\n\t\t\tautofocus\n\t\t/>\n\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t</div>\n\t<br />\n\t<button\n\t\ttype=\"submit\"\n\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\tonclick=\"showLoading()\"\n\t>\n\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t</button>\n\t<hr />\n\t<div id=\"spinner\" class=\"mdl-spinner mdl-js-spinner is-active\" style=\"display: none\"></div>\n\t<div id=\"details\">{{detailsHtml}}</div>\n</form>\n";
+var templateHtml$6 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<div>{{documentationHtml}}</div>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
 
 const recordDetailsPage = {
     name: "record-details",
@@ -375,12 +434,16 @@ const recordDetailsPage = {
 					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
 				</ul>
 			`),
-            recordTypeOptionsHtml: recordTypeOptions(recordType),
+            // `*Attr` keys go into HTML attribute values on <record-details-page>
+            // — `interpolate` HTML-escapes by default, which is what we need so
+            // the markup payload survives attribute-value parsing. The Lit
+            // component re-interprets them via `unsafeHTML` at render time.
+            recordTypeOptionsAttr: recordTypeOptions(recordType),
             paramRecordType,
             paramRecordId,
             recordType,
             recordId,
-            detailsHtml,
+            detailsAttr: detailsHtml,
         });
     },
 };
@@ -564,6 +627,82 @@ function parseFieldAssignmentList(fieldAssignmentList) {
     return withMultiSelect;
 }
 
+// Sublist line resolution helpers.
+//
+// Used by lookup-fields and edit-records to translate a textual line query
+// (a number, a `fieldId=value` predicate, or `&`-joined predicates) into
+// concrete line numbers on a NetSuite record's sublist.
+// Resolve a sublist-line query that must match exactly one line. Throws if
+// zero or more-than-one lines match.
+function getSublistLine(rec, sublistId, sublistLineQuery) {
+    const matches = findSublistLines(rec, sublistId, sublistLineQuery);
+    if (matches.length === 0) {
+        throw new Error("Sublist line not found: " + sublistLineQuery);
+    }
+    if (matches.length > 1) {
+        throw new Error(`Multiple matching sublist lines (${matches.join(",")}): ${sublistLineQuery}`);
+    }
+    return matches[0];
+}
+// Resolve a sublist-line query to candidate line numbers. The query is a
+// `&`-joined conjunction of predicates; each predicate is either:
+//   - a numeric line index (negative counts from end; `-0` = "after last")
+//   - a `fieldId=value` clause matched against `getSublistText` then by number.
+function findSublistLines(rec, sublistId, sublistLineQuery) {
+    const count = rec.getLineCount({ sublistId });
+    const conjunctions = splitAmpersand(sublistLineQuery);
+    let candidates = [...Array(count).keys()];
+    for (const conjunction of conjunctions) {
+        if (candidates.length === 0) {
+            return [];
+        }
+        const asNumber = Number(conjunction);
+        if (Number.isInteger(asNumber)) {
+            // NB: negative numbers count from the end. `-0` is the special
+            // "after last" sentinel used by the insert action.
+            if (!conjunction.startsWith("-")) {
+                if (asNumber >= candidates.length) {
+                    throw new Error(`Line ${asNumber} is too big: ${candidates.join(",")}`);
+                }
+                return [candidates[asNumber]];
+            }
+            if (-asNumber > candidates.length) {
+                throw new Error(`Line ${asNumber} is too small: ${candidates.join(",")}`);
+            }
+            if (asNumber === 0) {
+                // negative zero: insert past the last line
+                return [candidates[candidates.length - 1] + 1];
+            }
+            return [candidates[candidates.length + asNumber]];
+        }
+        const queryField = parseFieldAssignment(conjunction);
+        const remainingCandidates = [];
+        for (let i = 0; i < candidates.length; i++) {
+            const sublistFieldText = rec.getSublistText({
+                sublistId,
+                fieldId: queryField.fieldId,
+                line: candidates[i],
+            });
+            if (sublistFieldText === queryField.fieldText) {
+                remainingCandidates.push(candidates[i]);
+                continue;
+            }
+            if (Number.isInteger(Number(queryField.fieldText))) {
+                const sublistValue = rec.getSublistValue({
+                    sublistId,
+                    fieldId: queryField.fieldId,
+                    line: candidates[i],
+                });
+                if (Number(queryField.fieldText) === Number("" + String(sublistValue))) {
+                    remainingCandidates.push(candidates[i]);
+                }
+            }
+        }
+        candidates = remainingCandidates;
+    }
+    return candidates;
+}
+
 var templateHtml$5 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID|Location|Field ID\" command-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$5 = "lookup-fields";
@@ -600,26 +739,22 @@ function handleLookupFields(context) {
     const tabDelimitedRows = JSON.parse(context.request.body);
     const tabDelimitedRow = tabDelimitedRows[0];
     if (!tabDelimitedRow) {
-        return JSON.stringify(["Empty"]);
+        return failure("Empty input");
     }
     const parts = splitVerticalBar(tabDelimitedRow);
     const recordType = getRecordType(parts[0] ?? "");
     const recordId = normalizeKey(parts[1] ?? "");
     const pathParts = splitSlash(parts[2] ?? "");
     const fieldIds = splitAmpersand(parts[3] ?? "").map(i => normalizeKey(i.split("=")[0] ?? ""));
-    const rec = record.load({
-        type: recordType,
-        id: recordId,
-    });
     if (fieldIds.length === 0) {
-        return JSON.stringify(["Please specify Field ID"]);
+        return failure("Please specify Field ID");
     }
+    const rec = record.load({ type: recordType, id: recordId });
     const fieldTexts = [];
     for (const fieldId of fieldIds) {
-        const fieldText = pathLookupFields(rec, fieldId, pathParts);
-        fieldTexts.push(fieldText);
+        fieldTexts.push(pathLookupFields(rec, fieldId, pathParts));
     }
-    return JSON.stringify([fieldTexts.join(" | ")]);
+    return success([fieldTexts.join(" | ")]);
 }
 function pathLookupFields(rec, fieldId, remainingPath) {
     if (remainingPath.length === 0) {
@@ -641,10 +776,7 @@ function pathLookupFields(rec, fieldId, remainingPath) {
         throw new Error("Sublist not found: " + sublistOrSubrecord);
     }
     if (remainingPath.length === 1 && (fieldId === "count" || fieldId === "linecount")) {
-        return (`${sublistOrSubrecord}.${fieldId}=` +
-            rec.getLineCount({
-                sublistId: sublistOrSubrecord,
-            }));
+        return `${sublistOrSubrecord}.${fieldId}=` + rec.getLineCount({ sublistId: sublistOrSubrecord });
     }
     const sublistLineQuery = remainingPath[1] ?? "";
     const sublistLine = getSublistLine(rec, sublistOrSubrecord, sublistLineQuery);
@@ -653,88 +785,226 @@ function pathLookupFields(rec, fieldId, remainingPath) {
     }
     let sublistText;
     try {
-        sublistText = rec.getSublistText({
-            sublistId: sublistOrSubrecord,
-            fieldId,
-            line: sublistLine,
-        });
+        sublistText = rec.getSublistText({ sublistId: sublistOrSubrecord, fieldId, line: sublistLine });
     }
     catch (e) {
         sublistText = "Error: " + errorMessage(e);
     }
-    const sublistValue = rec.getSublistValue({
-        sublistId: sublistOrSubrecord,
-        fieldId,
-        line: sublistLine,
-    });
+    const sublistValue = rec.getSublistValue({ sublistId: sublistOrSubrecord, fieldId, line: sublistLine });
     const sublistValueSuffix = "" + String(sublistValue) !== sublistText && sublistValue ? ` (${String(sublistValue)})` : "";
     return `${sublistOrSubrecord}.${sublistLine}.${fieldId}=${sublistText}${sublistValueSuffix}`;
 }
-function getSublistLine(rec, sublistId, sublistLineQuery) {
-    const matches = findSublistLines(rec, sublistId, sublistLineQuery);
-    if (matches.length === 0) {
-        throw new Error("Sublist line not found: " + sublistLineQuery);
+
+// Shared field-mutation helpers for the edit-records and create-records pages.
+//
+// Two call shapes:
+//
+//   - `setRecordField` / `setSublistField` — *edit* semantics: read existing
+//     value first, only write if changed, return a validator that compares
+//     before / after / target on the reloaded record.
+//   - `setRecordFieldDefault` — *create-default* semantics: set
+//     unconditionally during `record.create({defaultValues})` flow, return a
+//     validator that confirms the value persisted.
+//
+// All four `set*` functions return a `Validator` thunk that produces a
+// human-readable message when invoked against the reloaded record.
+// =============================================================================
+// Edit semantics: compare existing → set if changed → validate after save.
+// =============================================================================
+function setRecordField(rec, fieldId, fieldText) {
+    const field = rec.getField({ fieldId });
+    if (field == null) {
+        throw new Error("Field not found: " + fieldId);
     }
-    if (matches.length > 1) {
-        throw new Error(`Multiple matching sublist lines (${matches.join(",")}): ${sublistLineQuery}`);
+    if (field.type === "select" || field.type === "multiselect") {
+        return setRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
     }
-    return matches[0];
+    if (Array.isArray(fieldText)) {
+        throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
+    }
+    const existingText = readText(() => rec.getText({ fieldId }));
+    if (existingText !== fieldText) {
+        rec.setText({ fieldId, text: fieldText });
+    }
+    return reload => {
+        const afterUpdate = readText(() => reload.getText({ fieldId }));
+        return validateSetField(fieldId, existingText, fieldText, afterUpdate);
+    };
 }
-function findSublistLines(rec, sublistId, sublistLineQuery) {
-    const count = rec.getLineCount({ sublistId });
-    const conjunctions = splitAmpersand(sublistLineQuery);
-    let candidates = [...Array(count).keys()];
-    for (const conjunction of conjunctions) {
-        if (candidates.length === 0) {
-            return [];
-        }
-        const asNumber = Number(conjunction);
-        if (Number.isInteger(asNumber)) {
-            // NB: handle -0 for inserting last
-            if (!conjunction.startsWith("-")) {
-                if (asNumber >= candidates.length) {
-                    throw new Error(`Line ${asNumber} is too big: ${candidates.join(",")}`);
-                }
-                return [candidates[asNumber]];
-            }
-            else {
-                if (-asNumber > candidates.length) {
-                    throw new Error(`Line ${asNumber} is too small: ${candidates.join(",")}`);
-                }
-                else if (asNumber === 0) {
-                    // negative zero
-                    return [candidates[candidates.length - 1] + 1];
-                }
-                return [candidates[candidates.length + asNumber]];
-            }
-        }
-        const queryField = parseFieldAssignment(conjunction);
-        const remainingCandidates = [];
-        for (let i = 0; i < candidates.length; i++) {
-            const sublistFieldText = rec.getSublistText({
-                sublistId,
-                fieldId: queryField.fieldId,
-                line: candidates[i],
+function setRecordSelect(rec, fieldId, fieldText, multi) {
+    const norm = normalizeSelectInput(fieldId, fieldText, multi);
+    if (norm.kind === "ids") {
+        const existingValue = rec.getValue({ fieldId });
+        const existingList = toList(existingValue);
+        if (!listsEqual(norm.asList, existingList)) {
+            rec.setValue({
+                fieldId,
+                value: (multi ? norm.fieldValues : norm.fieldValues[0]),
             });
-            if (sublistFieldText === queryField.fieldText) {
-                remainingCandidates.push(candidates[i]);
-                continue;
-            }
-            if (Number.isInteger(Number(queryField.fieldText))) {
-                const sublistValue = rec.getSublistValue({
-                    sublistId,
-                    fieldId: queryField.fieldId,
-                    line: candidates[i],
-                });
-                if (Number(queryField.fieldText) === Number("" + String(sublistValue))) {
-                    remainingCandidates.push(candidates[i]);
-                    continue;
-                }
-            }
         }
-        candidates = remainingCandidates;
+        return reload => {
+            const afterUpdate = reload.getValue({ fieldId });
+            return validateSetField(fieldId, "" + String(existingList), "" + norm.asList.join(","), "" + String(afterUpdate));
+        };
     }
-    return candidates;
+    const existingText = rec.getText({ fieldId });
+    const existingList = toList(existingText);
+    if (!listsEqual(norm.asList, existingList)) {
+        rec.setText({ fieldId, text: (multi ? norm.asList : norm.asList[0]) });
+    }
+    return reload => {
+        const afterUpdate = readText(() => reload.getText({ fieldId }));
+        const target = typeof fieldText === "string" ? fieldText : fieldText.join(",");
+        return validateSetField(fieldId, "" + String(existingText), "" + target, "" + afterUpdate);
+    };
+}
+function setSublistField(rec, sublistId, sublistLineQuery, fieldId, fieldText) {
+    const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
+    const field = rec.getSublistField({ sublistId, fieldId, line: sublistLine });
+    if (field == null) {
+        throw new Error("Sublist field not found: " + sublistId + "/" + fieldId);
+    }
+    if (field.type === "select" || field.type === "multiselect") {
+        return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, field.type === "multiselect");
+    }
+    if (Array.isArray(fieldText)) {
+        throw new Error("Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText.join(","));
+    }
+    const existingText = rec.getSublistText({ sublistId, fieldId, line: sublistLine });
+    if (existingText !== fieldText) {
+        rec.setSublistText({ sublistId, fieldId, line: sublistLine, text: fieldText });
+    }
+    return reload => {
+        const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
+        const afterUpdate = reload.getSublistText({ sublistId, fieldId, line: reloadSublistLine });
+        return validateSetField(fieldId, existingText, fieldText, afterUpdate);
+    };
+}
+function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, multi) {
+    const where = sublistId + "/" + sublistLineQuery + "/" + fieldId;
+    const norm = normalizeSelectInput(where, fieldText, multi);
+    if (norm.kind === "ids") {
+        const existingValue = rec.getSublistValue({ sublistId, fieldId, line: sublistLine });
+        const existingList = toList(existingValue);
+        if (!listsEqual(norm.asList, existingList)) {
+            rec.setSublistValue({
+                sublistId,
+                fieldId,
+                line: sublistLine,
+                value: (multi ? norm.fieldValues : norm.fieldValues[0]),
+            });
+        }
+        return reload => {
+            const afterUpdate = reload.getSublistValue({ sublistId, fieldId, line: sublistLine });
+            return validateSetField(fieldId, "" + String(existingList), "" + norm.asList.join(","), "" + String(afterUpdate));
+        };
+    }
+    const existingText = rec.getSublistText({ sublistId, fieldId, line: sublistLine });
+    const existingList = toList(existingText);
+    if (!listsEqual(norm.asList, existingList)) {
+        rec.setSublistText({
+            sublistId,
+            fieldId,
+            line: sublistLine,
+            text: (multi ? norm.asList : norm.asList[0]),
+        });
+    }
+    return reload => {
+        const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
+        const afterUpdate = reload.getSublistText({ sublistId, fieldId, line: reloadSublistLine });
+        const afterUpdateAsList = toList(afterUpdate);
+        return validateSetField(fieldId, "" + JSON.stringify(existingList), "" + JSON.stringify(norm.asList), "" + JSON.stringify(afterUpdateAsList));
+    };
+}
+function validateSetField(fieldId, existingText, fieldText, afterUpdate) {
+    if (existingText === fieldText) {
+        if (existingText === afterUpdate) {
+            return `Did not change ${fieldId}, already set to '${existingText}'`;
+        }
+        return `Unexpected change ${fieldId}, was already '${existingText}' but now '${afterUpdate}'`;
+    }
+    if (existingText === afterUpdate) {
+        return `Unable to change ${fieldId}, still '${existingText}'`;
+    }
+    if (fieldText === afterUpdate) {
+        return `Changed ${fieldId} from '${existingText}' to '${afterUpdate}'`;
+    }
+    return `Unexpected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
+}
+// =============================================================================
+// Create-default semantics: set unconditionally, validator confirms persistence.
+// =============================================================================
+function setRecordFieldDefault(rec, fieldId, fieldText) {
+    const field = rec.getField({ fieldId });
+    if (field == null) {
+        throw new Error("Field not found: " + fieldId);
+    }
+    if (field.type === "select" || field.type === "multiselect") {
+        return setRecordSelectDefault(rec, fieldId, fieldText, field.type === "multiselect");
+    }
+    if (Array.isArray(fieldText)) {
+        throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
+    }
+    rec.setText({ fieldId, text: fieldText });
+    return reload => {
+        const afterSave = readText(() => reload.getText({ fieldId }));
+        return afterSave === fieldText
+            ? `Default ${fieldId} to '${fieldText}'`
+            : `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
+    };
+}
+function setRecordSelectDefault(rec, fieldId, fieldText, multi) {
+    const norm = normalizeSelectInput(fieldId, fieldText, multi);
+    const target = typeof fieldText === "string" ? fieldText : fieldText.join(",");
+    if (norm.kind === "ids") {
+        rec.setValue({
+            fieldId,
+            value: (multi ? norm.fieldValues : norm.fieldValues[0]),
+        });
+        return reload => {
+            const afterSave = reload.getValue({ fieldId });
+            const afterSaveList = toList(afterSave);
+            return listsEqual(norm.asList, afterSaveList)
+                ? `Default ${fieldId} to '${target}'`
+                : `Unexpected ${fieldId} default, tried '${target}' but got '${String(afterSave)}'`;
+        };
+    }
+    rec.setText({ fieldId, text: (multi ? norm.asList : norm.asList[0]) });
+    return reload => {
+        const afterSave = reload.getText({ fieldId });
+        const afterSaveList = toList(afterSave);
+        return listsEqual(norm.asList, afterSaveList)
+            ? `Default ${fieldId} to '${target}'`
+            : `Unexpected ${fieldId} default, tried '${target}' but got '${String(afterSave)}'`;
+    };
+}
+// Normalise a `select`/`multiselect` input. NetSuite accepts either numeric
+// IDs or display text but not a mix. This helper enforces that and reports
+// which form the caller supplied.
+function normalizeSelectInput(where, fieldText, multi) {
+    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
+    if (!multi && asList.length > 1) {
+        throw new Error("Single value expected (" + where + "): " + asList.join(","));
+    }
+    const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
+    const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
+    if (someIds && !allIds) {
+        throw new Error("All must be text or all must be IDs (" + where + "): " + asList.join(","));
+    }
+    if (allIds) {
+        return { kind: "ids", asList, fieldValues: asList.map(i => parseInt(i)) };
+    }
+    return { kind: "text", asList };
+}
+function toList(value) {
+    return Array.isArray(value) ? value : [value];
+}
+// `getText` and `getSublistText` can return `string | string[]`. Normalise to
+// a flat string so comparisons with the input fieldText (always a string in
+// non-array codepaths) work correctly.
+function readText(fn) {
+    const raw = fn();
+    return Array.isArray(raw) ? raw.join(",") : raw;
 }
 
 var templateHtml$4 = "<script type=\"module\">\n\timport \"edit-records\";\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-edit-records\n\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\tcommand-post-url=\"{{commandUrl}}\"\n>\n</bulk-runner-edit-records>\n";
@@ -776,10 +1046,7 @@ function handleEditRecord(context) {
     const firstParts = splitVerticalBar(firstTabDelimitedRow);
     const recordType = getRecordType(firstParts[0] ?? "");
     const recordId = normalizeKey(firstParts[1] ?? "");
-    const rec = record.load({
-        type: recordType,
-        id: recordId,
-    });
+    const rec = record.load({ type: recordType, id: recordId });
     const allValidators = [];
     for (const tabDelimitedRow of tabDelimitedRows) {
         const parts = splitVerticalBar(tabDelimitedRow);
@@ -787,16 +1054,12 @@ function handleEditRecord(context) {
         const fieldValues = parts[3] ?? "";
         const actionName = parts[4];
         if (!actionName) {
-            return "Please specify Action";
+            return failure("Please specify Action");
         }
-        const validators = handleEditRecordAction(rec, actionName, actionLocation, fieldValues);
-        allValidators.push(validators);
+        allValidators.push(handleEditRecordAction(rec, actionName, actionLocation, fieldValues));
     }
     rec.save({});
-    const reload = record.load({
-        type: recordType,
-        id: recordId,
-    });
+    const reload = record.load({ type: recordType, id: recordId });
     const messages = [];
     for (const validators of allValidators) {
         const actionMessages = [];
@@ -810,7 +1073,7 @@ function handleEditRecord(context) {
         }
         messages.push(actionMessages.join(" | "));
     }
-    return JSON.stringify(messages);
+    return success(messages);
 }
 function handleEditRecordAction(rec, actionName, actionLocation, fieldValues) {
     const fieldAssignments = parseFieldAssignmentList(fieldValues);
@@ -841,170 +1104,13 @@ function handleEditRecordAction(rec, actionName, actionLocation, fieldValues) {
             throw new Error("Unsupported action on sublist: " + actionName);
     }
 }
-function setRecordField(rec, fieldId, fieldText) {
-    const field = rec.getField({ fieldId });
-    if (field == null) {
-        throw new Error("Field not found: " + fieldId);
-    }
-    if (field.type === "select" || field.type === "multiselect") {
-        return setRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
-    }
-    if (Array.isArray(fieldText)) {
-        throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
-    }
-    const existingTextRaw = rec.getText({ fieldId });
-    const existingText = Array.isArray(existingTextRaw) ? existingTextRaw.join(",") : existingTextRaw;
-    if (existingText !== fieldText) {
-        rec.setText({ fieldId, text: fieldText });
-    }
-    return reload => {
-        const afterUpdateRaw = reload.getText({ fieldId });
-        const afterUpdate = Array.isArray(afterUpdateRaw) ? afterUpdateRaw.join(",") : afterUpdateRaw;
-        return validateSetField(fieldId, existingText, fieldText, afterUpdate);
-    };
-}
-function setRecordSelect(rec, fieldId, fieldText, multi) {
-    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-    if (!multi && asList.length > 1) {
-        throw new Error("Single value expected (" + fieldId + "): " + asList.join(","));
-    }
-    const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
-    const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-    if (someIds && !allIds) {
-        throw new Error("All must be text or all must be IDs (" + fieldId + "): " + asList.join(","));
-    }
-    if (allIds) {
-        const fieldValues = asList.map(i => parseInt(i));
-        const existingValue = rec.getValue({ fieldId });
-        const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-        if (!listsEqual(asList, existingList)) {
-            rec.setValue({
-                fieldId,
-                value: (multi ? fieldValues : fieldValues[0]),
-            });
-        }
-        return reload => {
-            const afterUpdate = reload.getValue({ fieldId });
-            return validateSetField(fieldId, "" + String(existingList), "" + asList.join(","), "" + String(afterUpdate));
-        };
-    }
-    const existingText = rec.getText({ fieldId });
-    const existingList = Array.isArray(existingText) ? existingText : [existingText];
-    if (!listsEqual(asList, existingList)) {
-        rec.setText({
-            fieldId,
-            text: (multi ? asList : asList[0]),
-        });
-    }
-    return reload => {
-        const afterUpdate = reload.getText({ fieldId });
-        return validateSetField(fieldId, "" + String(existingText), "" + (typeof fieldText === "string" ? fieldText : fieldText.join(",")), "" + String(afterUpdate));
-    };
-}
-function setSublistField(rec, sublistId, sublistLineQuery, fieldId, fieldText) {
-    const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
-    const field = rec.getSublistField({ sublistId, fieldId, line: sublistLine });
-    if (field == null) {
-        throw new Error("Sublist field not found: " + sublistId + "/" + fieldId);
-    }
-    if (field.type === "select" || field.type === "multiselect") {
-        return setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, field.type === "multiselect");
-    }
-    if (Array.isArray(fieldText)) {
-        throw new Error("Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText.join(","));
-    }
-    const existingText = rec.getSublistText({ sublistId, fieldId, line: sublistLine });
-    if (existingText !== fieldText) {
-        rec.setSublistText({
-            sublistId,
-            fieldId,
-            line: sublistLine,
-            text: fieldText,
-        });
-    }
-    return reload => {
-        const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
-        const afterUpdate = reload.getSublistText({ sublistId, fieldId, line: reloadSublistLine });
-        return validateSetField(fieldId, existingText, fieldText, afterUpdate);
-    };
-}
-function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine, fieldText, multi) {
-    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-    if (!multi && asList.length > 1) {
-        throw new Error("Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + asList.join(","));
-    }
-    const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
-    const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-    if (someIds && !allIds) {
-        throw new Error("All must be text or all must be IDs (" +
-            sublistId +
-            "/" +
-            sublistLineQuery +
-            "/" +
-            fieldId +
-            "): " +
-            asList.join(","));
-    }
-    if (allIds) {
-        const fieldValues = asList.map(i => parseInt(i));
-        const existingValue = rec.getSublistValue({ sublistId, fieldId, line: sublistLine });
-        const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-        if (!listsEqual(asList, existingList)) {
-            rec.setSublistValue({
-                sublistId,
-                fieldId,
-                line: sublistLine,
-                value: (multi ? fieldValues : fieldValues[0]),
-            });
-        }
-        return reload => {
-            const afterUpdate = reload.getSublistValue({ sublistId, fieldId, line: sublistLine });
-            return validateSetField(fieldId, "" + String(existingList), "" + asList.join(","), "" + String(afterUpdate));
-        };
-    }
-    const existingText = rec.getSublistText({ sublistId, fieldId, line: sublistLine });
-    const existingList = Array.isArray(existingText) ? existingText : [existingText];
-    if (!listsEqual(asList, existingList)) {
-        rec.setSublistText({
-            sublistId,
-            fieldId,
-            line: sublistLine,
-            text: (multi ? asList : asList[0]),
-        });
-    }
-    return reload => {
-        const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
-        const afterUpdate = reload.getSublistText({ sublistId, fieldId, line: reloadSublistLine });
-        const afterUpdateAsList = Array.isArray(afterUpdate) ? afterUpdate : [afterUpdate];
-        return validateSetField(fieldId, "" + JSON.stringify(existingList), "" + JSON.stringify(asList), "" + JSON.stringify(afterUpdateAsList));
-    };
-}
-function validateSetField(fieldId, existingText, fieldText, afterUpdate) {
-    if (existingText === fieldText) {
-        if (existingText === afterUpdate) {
-            return `Did not change ${fieldId}, already set to '${existingText}'`;
-        }
-        return `Unexpected change ${fieldId}, was already '${existingText}' but now '${afterUpdate}'`;
-    }
-    if (existingText === afterUpdate) {
-        return `Unable to change ${fieldId}, still '${existingText}'`;
-    }
-    if (fieldText === afterUpdate) {
-        return `Changed ${fieldId} from '${existingText}' to '${afterUpdate}'`;
-    }
-    return `Unexpected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
-}
 function insertSublistLine(rec, sublistId, sublistLineQuery, fieldAssignments) {
     const count = rec.getLineCount({ sublistId });
     const sublistLine = count === 0 && (sublistLineQuery === "0" || sublistLineQuery === "-0")
         ? 0
         : getSublistLine(rec, sublistId, sublistLineQuery);
     const ignoreRecalc = getIgnoreCalcArgument(fieldAssignments, true);
-    rec.insertLine({
-        sublistId,
-        line: sublistLine,
-        ignoreRecalc,
-    });
+    rec.insertLine({ sublistId, line: sublistLine, ignoreRecalc });
     for (const fieldAssignment of fieldAssignments) {
         if (fieldAssignment.fieldId === ignoreRecalcArg) {
             continue;
@@ -1052,11 +1158,7 @@ function removeSublistLine(rec, sublistId, sublistLineQuery, fieldAssignments) {
     const ignoreRecalc = getIgnoreCalcArgument(fieldAssignments, true);
     const validationSublistFields = rec.getSublistFields({ sublistId }).filter(i => !i.startsWith("sys_"));
     const removedLineFingerprint = validationSublistFields.map(fieldId => getSublistTextOrValue(rec, sublistId, fieldId, sublistLine));
-    rec.removeLine({
-        sublistId,
-        line: sublistLine,
-        ignoreRecalc,
-    });
+    rec.removeLine({ sublistId, line: sublistLine, ignoreRecalc });
     return reload => {
         const foundAt = [];
         const lineCount = reload.getLineCount({ sublistId });
@@ -1132,28 +1234,17 @@ function handleCreateRecord(context) {
         const fieldValues = parseFieldAssignmentList(firstParts[2] ?? "");
         const allValidators = [];
         const defaultValues = {};
-        const rec = record.create({
-            type: recordType,
-            defaultValues,
-        });
+        const rec = record.create({ type: recordType, defaultValues });
         for (const fieldValue of defaultFieldValues) {
-            const validator = setDefaultRecordField(rec, fieldValue.fieldId, fieldValue.fieldText);
-            allValidators.push(validator);
+            allValidators.push(setRecordFieldDefault(rec, fieldValue.fieldId, fieldValue.fieldText));
         }
         recordId = rec.save({});
-        const loaded = record.load({
-            type: recordType,
-            id: recordId,
-        });
+        const loaded = record.load({ type: recordType, id: recordId });
         for (const fieldValue of fieldValues) {
-            const validator = setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText);
-            allValidators.push(validator);
+            allValidators.push(setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText));
         }
         loaded.save({});
-        const reload = record.load({
-            type: recordType,
-            id: recordId,
-        });
+        const reload = record.load({ type: recordType, id: recordId });
         const messages = [];
         for (const validator of allValidators) {
             try {
@@ -1163,72 +1254,12 @@ function handleCreateRecord(context) {
                 messages.push(`Unable to validate: ${errorMessage(e)}`);
             }
         }
-        return JSON.stringify([`Internal ID: ${recordId} | ${messages.join(" | ")}`]);
+        return success([`Internal ID: ${recordId} | ${messages.join(" | ")}`]);
     }
     catch (e) {
-        const prefix = recordId == null ? "Error: " : `Error after creating Internal ID ${recordId}: `;
-        return JSON.stringify([prefix + errorMessage(e)]);
+        const prefix = recordId == null ? "" : `after creating Internal ID ${recordId}: `;
+        return failure(prefix + errorMessage(e));
     }
-}
-function setDefaultRecordField(rec, fieldId, fieldText) {
-    const field = rec.getField({ fieldId });
-    if (field == null) {
-        throw new Error("Field not found: " + fieldId);
-    }
-    if (field.type === "select" || field.type === "multiselect") {
-        return setDefaultRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
-    }
-    if (Array.isArray(fieldText)) {
-        throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
-    }
-    rec.setText({
-        fieldId,
-        text: fieldText,
-    });
-    return reload => {
-        const afterSaveRaw = reload.getText({ fieldId });
-        const afterSave = Array.isArray(afterSaveRaw) ? afterSaveRaw.join(",") : afterSaveRaw;
-        return afterSave === fieldText
-            ? `Default ${fieldId} to '${fieldText}'`
-            : `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
-    };
-}
-function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
-    const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-    if (!multi && asList.length > 1) {
-        throw new Error("Single value expected (" + fieldId + "): " + asList.join(","));
-    }
-    const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
-    const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-    if (someIds && !allIds) {
-        throw new Error("All must be text or all must be IDs (" + fieldId + "): " + asList.join(","));
-    }
-    const renderedFieldText = typeof fieldText === "string" ? fieldText : fieldText.join(",");
-    if (allIds) {
-        const fieldValues = asList.map(i => parseInt(i));
-        rec.setValue({
-            fieldId,
-            value: (multi ? fieldValues : fieldValues[0]),
-        });
-        return reload => {
-            const afterSave = reload.getValue({ fieldId });
-            const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-            return listsEqual(asList, afterSaveList)
-                ? `Default ${fieldId} to '${renderedFieldText}'`
-                : `Unexpected ${fieldId} default, tried '${renderedFieldText}' but got '${String(afterSave)}'`;
-        };
-    }
-    rec.setText({
-        fieldId,
-        text: (multi ? asList : asList[0]),
-    });
-    return reload => {
-        const afterSave = reload.getText({ fieldId });
-        const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-        return listsEqual(asList, afterSaveList)
-            ? `Default ${fieldId} to '${renderedFieldText}'`
-            : `Unexpected ${fieldId} default, tried '${renderedFieldText}' but got '${String(afterSave)}'`;
-    };
 }
 
 var templateHtml$2 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
@@ -1266,17 +1297,14 @@ function handleMassSave(context) {
     const recordType = getRecordType(firstParts[0] ?? "");
     const recordId = normalizeKey(firstParts[1] ?? "");
     if (!recordType) {
-        return `["Record Type not specified"]`;
+        return failure("Record Type not specified");
     }
     if (!recordId) {
-        return `["Internal ID not specified"]`;
+        return failure("Internal ID not specified");
     }
-    const rec = record.load({
-        type: recordType,
-        id: recordId,
-    });
+    const rec = record.load({ type: recordType, id: recordId });
     rec.save({});
-    return `["Edit/Save"]`;
+    return success(["Edit/Save"]);
 }
 
 var templateHtml$1 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
@@ -1310,60 +1338,53 @@ function handleMassDelete(context) {
     const recordType = getRecordType(firstParts[0] ?? "");
     const recordId = normalizeKey(firstParts[1] ?? "");
     if (!recordType) {
-        return `["Record Type not specified"]`;
+        return failure("Record Type not specified");
     }
     if (!recordId) {
-        return `["Internal ID not specified"]`;
+        return failure("Internal ID not specified");
     }
     let loadMessageSuffix = "";
     try {
-        record.load({
-            type: recordType,
-            id: recordId,
-        });
+        record.load({ type: recordType, id: recordId });
     }
     catch (e) {
         const name = errorName(e);
         if (name === "RCRD_DSNT_EXIST") {
-            return `["Does not exist"]`;
+            return success(["Does not exist"]);
         }
-        else if (name === "INVALID_RCRD_TYPE") {
-            return `["Error: record type ${recordType} does not exist"]`;
+        if (name === "INVALID_RCRD_TYPE") {
+            return failure(`record type ${recordType} does not exist`, name);
         }
-        else {
-            loadMessageSuffix = " | Load error: " + name + " - " + errorMessage(e);
-        }
+        loadMessageSuffix = " | Load error: " + name + " - " + errorMessage(e);
     }
     try {
-        record.delete({
-            type: recordType,
-            id: recordId,
-        });
+        record.delete({ type: recordType, id: recordId });
     }
     catch (e) {
-        return `["Delete error: ${errorMessage(e)}${loadMessageSuffix}"]`;
+        return failure(`Delete error: ${errorMessage(e)}${loadMessageSuffix}`, errorName(e));
     }
     try {
-        record.load({
-            type: recordType,
-            id: recordId,
-        });
-        return `["Delete failed${loadMessageSuffix}"]`;
+        record.load({ type: recordType, id: recordId });
+        return success([`Delete failed${loadMessageSuffix}`]);
     }
     catch (e) {
         if (errorName(e) === "RCRD_DSNT_EXIST") {
-            return `["Delete successful${loadMessageSuffix}"]`;
+            return success([`Delete successful${loadMessageSuffix}`]);
         }
-        return `["Delete error${loadMessageSuffix} | Reload error: ${errorMessage(e)}"]`;
+        return failure(`Delete error${loadMessageSuffix} | Reload error: ${errorMessage(e)}`, errorName(e));
     }
 }
 
-var templateHtml = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n<style>\n\t/* MDL's default is overflow-x: hidden, which clips wide result tables.\n\t   Wrapping the table in an overflow-x: auto div would create a scroll\n\t   container that breaks the page-level sticky thead, so let the page\n\t   itself scroll horizontally instead. */\n\t.mdl-layout__content {\n\t\toverflow-x: auto !important;\n\t}\n</style>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
+var templateHtml = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
 
 const commandName = "suiteql";
 const suiteqlPage = {
     name: "suiteql",
     label: "SuiteQL Query",
+    // Wide result tables — let the page scroll horizontally instead of being
+    // clipped by MDL's default `overflow-x: hidden`. See layout.html for the
+    // body-class CSS that this opts into.
+    bodyClass: "page-wide",
     render(context) {
         return interpolate(templateHtml, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
@@ -1393,30 +1414,20 @@ function handleSuiteQl(context) {
         body = JSON.parse(context.request.body);
     }
     catch (e) {
-        return JSON.stringify({ error: "Invalid request body: " + errorMessage(e) });
+        return failure("Invalid request body: " + errorMessage(e));
     }
     const sql = (body.query ?? "").trim();
     if (!sql) {
-        return JSON.stringify({ error: "Empty query" });
+        return failure("Empty query");
     }
     const pageIndex = Number.isInteger(body.pageIndex) ? body.pageIndex : 0;
     const pageSize = Number.isInteger(body.pageSize) ? body.pageSize : 1000;
     try {
-        const paged = query.runSuiteQLPaged({
-            query: sql,
-            pageSize,
-        });
+        const paged = query.runSuiteQLPaged({ query: sql, pageSize });
         const totalCount = paged.count;
         const pageCount = paged.pageRanges.length;
         if (pageCount === 0 || pageIndex >= pageCount) {
-            return JSON.stringify({
-                totalCount,
-                pageCount,
-                pageSize,
-                pageIndex,
-                columns: [],
-                rows: [],
-            });
+            return success({ totalCount, pageCount, pageSize, pageIndex, columns: [], rows: [] });
         }
         const page = paged.fetch({ index: pageIndex });
         // page.data is a ResultSet (not a plain array). asMappedResults() gives
@@ -1424,17 +1435,10 @@ function handleSuiteQl(context) {
         const mapped = page.data.asMappedResults();
         const columns = mapped.length > 0 ? Object.keys(mapped[0]) : [];
         const rows = mapped.map(m => columns.map(c => m[c]));
-        return JSON.stringify({
-            totalCount,
-            pageCount,
-            pageSize,
-            pageIndex,
-            columns,
-            rows,
-        });
+        return success({ totalCount, pageCount, pageSize, pageIndex, columns, rows });
     }
     catch (e) {
-        return JSON.stringify({ error: errorMessage(e) });
+        return failure(errorMessage(e));
     }
 }
 
@@ -1460,32 +1464,21 @@ function main(context) {
     }
     renderPage(context);
 }
-// Embeds the module source as a data: URL so the browser can load it without
-// hitting NetSuite's Content-Type restrictions on Suitelet responses.
-function moduleDataUrl(id) {
-    const source = clientModules[id];
-    if (source === undefined) {
-        throw new Error(`Unknown client module id: ${id}`);
-    }
-    return "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
-}
 function dispatchCommand(context, command) {
     const page = pages.find(p => p.commands && command in p.commands);
-    let responseText;
+    let envelope;
     if (!page || !page.commands) {
-        responseText = `Error: unknown command '${command}'`;
+        envelope = failure(`Unknown command '${command}'`, "UNKNOWN_COMMAND");
     }
     else {
         try {
-            const handler = page.commands[command];
-            responseText = "" + String(handler(context));
+            envelope = page.commands[command](context);
         }
         catch (e) {
-            const message = e instanceof Error ? e.message : String(e);
-            responseText = `Error: ${message}`;
+            envelope = fromError(e);
         }
     }
-    context.response.write(responseText || "(blank)");
+    context.response.write(JSON.stringify(envelope));
 }
 function renderPage(context) {
     const requestedPage = context.request.parameters[paramPage];
@@ -1504,11 +1497,12 @@ function renderPage(context) {
         version,
         nsVersion: runtime.version || "[unknown version]",
         navHtml,
-        clientCsvUrlJs: moduleDataUrl("csv"),
-        clientBulkRunnerUrlJs: moduleDataUrl("bulk-runner"),
-        clientEditRecordsUrlJs: moduleDataUrl("edit-records"),
-        clientRecordTypeUrlJs: moduleDataUrl("record-type"),
-        clientSuiteqlUrlJs: moduleDataUrl("suiteql"),
+        // `Js` suffix: the import map JSON contains `&` and `"` that must
+        // not be HTML-escaped — it lives inside a <script> block.
+        importMapJsonJs: buildImportMapJson(),
+        // Pages can opt into layout-level overrides via PageDef.bodyClass.
+        // Escaped because it's a regular HTML attribute value.
+        bodyClassesHtml: escapeHtml(page.bodyClass ?? ""),
         bodyHtml: page.render(context),
     }));
 }

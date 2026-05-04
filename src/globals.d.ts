@@ -24,6 +24,11 @@ declare module "*.client.js?raw" {
 	export default source;
 }
 
+declare module "*.ts?raw" {
+	const source: string;
+	export default source;
+}
+
 // MDL global injected by the Material Design Lite script. We call it after
 // each Lit render in light-DOM components.
 interface Window {

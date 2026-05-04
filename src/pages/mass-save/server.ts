@@ -6,9 +6,10 @@ import {pageLink, taskInputFormatHelp} from "../../help";
 import {scriptDeployParam} from "../../url";
 import {normalizeKey, splitVerticalBar} from "../../utils";
 import {getRecordType} from "../../record-types";
+import {failure, success} from "../../command";
 import lookupFieldsPage from "../lookup-fields/server";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "mass-save";
 
@@ -42,7 +43,7 @@ const massSavePage: PageDef = {
 
 export default massSavePage;
 
-function handleMassSave(context: SuiteletContext): string {
+function handleMassSave(context: SuiteletContext): CommandResponse<string[]> {
 	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
 	const firstTabDelimitedRow = tabDelimitedRows[0] ?? "";
 	const firstParts = splitVerticalBar(firstTabDelimitedRow);
@@ -50,17 +51,14 @@ function handleMassSave(context: SuiteletContext): string {
 	const recordId = normalizeKey(firstParts[1] ?? "");
 
 	if (!recordType) {
-		return `["Record Type not specified"]`;
+		return failure("Record Type not specified");
 	}
 	if (!recordId) {
-		return `["Internal ID not specified"]`;
+		return failure("Internal ID not specified");
 	}
 
-	const rec = record.load({
-		type: recordType,
-		id: recordId,
-	});
+	const rec = record.load({type: recordType, id: recordId});
 	rec.save({});
 
-	return `["Edit/Save"]`;
+	return success(["Edit/Save"]);
 }

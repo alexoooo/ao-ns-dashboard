@@ -31,12 +31,16 @@ const recordDetailsPage: PageDef = {
 					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
 				</ul>
 			`),
-			recordTypeOptionsHtml: recordTypeOptions(recordType),
+			// `*Attr` keys go into HTML attribute values on <record-details-page>
+			// — `interpolate` HTML-escapes by default, which is what we need so
+			// the markup payload survives attribute-value parsing. The Lit
+			// component re-interprets them via `unsafeHTML` at render time.
+			recordTypeOptionsAttr: recordTypeOptions(recordType),
 			paramRecordType,
 			paramRecordId,
 			recordType,
 			recordId,
-			detailsHtml,
+			detailsAttr: detailsHtml,
 		});
 	},
 };

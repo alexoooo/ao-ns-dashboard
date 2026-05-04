@@ -8,20 +8,23 @@ import typescript from "@rollup/plugin-typescript";
 
 const banner = fs.readFileSync("src/banner.txt", "utf8");
 
-// Custom plugin: imports ending in `?raw` (or `.html` / `.client.ts` /
-// `.client.js`) resolve to the file's source text exported as the default
-// export.
+// Custom plugin: certain imports resolve to a file's source text exported
+// as the default export, so it can be embedded into the bundle.
 //
-// - `.html` / `.html?raw` are embedded verbatim (page templates).
-// - `.client.js?raw` is embedded verbatim (legacy fallback, in case any client
-//   modules remain in plain JS during a migration).
-// - `.client.ts?raw` is **transpiled to JS first**, then embedded — the browser
-//   loads each client module as a native ES module via a data: URL in the
-//   import map (see src/layout.html), so the embedded source must be valid JS.
+// Triggers on:
+//   - `*.html` (no suffix) — page template literals (e.g.
+//     `import templateHtml from "./template.html"`).
+//   - `*?raw` — any file imported with the `?raw` query, used by
+//     `client-modules.ts` to embed client-side ES modules into the import
+//     map at runtime.
 //
-// Type checking for `.client.ts` happens via `npm run typecheck` (which runs
-// the full TS program over every file in tsconfig's `include`). The transpile
-// here is a fast, single-file syntax-stripping pass; it does not type-check.
+// `.ts` sources (whether `.client.ts` or any other `.ts?raw`) are
+// **transpiled to JS first**, since the browser runs the embedded text as
+// a native ES module via a data: URL and can't parse TypeScript syntax.
+//
+// Type checking happens via `npm run typecheck` (the full TS program over
+// every file in tsconfig's `include`); the transpile here is a fast,
+// single-file syntax-stripping pass that does not type-check.
 const rawText = {
 	name: "raw-text",
 	resolveId(source, importer) {
@@ -35,13 +38,14 @@ const rawText = {
 		const cleaned = id.replace(/\?raw$/, "");
 		const isRaw = id.endsWith("?raw");
 		const isTemplate = cleaned.endsWith(".html");
-		const isClientTs = cleaned.endsWith(".client.ts");
-		const isClientJs = cleaned.endsWith(".client.js");
-		if (!(isRaw || isTemplate || isClientTs || isClientJs)) {
+		// Only intercept `?raw` imports and `.html` imports. Regular `.ts`
+		// module imports (without `?raw`) fall through to the typescript
+		// plugin so they're compiled into the server bundle normally.
+		if (!isRaw && !isTemplate) {
 			return null;
 		}
 		const source = fs.readFileSync(cleaned, "utf8");
-		const emitted = isClientTs ? transpileClientModule(source, cleaned) : source;
+		const emitted = cleaned.endsWith(".ts") ? transpileClientModule(source, cleaned) : source;
 		return {
 			code: `export default ${JSON.stringify(emitted)};`,
 			map: {mappings: ""},

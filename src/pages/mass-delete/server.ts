@@ -7,9 +7,10 @@ import {scriptDeployParam} from "../../url";
 import {normalizeKey, splitVerticalBar} from "../../utils";
 import {getRecordType} from "../../record-types";
 import {errorMessage, errorName} from "../../error-utils";
+import {failure, success} from "../../command";
 import lookupFieldsPage from "../lookup-fields/server";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "mass-delete";
 
@@ -39,7 +40,7 @@ const massDeletePage: PageDef = {
 
 export default massDeletePage;
 
-function handleMassDelete(context: SuiteletContext): string {
+function handleMassDelete(context: SuiteletContext): CommandResponse<string[]> {
 	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
 	const firstTabDelimitedRow = tabDelimitedRows[0] ?? "";
 	const firstParts = splitVerticalBar(firstTabDelimitedRow);
@@ -47,48 +48,39 @@ function handleMassDelete(context: SuiteletContext): string {
 	const recordId = normalizeKey(firstParts[1] ?? "");
 
 	if (!recordType) {
-		return `["Record Type not specified"]`;
+		return failure("Record Type not specified");
 	}
 	if (!recordId) {
-		return `["Internal ID not specified"]`;
+		return failure("Internal ID not specified");
 	}
 
 	let loadMessageSuffix = "";
 	try {
-		record.load({
-			type: recordType,
-			id: recordId,
-		});
+		record.load({type: recordType, id: recordId});
 	} catch (e) {
 		const name = errorName(e);
 		if (name === "RCRD_DSNT_EXIST") {
-			return `["Does not exist"]`;
-		} else if (name === "INVALID_RCRD_TYPE") {
-			return `["Error: record type ${recordType} does not exist"]`;
-		} else {
-			loadMessageSuffix = " | Load error: " + name + " - " + errorMessage(e);
+			return success(["Does not exist"]);
 		}
+		if (name === "INVALID_RCRD_TYPE") {
+			return failure(`record type ${recordType} does not exist`, name);
+		}
+		loadMessageSuffix = " | Load error: " + name + " - " + errorMessage(e);
 	}
 
 	try {
-		record.delete({
-			type: recordType,
-			id: recordId,
-		});
+		record.delete({type: recordType, id: recordId});
 	} catch (e) {
-		return `["Delete error: ${errorMessage(e)}${loadMessageSuffix}"]`;
+		return failure(`Delete error: ${errorMessage(e)}${loadMessageSuffix}`, errorName(e));
 	}
 
 	try {
-		record.load({
-			type: recordType,
-			id: recordId,
-		});
-		return `["Delete failed${loadMessageSuffix}"]`;
+		record.load({type: recordType, id: recordId});
+		return success([`Delete failed${loadMessageSuffix}`]);
 	} catch (e) {
 		if (errorName(e) === "RCRD_DSNT_EXIST") {
-			return `["Delete successful${loadMessageSuffix}"]`;
+			return success([`Delete successful${loadMessageSuffix}`]);
 		}
-		return `["Delete error${loadMessageSuffix} | Reload error: ${errorMessage(e)}"]`;
+		return failure(`Delete error${loadMessageSuffix} | Reload error: ${errorMessage(e)}`, errorName(e));
 	}
 }

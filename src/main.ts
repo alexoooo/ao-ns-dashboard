@@ -1,12 +1,13 @@
 import runtime from "N/runtime";
 
-import {interpolate} from "./html";
+import {interpolate, escapeHtml} from "./html";
 import layoutHtml from "./layout.html";
 import {version, mdlCssUrl, mdlJsUrl, paramPage, paramCommand} from "./constants";
 import {setPageParam} from "./url";
-import {clientModules} from "./client-modules";
+import {buildImportMapJson} from "./client-modules";
+import {failure, fromError} from "./command";
 import pages from "./pages/index";
-import type {PageDef, SuiteletContext} from "./types";
+import type {CommandResponse, PageDef, SuiteletContext} from "./types";
 
 export function main(context: SuiteletContext): void {
 	const command = (context.request.parameters[paramCommand] as string | undefined) ?? "";
@@ -17,31 +18,19 @@ export function main(context: SuiteletContext): void {
 	renderPage(context);
 }
 
-// Embeds the module source as a data: URL so the browser can load it without
-// hitting NetSuite's Content-Type restrictions on Suitelet responses.
-function moduleDataUrl(id: string): string {
-	const source = clientModules[id];
-	if (source === undefined) {
-		throw new Error(`Unknown client module id: ${id}`);
-	}
-	return "data:text/javascript;charset=utf-8," + encodeURIComponent(source);
-}
-
 function dispatchCommand(context: SuiteletContext, command: string): void {
 	const page = pages.find(p => p.commands && command in p.commands);
-	let responseText: string;
+	let envelope: CommandResponse;
 	if (!page || !page.commands) {
-		responseText = `Error: unknown command '${command}'`;
+		envelope = failure(`Unknown command '${command}'`, "UNKNOWN_COMMAND");
 	} else {
 		try {
-			const handler = page.commands[command]!;
-			responseText = "" + String(handler(context));
+			envelope = page.commands[command]!(context);
 		} catch (e) {
-			const message = e instanceof Error ? e.message : String(e);
-			responseText = `Error: ${message}`;
+			envelope = fromError(e);
 		}
 	}
-	context.response.write(responseText || "(blank)");
+	context.response.write(JSON.stringify(envelope));
 }
 
 function renderPage(context: SuiteletContext): void {
@@ -65,11 +54,12 @@ function renderPage(context: SuiteletContext): void {
 			version,
 			nsVersion: runtime.version || "[unknown version]",
 			navHtml,
-			clientCsvUrlJs: moduleDataUrl("csv"),
-			clientBulkRunnerUrlJs: moduleDataUrl("bulk-runner"),
-			clientEditRecordsUrlJs: moduleDataUrl("edit-records"),
-			clientRecordTypeUrlJs: moduleDataUrl("record-type"),
-			clientSuiteqlUrlJs: moduleDataUrl("suiteql"),
+			// `Js` suffix: the import map JSON contains `&` and `"` that must
+			// not be HTML-escaped — it lives inside a <script> block.
+			importMapJsonJs: buildImportMapJson(),
+			// Pages can opt into layout-level overrides via PageDef.bodyClass.
+			// Escaped because it's a regular HTML attribute value.
+			bodyClassesHtml: escapeHtml(page.bodyClass ?? ""),
 			bodyHtml: page.render(context),
 		})
 	);

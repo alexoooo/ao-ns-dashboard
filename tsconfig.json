@@ -9,10 +9,13 @@
     "baseUrl": ".",
     "paths": {
       "N/*": ["node_modules/@hitc/netsuite-types/N/*"],
+      "separators": ["src/shared/separators"],
+      "api": ["src/client/api.client"],
       "csv": ["src/client/csv.client"],
       "bulk-runner": ["src/client/bulk-runner.client"],
       "edit-records": ["src/pages/edit-records/page.client"],
       "record-type": ["src/pages/record-type/page.client"],
+      "record-details": ["src/pages/record-details/page.client"],
       "suiteql": ["src/pages/suiteql/page.client"]
     },
 

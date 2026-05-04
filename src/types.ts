@@ -21,14 +21,14 @@ export interface BulkTaskResult {
 }
 
 // Server-side handler for a `?command=<name>` POST. Each page may declare zero
-// or more commands. The dispatcher (main.ts) wraps invocations in a try/catch
-// and writes the returned string to the response body.
+// or more commands. The dispatcher (main.ts) wraps invocations in a try/catch,
+// JSON-serialises the returned envelope, and writes it to the response body.
+// Use `success()` / `failure()` from src/command.ts to build the return value.
 //
-// Today handlers return a raw JSON string (e.g. `JSON.stringify([...])`). In
-// Phase 2.1 of the role-model overhaul this contract will tighten to
-// `CommandResponse<T>` so the bulk-runner client can parse predictably.
-// Until then `string` keeps the surface honest.
-export type CommandHandler = (context: SuiteletContext) => string;
+// `T` is the data shape consumed by the calling client component:
+//   - bulk-task pages return `string[]` (one message per task in the batch)
+//   - SuiteQL returns its result-set object
+export type CommandHandler<T = unknown> = (context: SuiteletContext) => CommandResponse<T>;
 
 // The shape every page module default-exports. `pages/index.ts` aggregates
 // these into the ordered registry; element 0 is the default landing page.
@@ -36,7 +36,7 @@ export interface PageDef {
 	name: string;
 	label: string;
 	render(context: SuiteletContext): string;
-	commands?: Record<string, CommandHandler>;
+	commands?: Record<string, CommandHandler<unknown>>;
 
 	// Optional CSS class added to the layout `<body>`. Pages that need
 	// layout-level overrides (e.g. `overflow-x: auto` for horizontally-wide

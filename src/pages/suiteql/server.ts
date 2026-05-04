@@ -4,8 +4,9 @@ import {paramCommand} from "../../constants";
 import {interpolate, documentationSection} from "../../html";
 import {scriptDeployParam} from "../../url";
 import {errorMessage} from "../../error-utils";
+import {failure, success} from "../../command";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "suiteql";
 
@@ -15,9 +16,22 @@ interface SuiteqlBody {
 	pageSize?: number;
 }
 
+export interface SuiteqlResultPage {
+	totalCount: number;
+	pageCount: number;
+	pageSize: number;
+	pageIndex: number;
+	columns: string[];
+	rows: unknown[][];
+}
+
 const suiteqlPage: PageDef = {
 	name: "suiteql",
 	label: "SuiteQL Query",
+	// Wide result tables — let the page scroll horizontally instead of being
+	// clipped by MDL's default `overflow-x: hidden`. See layout.html for the
+	// body-class CSS that this opts into.
+	bodyClass: "page-wide",
 
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
@@ -46,39 +60,29 @@ const suiteqlPage: PageDef = {
 
 export default suiteqlPage;
 
-function handleSuiteQl(context: SuiteletContext): string {
+function handleSuiteQl(context: SuiteletContext): CommandResponse<SuiteqlResultPage> {
 	let body: SuiteqlBody;
 	try {
 		body = JSON.parse(context.request.body) as SuiteqlBody;
 	} catch (e) {
-		return JSON.stringify({error: "Invalid request body: " + errorMessage(e)});
+		return failure("Invalid request body: " + errorMessage(e));
 	}
 
 	const sql = (body.query ?? "").trim();
 	if (!sql) {
-		return JSON.stringify({error: "Empty query"});
+		return failure("Empty query");
 	}
 
 	const pageIndex = Number.isInteger(body.pageIndex) ? (body.pageIndex as number) : 0;
 	const pageSize = Number.isInteger(body.pageSize) ? (body.pageSize as number) : 1000;
 
 	try {
-		const paged = query.runSuiteQLPaged({
-			query: sql,
-			pageSize,
-		});
+		const paged = query.runSuiteQLPaged({query: sql, pageSize});
 		const totalCount = paged.count;
 		const pageCount = paged.pageRanges.length;
 
 		if (pageCount === 0 || pageIndex >= pageCount) {
-			return JSON.stringify({
-				totalCount,
-				pageCount,
-				pageSize,
-				pageIndex,
-				columns: [],
-				rows: [],
-			});
+			return success({totalCount, pageCount, pageSize, pageIndex, columns: [], rows: []});
 		}
 
 		const page = paged.fetch({index: pageIndex});
@@ -88,15 +92,8 @@ function handleSuiteQl(context: SuiteletContext): string {
 		const columns = mapped.length > 0 ? Object.keys(mapped[0]!) : [];
 		const rows = mapped.map(m => columns.map(c => m[c]));
 
-		return JSON.stringify({
-			totalCount,
-			pageCount,
-			pageSize,
-			pageIndex,
-			columns,
-			rows,
-		});
+		return success({totalCount, pageCount, pageSize, pageIndex, columns, rows});
 	} catch (e) {
-		return JSON.stringify({error: errorMessage(e)});
+		return failure(errorMessage(e));
 	}
 }

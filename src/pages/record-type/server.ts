@@ -6,8 +6,9 @@ import {interpolate, documentationSection} from "../../html";
 import {scriptDeployParam} from "../../url";
 import {allRecordTypes, undocumentedRecordTypes, getRecordType} from "../../record-types";
 import {errorMessage} from "../../error-utils";
+import {failure, success} from "../../command";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "record-type";
 
@@ -51,16 +52,16 @@ const recordTypePage: PageDef = {
 
 export default recordTypePage;
 
-function handleTypeListing(context: SuiteletContext): string {
+function handleTypeListing(context: SuiteletContext): CommandResponse<string[]> {
 	const recordTypes = JSON.parse(context.request.body) as string[];
 	const recordTypeName = recordTypes[0];
 	if (!recordTypeName) {
-		return "Record Type not specified";
+		return failure("Record Type not specified");
 	}
 
 	const recordId = context.request.parameters[paramRecordId] as string | undefined;
 	if (!recordId) {
-		return "Record ID not specified";
+		return failure("Record ID not specified");
 	}
 
 	const recordType = getRecordType(recordTypeName);
@@ -69,10 +70,7 @@ function handleTypeListing(context: SuiteletContext): string {
 	let internalMessage: string;
 	if (canBeInternal) {
 		try {
-			record.load({
-				type: recordType,
-				id: recordId,
-			});
+			record.load({type: recordType, id: recordId});
 			internalMessage = "*** Internal ID found";
 		} catch (e) {
 			internalMessage = "Internal ID not found: " + errorMessage(e);
@@ -106,6 +104,5 @@ function handleTypeListing(context: SuiteletContext): string {
 		externalMessage = "External ID not found: " + errorMessage(e);
 	}
 
-	const message = internalMessage + " | " + externalMessage;
-	return JSON.stringify([message]);
+	return success([internalMessage + " | " + externalMessage]);
 }

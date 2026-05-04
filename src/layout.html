@@ -2,20 +2,21 @@
 <head>
 	<title>{{title}}</title>
 	<script type="importmap">
-		{
-			"imports": {
-				"lit": "https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm",
-				"csv": "{{clientCsvUrlJs}}",
-				"bulk-runner": "{{clientBulkRunnerUrlJs}}",
-				"edit-records": "{{clientEditRecordsUrlJs}}",
-				"record-type": "{{clientRecordTypeUrlJs}}",
-				"suiteql": "{{clientSuiteqlUrlJs}}"
-			}
-		}
+		{{importMapJsonJs}}
 	</script>
 	<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
 	<link rel="stylesheet" href="{{mdlCssUrl}}" />
 	<script defer src="{{mdlJsUrl}}"></script>
+	<style>
+		/* MDL's default is overflow-x: hidden, which clips wide tables. Pages
+		   that need horizontal scroll opt in via PageDef.bodyClass = "page-wide".
+		   Wrapping the table in an overflow-x: auto div would create a scroll
+		   container that breaks the page-level sticky thead, so let the page
+		   itself scroll horizontally instead. */
+		body.page-wide .mdl-layout__content {
+			overflow-x: auto !important;
+		}
+	</style>
 
 	<script
 		src="https://code.jquery.com/jquery-3.6.0.js"
@@ -45,11 +46,13 @@
 			if (!env.includes("-sb")) {
 				document.getElementsByClassName("mdl-layout__header-row")[0].style = "background-color: red";
 			}
-			document.getElementById("env").innerHTML = "[" + env + "]";
+			// textContent (not innerHTML): hostname is browser-controlled but
+			// nothing in this codepath should ever interpret it as markup.
+			document.getElementById("env").textContent = "[" + env + "]";
 		});
 	</script>
 </head>
-<body>
+<body class="{{bodyClassesHtml}}">
 	<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer" style="width: 100%">
 		<header class="mdl-layout__header">
 			<div class="mdl-layout__header-row">

@@ -6,12 +6,13 @@ import {interpolate, documentationSection} from "../../html";
 import {pageLink, taskInputFormatHelp} from "../../help";
 import {scriptDeployParam} from "../../url";
 import {normalizeKey, splitAmpersand, splitVerticalBar, splitSlash} from "../../utils";
-import {parseFieldAssignment} from "../../field-assignments";
 import {getRecordType} from "../../record-types";
 import {errorMessage} from "../../error-utils";
+import {failure, success} from "../../command";
+import {getSublistLine} from "../../server/sublist";
 import recordDetailsPage from "../record-details/server";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "lookup-fields";
 
@@ -49,11 +50,11 @@ const lookupFieldsPage: PageDef = {
 
 export default lookupFieldsPage;
 
-function handleLookupFields(context: SuiteletContext): string {
+function handleLookupFields(context: SuiteletContext): CommandResponse<string[]> {
 	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
 	const tabDelimitedRow = tabDelimitedRows[0];
 	if (!tabDelimitedRow) {
-		return JSON.stringify(["Empty"]);
+		return failure("Empty input");
 	}
 
 	const parts = splitVerticalBar(tabDelimitedRow);
@@ -63,21 +64,17 @@ function handleLookupFields(context: SuiteletContext): string {
 	const pathParts = splitSlash(parts[2] ?? "");
 	const fieldIds = splitAmpersand(parts[3] ?? "").map(i => normalizeKey(i.split("=")[0] ?? ""));
 
-	const rec = record.load({
-		type: recordType,
-		id: recordId,
-	});
-
 	if (fieldIds.length === 0) {
-		return JSON.stringify(["Please specify Field ID"]);
+		return failure("Please specify Field ID");
 	}
+
+	const rec = record.load({type: recordType, id: recordId});
 
 	const fieldTexts: string[] = [];
 	for (const fieldId of fieldIds) {
-		const fieldText = pathLookupFields(rec, fieldId, pathParts);
-		fieldTexts.push(fieldText);
+		fieldTexts.push(pathLookupFields(rec, fieldId, pathParts));
 	}
-	return JSON.stringify([fieldTexts.join(" | ")]);
+	return success([fieldTexts.join(" | ")]);
 }
 
 function pathLookupFields(rec: NsRecord, fieldId: string, remainingPath: string[]): string {
@@ -103,12 +100,7 @@ function pathLookupFields(rec: NsRecord, fieldId: string, remainingPath: string[
 	}
 
 	if (remainingPath.length === 1 && (fieldId === "count" || fieldId === "linecount")) {
-		return (
-			`${sublistOrSubrecord}.${fieldId}=` +
-			rec.getLineCount({
-				sublistId: sublistOrSubrecord,
-			})
-		);
+		return `${sublistOrSubrecord}.${fieldId}=` + rec.getLineCount({sublistId: sublistOrSubrecord});
 	}
 
 	const sublistLineQuery = remainingPath[1] ?? "";
@@ -122,97 +114,14 @@ function pathLookupFields(rec: NsRecord, fieldId: string, remainingPath: string[
 
 	let sublistText: string;
 	try {
-		sublistText = rec.getSublistText({
-			sublistId: sublistOrSubrecord,
-			fieldId,
-			line: sublistLine,
-		});
+		sublistText = rec.getSublistText({sublistId: sublistOrSubrecord, fieldId, line: sublistLine});
 	} catch (e) {
 		sublistText = "Error: " + errorMessage(e);
 	}
 
-	const sublistValue = rec.getSublistValue({
-		sublistId: sublistOrSubrecord,
-		fieldId,
-		line: sublistLine,
-	});
+	const sublistValue = rec.getSublistValue({sublistId: sublistOrSubrecord, fieldId, line: sublistLine});
 	const sublistValueSuffix =
 		"" + String(sublistValue) !== sublistText && sublistValue ? ` (${String(sublistValue)})` : "";
 
 	return `${sublistOrSubrecord}.${sublistLine}.${fieldId}=${sublistText}${sublistValueSuffix}`;
-}
-
-export function getSublistLine(rec: NsRecord, sublistId: string, sublistLineQuery: string): number {
-	const matches = findSublistLines(rec, sublistId, sublistLineQuery);
-	if (matches.length === 0) {
-		throw new Error("Sublist line not found: " + sublistLineQuery);
-	}
-	if (matches.length > 1) {
-		throw new Error(`Multiple matching sublist lines (${matches.join(",")}): ${sublistLineQuery}`);
-	}
-	return matches[0]!;
-}
-
-export function findSublistLines(rec: NsRecord, sublistId: string, sublistLineQuery: string): number[] {
-	const count = rec.getLineCount({sublistId});
-
-	const conjunctions = splitAmpersand(sublistLineQuery);
-
-	let candidates = [...Array(count).keys()];
-	for (const conjunction of conjunctions) {
-		if (candidates.length === 0) {
-			return [];
-		}
-
-		const asNumber = Number(conjunction);
-		if (Number.isInteger(asNumber)) {
-			// NB: handle -0 for inserting last
-			if (!conjunction.startsWith("-")) {
-				if (asNumber >= candidates.length) {
-					throw new Error(`Line ${asNumber} is too big: ${candidates.join(",")}`);
-				}
-				return [candidates[asNumber]!];
-			} else {
-				if (-asNumber > candidates.length) {
-					throw new Error(`Line ${asNumber} is too small: ${candidates.join(",")}`);
-				} else if (asNumber === 0) {
-					// negative zero
-					return [candidates[candidates.length - 1]! + 1];
-				}
-				return [candidates[candidates.length + asNumber]!];
-			}
-		}
-
-		const queryField = parseFieldAssignment(conjunction);
-
-		const remainingCandidates: number[] = [];
-		for (let i = 0; i < candidates.length; i++) {
-			const sublistFieldText = rec.getSublistText({
-				sublistId,
-				fieldId: queryField.fieldId,
-				line: candidates[i]!,
-			});
-
-			if (sublistFieldText === queryField.fieldText) {
-				remainingCandidates.push(candidates[i]!);
-				continue;
-			}
-
-			if (Number.isInteger(Number(queryField.fieldText))) {
-				const sublistValue = rec.getSublistValue({
-					sublistId,
-					fieldId: queryField.fieldId,
-					line: candidates[i]!,
-				});
-
-				if (Number(queryField.fieldText) === Number("" + String(sublistValue))) {
-					remainingCandidates.push(candidates[i]!);
-					continue;
-				}
-			}
-		}
-		candidates = remainingCandidates;
-	}
-
-	return candidates;
 }

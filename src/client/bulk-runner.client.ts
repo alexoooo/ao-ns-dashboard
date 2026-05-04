@@ -4,14 +4,7 @@
 
 import {LitElement, html, type TemplateResult} from "lit";
 import {csvEncode} from "csv";
-
-// Mirrors src/utils.ts#splitVerticalBar for client-side use (subclass groupKey
-// implementations). Keep both copies in sync if escape semantics change.
-export function splitVerticalBar(value: string): string[] {
-	const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
-	const withSentinel = value.replaceAll("\\|", sentinel);
-	return withSentinel.split("|").map(i => i.replaceAll(sentinel, "|"));
-}
+import {postJson} from "api";
 
 export interface BulkRunnerTask {
 	task: string;
@@ -38,6 +31,11 @@ export class BulkRunner extends LitElement {
 	declare pageStart: number;
 	declare pageCount: number;
 
+	// Aborts any in-flight request when the component is removed (e.g. user
+	// navigates to another page mid-batch). Avoids "set state on detached
+	// element" warnings and stops the run loop cleanly.
+	private abortController: AbortController | null = null;
+
 	constructor() {
 		super();
 		this.taskTypeLabel = "";
@@ -46,6 +44,12 @@ export class BulkRunner extends LitElement {
 		this.model = [];
 		this.pageStart = 0;
 		this.pageCount = 100;
+	}
+
+	override disconnectedCallback(): void {
+		super.disconnectedCallback();
+		this.abortController?.abort();
+		this.abortController = null;
 	}
 
 	override createRenderRoot() {
@@ -224,42 +228,46 @@ export class BulkRunner extends LitElement {
 			next.status = "Running";
 		}
 		this.requestUpdate();
-		this.runCommand(batch);
+		void this.runCommand(batch);
 	}
 
-	runCommand(nextBatch: BulkRunnerTask[]): void {
-		const request = new XMLHttpRequest();
-		request.onreadystatechange = () => {
-			if (request.readyState !== 4) {
+	async runCommand(nextBatch: BulkRunnerTask[]): Promise<void> {
+		const markBatchError = (message: string) => {
+			nextBatch[0]!.status = message;
+			for (let i = 1; i < nextBatch.length; i++) {
+				nextBatch[i]!.status = "Error for: " + nextBatch[0]!.group;
+			}
+		};
+
+		this.abortController = new AbortController();
+		let envelope;
+		try {
+			envelope = await postJson<string[]>(
+				this.commandPostUrl,
+				nextBatch.map(i => i.task),
+				this.abortController.signal
+			);
+		} catch (e) {
+			// AbortError — component was disconnected; bail without state changes.
+			if (e instanceof DOMException && e.name === "AbortError") {
 				return;
 			}
-			const status = request.status;
-			if (status !== 200) {
-				nextBatch[0]!.status = "Error " + status + ": " + request.responseText;
-				for (let i = 1; i < nextBatch.length; i++) {
-					nextBatch[i]!.status = "Error for: " + nextBatch[0]!.group;
-				}
-			} else {
-				try {
-					const responses = JSON.parse(request.responseText) as unknown[];
-					for (let i = 0; i < responses.length; i++) {
-						const value = responses[i];
-						const adjustedStatus = value === "" ? "(blank)" : "" + String(value);
-						nextBatch[i]!.status = adjustedStatus;
-					}
-				} catch (_e) {
-					nextBatch[0]!.status = "" + request.responseText;
-					for (let i = 1; i < nextBatch.length; i++) {
-						nextBatch[i]!.status = "Error as part of: " + nextBatch[0]!.group;
-					}
-				}
-			}
+			markBatchError("Error: " + (e instanceof Error ? e.message : String(e)));
 			this.requestUpdate();
 			this.runNext();
-		};
-		request.open("POST", this.commandPostUrl);
-		request.setRequestHeader("Content-type", "application/json");
-		request.send(JSON.stringify(nextBatch.map(i => i.task)));
+			return;
+		}
+
+		if (!envelope.ok) {
+			markBatchError("Error: " + envelope.error.message);
+		} else {
+			for (let i = 0; i < envelope.data.length; i++) {
+				const value = envelope.data[i];
+				nextBatch[i]!.status = value === "" || value === undefined ? "(blank)" : value;
+			}
+		}
+		this.requestUpdate();
+		this.runNext();
 	}
 
 	downloadStatus(): void {

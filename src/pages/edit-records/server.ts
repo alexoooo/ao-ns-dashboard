@@ -1,28 +1,26 @@
 import record from "N/record";
-import type {Record as NsRecord, FieldValue} from "N/record";
+import type {Record as NsRecord} from "N/record";
 
 import {paramCommand} from "../../constants";
 import {interpolate, documentationSection} from "../../html";
 import {pageLink, taskInputFormatHelp} from "../../help";
 import {scriptDeployParam} from "../../url";
-import {normalizeKey, splitVerticalBar, splitSlash, listsEqual} from "../../utils";
+import {normalizeKey, splitVerticalBar, splitSlash} from "../../utils";
 import {parseFieldAssignmentList, type FieldAssignment} from "../../field-assignments";
 import {getRecordType} from "../../record-types";
 import {errorMessage} from "../../error-utils";
-import {getSublistLine} from "../lookup-fields/server";
+import {failure, success} from "../../command";
+import {getSublistLine} from "../../server/sublist";
+import {setRecordField, setSublistField, type Validator} from "../../server/field-setters";
 import lookupFieldsPage from "../lookup-fields/server";
 import templateHtml from "./template.html";
-import type {PageDef, SuiteletContext} from "../../types";
+import type {CommandResponse, PageDef, SuiteletContext} from "../../types";
 
 const commandName = "edit";
 const actionSet = "set";
 const actionInsertLine = "insert";
 const actionRemoveLine = "remove";
 const ignoreRecalcArg = normalizeKey("ignoreRecalc");
-
-// Returned by every set-* function: a thunk that takes the reloaded record and
-// produces a message describing what actually happened on the server side.
-export type Validator = (reload: NsRecord) => string;
 
 const editRecordsPage: PageDef = {
 	name: "edit-records",
@@ -55,17 +53,14 @@ const editRecordsPage: PageDef = {
 
 export default editRecordsPage;
 
-function handleEditRecord(context: SuiteletContext): string {
+function handleEditRecord(context: SuiteletContext): CommandResponse<string[]> {
 	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
 	const firstTabDelimitedRow = tabDelimitedRows[0] ?? "";
 	const firstParts = splitVerticalBar(firstTabDelimitedRow);
 	const recordType = getRecordType(firstParts[0] ?? "");
 	const recordId = normalizeKey(firstParts[1] ?? "");
 
-	const rec = record.load({
-		type: recordType,
-		id: recordId,
-	});
+	const rec = record.load({type: recordType, id: recordId});
 
 	const allValidators: Validator[][] = [];
 	for (const tabDelimitedRow of tabDelimitedRows) {
@@ -76,20 +71,15 @@ function handleEditRecord(context: SuiteletContext): string {
 		const actionName = parts[4];
 
 		if (!actionName) {
-			return "Please specify Action";
+			return failure("Please specify Action");
 		}
 
-		const validators = handleEditRecordAction(rec, actionName, actionLocation, fieldValues);
-
-		allValidators.push(validators);
+		allValidators.push(handleEditRecordAction(rec, actionName, actionLocation, fieldValues));
 	}
 
 	rec.save({});
 
-	const reload = record.load({
-		type: recordType,
-		id: recordId,
-	});
+	const reload = record.load({type: recordType, id: recordId});
 
 	const messages: string[] = [];
 	for (const validators of allValidators) {
@@ -104,7 +94,7 @@ function handleEditRecord(context: SuiteletContext): string {
 		messages.push(actionMessages.join(" | "));
 	}
 
-	return JSON.stringify(messages);
+	return success(messages);
 }
 
 function handleEditRecordAction(
@@ -151,230 +141,6 @@ function handleEditRecordAction(
 	}
 }
 
-export function setRecordField(rec: NsRecord, fieldId: string, fieldText: string | string[]): Validator {
-	const field = rec.getField({fieldId});
-	if (field == null) {
-		throw new Error("Field not found: " + fieldId);
-	}
-	if (field.type === "select" || field.type === "multiselect") {
-		return setRecordSelect(rec, fieldId, fieldText, field.type === "multiselect");
-	}
-
-	if (Array.isArray(fieldText)) {
-		throw new Error("Single value expected (" + fieldId + "): " + fieldText.join(","));
-	}
-
-	const existingTextRaw = rec.getText({fieldId});
-	const existingText = Array.isArray(existingTextRaw) ? existingTextRaw.join(",") : existingTextRaw;
-	if (existingText !== fieldText) {
-		rec.setText({fieldId, text: fieldText});
-	}
-
-	return reload => {
-		const afterUpdateRaw = reload.getText({fieldId});
-		const afterUpdate = Array.isArray(afterUpdateRaw) ? afterUpdateRaw.join(",") : afterUpdateRaw;
-		return validateSetField(fieldId, existingText, fieldText, afterUpdate);
-	};
-}
-
-function setRecordSelect(rec: NsRecord, fieldId: string, fieldText: string | string[], multi: boolean): Validator {
-	const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-	if (!multi && asList.length > 1) {
-		throw new Error("Single value expected (" + fieldId + "): " + asList.join(","));
-	}
-
-	const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
-	const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-	if (someIds && !allIds) {
-		throw new Error("All must be text or all must be IDs (" + fieldId + "): " + asList.join(","));
-	}
-
-	if (allIds) {
-		const fieldValues = asList.map(i => parseInt(i));
-		const existingValue = rec.getValue({fieldId});
-		const existingList = Array.isArray(existingValue) ? (existingValue as unknown[]) : [existingValue];
-		if (!listsEqual(asList, existingList)) {
-			rec.setValue({
-				fieldId,
-				value: (multi ? fieldValues : fieldValues[0]) as FieldValue,
-			});
-		}
-		return reload => {
-			const afterUpdate = reload.getValue({fieldId});
-			return validateSetField(
-				fieldId,
-				"" + String(existingList),
-				"" + asList.join(","),
-				"" + String(afterUpdate)
-			);
-		};
-	}
-
-	const existingText = rec.getText({fieldId});
-	const existingList = Array.isArray(existingText) ? existingText : [existingText];
-
-	if (!listsEqual(asList, existingList)) {
-		rec.setText({
-			fieldId,
-			text: (multi ? asList : asList[0]) as string,
-		});
-	}
-
-	return reload => {
-		const afterUpdate = reload.getText({fieldId});
-		return validateSetField(
-			fieldId,
-			"" + String(existingText),
-			"" + (typeof fieldText === "string" ? fieldText : fieldText.join(",")),
-			"" + String(afterUpdate)
-		);
-	};
-}
-
-function setSublistField(
-	rec: NsRecord,
-	sublistId: string,
-	sublistLineQuery: string,
-	fieldId: string,
-	fieldText: string | string[]
-): Validator {
-	const sublistLine = getSublistLine(rec, sublistId, sublistLineQuery);
-
-	const field = rec.getSublistField({sublistId, fieldId, line: sublistLine});
-	if (field == null) {
-		throw new Error("Sublist field not found: " + sublistId + "/" + fieldId);
-	}
-	if (field.type === "select" || field.type === "multiselect") {
-		return setSublistSelect(
-			rec,
-			sublistId,
-			sublistLineQuery,
-			fieldId,
-			sublistLine,
-			fieldText,
-			field.type === "multiselect"
-		);
-	}
-
-	if (Array.isArray(fieldText)) {
-		throw new Error(
-			"Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + fieldText.join(",")
-		);
-	}
-
-	const existingText = rec.getSublistText({sublistId, fieldId, line: sublistLine});
-
-	if (existingText !== fieldText) {
-		rec.setSublistText({
-			sublistId,
-			fieldId,
-			line: sublistLine,
-			text: fieldText,
-		});
-	}
-
-	return reload => {
-		const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
-		const afterUpdate = reload.getSublistText({sublistId, fieldId, line: reloadSublistLine});
-		return validateSetField(fieldId, existingText, fieldText, afterUpdate);
-	};
-}
-
-function setSublistSelect(
-	rec: NsRecord,
-	sublistId: string,
-	sublistLineQuery: string,
-	fieldId: string,
-	sublistLine: number,
-	fieldText: string | string[],
-	multi: boolean
-): Validator {
-	const asList = Array.isArray(fieldText) ? fieldText : [fieldText];
-	if (!multi && asList.length > 1) {
-		throw new Error(
-			"Single value expected (" + sublistId + "/" + sublistLineQuery + "/" + fieldId + "): " + asList.join(",")
-		);
-	}
-
-	const allIds = asList.every(i => /^-?\d+$/.test(i.trim()));
-	const someIds = asList.some(i => /^-?\d+$/.test(i.trim()));
-	if (someIds && !allIds) {
-		throw new Error(
-			"All must be text or all must be IDs (" +
-				sublistId +
-				"/" +
-				sublistLineQuery +
-				"/" +
-				fieldId +
-				"): " +
-				asList.join(",")
-		);
-	}
-
-	if (allIds) {
-		const fieldValues = asList.map(i => parseInt(i));
-		const existingValue = rec.getSublistValue({sublistId, fieldId, line: sublistLine});
-		const existingList = Array.isArray(existingValue) ? (existingValue as unknown[]) : [existingValue];
-		if (!listsEqual(asList, existingList)) {
-			rec.setSublistValue({
-				sublistId,
-				fieldId,
-				line: sublistLine,
-				value: (multi ? fieldValues : fieldValues[0]) as FieldValue,
-			});
-		}
-		return reload => {
-			const afterUpdate = reload.getSublistValue({sublistId, fieldId, line: sublistLine});
-			return validateSetField(
-				fieldId,
-				"" + String(existingList),
-				"" + asList.join(","),
-				"" + String(afterUpdate)
-			);
-		};
-	}
-
-	const existingText = rec.getSublistText({sublistId, fieldId, line: sublistLine});
-	const existingList = Array.isArray(existingText) ? (existingText as string[]) : [existingText];
-
-	if (!listsEqual(asList, existingList)) {
-		rec.setSublistText({
-			sublistId,
-			fieldId,
-			line: sublistLine,
-			text: (multi ? asList : asList[0]) as string,
-		});
-	}
-
-	return reload => {
-		const reloadSublistLine = getSublistLine(reload, sublistId, sublistLineQuery);
-		const afterUpdate = reload.getSublistText({sublistId, fieldId, line: reloadSublistLine});
-		const afterUpdateAsList = Array.isArray(afterUpdate) ? (afterUpdate as string[]) : [afterUpdate];
-		return validateSetField(
-			fieldId,
-			"" + JSON.stringify(existingList),
-			"" + JSON.stringify(asList),
-			"" + JSON.stringify(afterUpdateAsList)
-		);
-	};
-}
-
-function validateSetField(fieldId: string, existingText: string, fieldText: string, afterUpdate: string): string {
-	if (existingText === fieldText) {
-		if (existingText === afterUpdate) {
-			return `Did not change ${fieldId}, already set to '${existingText}'`;
-		}
-		return `Unexpected change ${fieldId}, was already '${existingText}' but now '${afterUpdate}'`;
-	}
-	if (existingText === afterUpdate) {
-		return `Unable to change ${fieldId}, still '${existingText}'`;
-	}
-	if (fieldText === afterUpdate) {
-		return `Changed ${fieldId} from '${existingText}' to '${afterUpdate}'`;
-	}
-	return `Unexpected ${fieldId} change, tried '${fieldText}' but got '${afterUpdate}'`;
-}
-
 // Each entry: [originalTextOrValue, fieldId, isText].
 type SublistLineFingerprint = [unknown, string, boolean];
 
@@ -391,11 +157,7 @@ function insertSublistLine(
 			: getSublistLine(rec, sublistId, sublistLineQuery);
 	const ignoreRecalc = getIgnoreCalcArgument(fieldAssignments, true);
 
-	rec.insertLine({
-		sublistId,
-		line: sublistLine,
-		ignoreRecalc,
-	});
+	rec.insertLine({sublistId, line: sublistLine, ignoreRecalc});
 
 	for (const fieldAssignment of fieldAssignments) {
 		if (fieldAssignment.fieldId === ignoreRecalcArg) {
@@ -469,11 +231,7 @@ function removeSublistLine(
 		getSublistTextOrValue(rec, sublistId, fieldId, sublistLine)
 	);
 
-	rec.removeLine({
-		sublistId,
-		line: sublistLine,
-		ignoreRecalc,
-	});
+	rec.removeLine({sublistId, line: sublistLine, ignoreRecalc});
 
 	return reload => {
 		const foundAt: number[] = [];

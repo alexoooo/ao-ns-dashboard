@@ -1,7 +1,8 @@
 // Edit-records subclass of BulkRunner: groups tasks by record type + ID so
 // multiple edits to the same record are saved as a single transaction.
 
-import {BulkRunner, splitVerticalBar} from "bulk-runner";
+import {BulkRunner} from "bulk-runner";
+import {splitVerticalBar} from "separators";
 
 class EditRecordsBulkRunner extends BulkRunner {
 	override groupKey(task: string): string {

@@ -3,29 +3,14 @@
 
 import {LitElement, html, type TemplateResult} from "lit";
 import {csvEncode} from "csv";
+import {postJson} from "api";
 
-interface SuiteqlSuccess {
+interface SuiteqlPageData {
 	columns: string[];
 	rows: unknown[][];
 	pageIndex: number;
 	pageCount: number;
 	totalCount: number;
-	error?: undefined;
-}
-
-interface SuiteqlError {
-	error: string;
-	columns?: undefined;
-	rows?: undefined;
-	pageIndex?: undefined;
-	pageCount?: undefined;
-	totalCount?: undefined;
-}
-
-type SuiteqlResponse = SuiteqlSuccess | SuiteqlError;
-
-function isError(resp: SuiteqlResponse): resp is SuiteqlError {
-	return typeof resp.error === "string";
 }
 
 function formatCell(value: unknown): string {
@@ -46,9 +31,11 @@ class SuiteqlPage extends LitElement {
 
 	declare commandPostUrl: string;
 	declare currentPageIndex: number;
-	declare lastResponse: SuiteqlSuccess | null;
+	declare lastResponse: SuiteqlPageData | null;
 	declare statusText: string;
 	declare running: boolean;
+
+	private abortController: AbortController | null = null;
 
 	constructor() {
 		super();
@@ -57,6 +44,12 @@ class SuiteqlPage extends LitElement {
 		this.lastResponse = null;
 		this.statusText = "";
 		this.running = false;
+	}
+
+	override disconnectedCallback(): void {
+		super.disconnectedCallback();
+		this.abortController?.abort();
+		this.abortController = null;
 	}
 
 	override createRenderRoot() {
@@ -171,66 +164,64 @@ class SuiteqlPage extends LitElement {
 
 	runQuery(): void {
 		this.currentPageIndex = 0;
-		this.fetchPage();
+		void this.fetchPage();
 	}
 
 	prevPage(): void {
 		if (this.currentPageIndex > 0) {
 			this.currentPageIndex--;
-			this.fetchPage();
+			void this.fetchPage();
 		}
 	}
 
 	nextPage(): void {
 		if (this.lastResponse && this.currentPageIndex < this.lastResponse.pageCount - 1) {
 			this.currentPageIndex++;
-			this.fetchPage();
+			void this.fetchPage();
 		}
 	}
 
-	fetchPage(): void {
+	async fetchPage(): Promise<void> {
 		const sql = this.querySelector<HTMLTextAreaElement>("#sql")!.value;
 		this.statusText = "Running...";
 		this.running = true;
 
-		const xhr = new XMLHttpRequest();
-		xhr.onreadystatechange = () => {
-			if (xhr.readyState !== 4) return;
+		// Cancel any in-flight request so rapid Run-Query / pagination clicks
+		// don't race; only the latest response wins.
+		this.abortController?.abort();
+		this.abortController = new AbortController();
+
+		let envelope;
+		try {
+			envelope = await postJson<SuiteqlPageData>(
+				this.commandPostUrl,
+				{query: sql, pageIndex: this.currentPageIndex, pageSize: 1000},
+				this.abortController.signal
+			);
+		} catch (e) {
+			if (e instanceof DOMException && e.name === "AbortError") {
+				return;
+			}
 			this.running = false;
-			if (xhr.status !== 200) {
-				this.statusText = "HTTP " + xhr.status + ": " + xhr.responseText;
-				return;
-			}
-			let resp: SuiteqlResponse;
-			try {
-				resp = JSON.parse(xhr.responseText) as SuiteqlResponse;
-			} catch (_e) {
-				this.statusText = "Bad response: " + xhr.responseText;
-				return;
-			}
-			if (isError(resp)) {
-				this.statusText = "Error: " + resp.error;
-				return;
-			}
-			this.lastResponse = resp;
-			this.statusText =
-				"Page " +
-				(resp.pageIndex + 1) +
-				" of " +
-				Math.max(resp.pageCount, 1) +
-				" · " +
-				resp.totalCount +
-				" rows total";
-		};
-		xhr.open("POST", this.commandPostUrl);
-		xhr.setRequestHeader("Content-type", "application/json");
-		xhr.send(
-			JSON.stringify({
-				query: sql,
-				pageIndex: this.currentPageIndex,
-				pageSize: 1000,
-			})
-		);
+			this.statusText = "Error: " + (e instanceof Error ? e.message : String(e));
+			return;
+		}
+
+		this.running = false;
+		if (!envelope.ok) {
+			this.statusText = "Error: " + envelope.error.message;
+			return;
+		}
+		const data = envelope.data;
+		this.lastResponse = data;
+		this.statusText =
+			"Page " +
+			(data.pageIndex + 1) +
+			" of " +
+			Math.max(data.pageCount, 1) +
+			" · " +
+			data.totalCount +
+			" rows total";
 	}
 
 	downloadCsv(): void {
