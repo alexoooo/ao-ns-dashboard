@@ -82,7 +82,7 @@ function documentationSection(documentationHtml) {
 
 var layoutHtml = "<!DOCTYPE html>\n<head>\n\t<title>{{title}}</title>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\"/>\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\"/>\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\n\t<script src=\"https://code.jquery.com/jquery-3.6.0.js\" integrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\" crossorigin=\"anonymous\"></script>\n\t<script src=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\" integrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"></script>\n\t<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\" integrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\" crossorigin=\"anonymous\" referrerpolicy=\"no-referrer\"/>\n\t<script>\n\t\t$(document).on('select2:open', () => {\n\t\t\tdocument.querySelector('.select2-search__field').focus();\n\t\t});\n\t\t$(function() {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split('.')[0];\n\t\t\tif (! env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName('mdl-layout__header-row')[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\tdocument.getElementById('env').innerHTML = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body>\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%;\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%;\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br/>\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">\n\t\t\t\t{{navHtml}}\n\t\t\t</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">\n\t\t\t\t{{bodyHtml}}\n\t\t\t</div>\n\t\t</main>\n\t</div>\n</body>\n";
 
-const version = "2026.05.02";
+const version = "2026.05.03";
 
 const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
@@ -98,8 +98,12 @@ function getCommandParam(context) {
 
 
 function scriptDeployParam(context) {
-	return "?script=" + context.request.parameters["script"] + "&" +
-		"deploy=" + context.request.parameters["deploy"];
+	const script = context.request.parameters["script"];
+	const deploy = context.request.parameters["deploy"];
+	if (! /^\d+$/.test(script || "") || ! /^\d+$/.test(deploy || "")) {
+		throw new Error("Invalid script/deploy parameters");
+	}
+	return "?script=" + script + "&deploy=" + deploy;
 }
 
 
@@ -183,7 +187,7 @@ function recordTypeOptions(selectedRecordType) {
 	}).join("");
 }
 
-var bulkRunnerJs = "// Lit base component for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n//\n// This file is a \"module fragment\": it is concatenated into a <script type=\"module\">\n// block by the page template, which provides the lit imports. Do NOT add an\n// `import` line for lit here — it would clash with the template's import when\n// fragments are concatenated together.\n//\n// Subclass to enable batching by overriding `groupKey(task)`.\n\nclass BulkRunner extends LitElement {\n\tstatic properties = {\n\t\ttaskTypeLabel: { type: String, attribute: \"task-type-label\" },\n\t\tcommandPostUrl: { type: String, attribute: \"command-post-url\" },\n\t\tphase: { state: true },\n\t\tmodel: { state: true },\n\t\tpageStart: { state: true },\n\t\tpageCount: { state: true },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.taskTypeLabel = \"\";\n\t\tthis.commandPostUrl = \"\";\n\t\tthis.phase = \"input\";\n\t\tthis.model = [];\n\t\tthis.pageStart = 0;\n\t\tthis.pageCount = 100;\n\t}\n\n\tcreateRenderRoot() {\n\t\treturn this;\n\t}\n\n\tgroupKey(task) {\n\t\treturn \"\";\n\t}\n\n\trender() {\n\t\treturn this.phase === \"input\" ? this.renderInput() : this.renderStatus();\n\t}\n\n\trenderInput() {\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" autofocus></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t@click=${this.runAll}>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\trenderStatus() {\n\t\tconst startedCount = this.model.filter(i => i.status !== \"\").length;\n\t\tconst visibleStart = this.pageStart;\n\t\tconst visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);\n\t\tconst visible = this.model.slice(visibleStart, visibleEnd);\n\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<div>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageStart + 1)}\n\t\t\t\t\t\t\t\t@change=${this.onPageStartChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Start</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em; margin-left: 1em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageCount)}\n\t\t\t\t\t\t\t\t@change=${this.onPageCountChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Count</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">\n\t\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t\t@click=${this.downloadStatus}>\n\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">Progress: ${startedCount} of ${this.model.length}</span>\n\t\t\t\t</div>\n\t\t\t\t<div>\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell\">Number</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Task</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\" style=\"width: 100%\">Result</th>\n\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t${visible.map((item, i) => {\n\t\t\t\t\t\t\t\tconst isError = item.status.toLowerCase().includes(\"error\");\n\t\t\t\t\t\t\t\tconst cellStyle = isError\n\t\t\t\t\t\t\t\t\t? \"color: red; white-space: normal\"\n\t\t\t\t\t\t\t\t\t: \"white-space: normal\";\n\t\t\t\t\t\t\t\treturn html`\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${visibleStart + i + 1}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${item.task}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=${cellStyle}>${item.status}</td>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t`;\n\t\t\t\t\t\t\t})}\n\t\t\t\t\t\t</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\tupdated() {\n\t\t// MDL classes need re-upgrading after re-render so freshly created\n\t\t// buttons/inputs pick up ripple/floating-label behavior.\n\t\tif (window.componentHandler) {\n\t\t\twindow.componentHandler.upgradeElements(this);\n\t\t}\n\t}\n\n\tonPageStartChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageStart = Number.isFinite(parsed) ? Math.max(0, parsed - 1) : 0;\n\t}\n\n\tonPageCountChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 100;\n\t}\n\n\trunAll() {\n\t\tconst taskValues = this.querySelector(\"#tasks\").value;\n\t\tconst tasks = taskValues.split(/\\r?\\n/);\n\t\tconst newModel = [];\n\t\tfor (const task of tasks) {\n\t\t\tconst trimmed = task.trim();\n\t\t\tif (trimmed !== \"\") {\n\t\t\t\tnewModel.push({\n\t\t\t\t\ttask,\n\t\t\t\t\tstatus: \"\",\n\t\t\t\t\tgroup: this.groupKey(task) || \"\",\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\tthis.model = newModel;\n\t\tthis.phase = \"running\";\n\t\tthis.runNext();\n\t}\n\n\trunNext() {\n\t\tconst nextIndex = this.model.findIndex(e => e.status === \"\");\n\t\tif (nextIndex === -1) {\n\t\t\tthis.requestUpdate();\n\t\t\treturn;\n\t\t}\n\t\tconst first = this.model[nextIndex];\n\t\tconst batch = first.group === \"\"\n\t\t\t? [first]\n\t\t\t: this.model.filter(i => i.group === first.group);\n\n\t\tfor (const next of batch) {\n\t\t\tnext.status = \"Running\";\n\t\t}\n\t\tthis.requestUpdate();\n\t\tthis.runCommand(batch);\n\t}\n\n\trunCommand(nextBatch) {\n\t\tconst request = new XMLHttpRequest();\n\t\trequest.onreadystatechange = () => {\n\t\t\tif (request.readyState !== 4) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tconst status = request.status;\n\t\t\tif (status !== 200) {\n\t\t\t\tnextBatch[0].status = \"Error \" + status + \": \" + request.responseText;\n\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\tnextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse {\n\t\t\t\ttry {\n\t\t\t\t\tconst responses = JSON.parse(request.responseText);\n\t\t\t\t\tfor (let i = 0; i < responses.length; i++) {\n\t\t\t\t\t\tconst adjustedStatus = (responses[i] === \"\" ? \"(blank)\" : \"\" + responses[i]);\n\t\t\t\t\t\tnextBatch[i].status = adjustedStatus;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (e) {\n\t\t\t\t\tnextBatch[0].status = \"\" + request.responseText;\n\t\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\t\tnextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tthis.requestUpdate();\n\t\t\tthis.runNext();\n\t\t};\n\t\trequest.open(\"POST\", this.commandPostUrl);\n\t\trequest.setRequestHeader(\"Content-type\", \"application/json\");\n\t\trequest.send(JSON.stringify(nextBatch.map(i => i.task)));\n\t}\n\n\tcsvEncode(value) {\n\t\treturn String(value).replaceAll('\"', '\"\"');\n\t}\n\n\tdownloadStatus() {\n\t\tconst rows = [\"Number,Task,Result\"];\n\t\tfor (let i = 0; i < this.model.length; i++) {\n\t\t\tconst item = this.model[i];\n\t\t\trows.push((i + 1) + ',\"' + this.csvEncode(item.task) + '\",\"' + this.csvEncode(item.status) + '\"');\n\t\t}\n\t\tconst csv = rows.join(\"\\r\\n\");\n\t\tconst a = document.createElement(\"a\");\n\t\ta.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n\t\ta.setAttribute(\"download\", \"result.csv\");\n\t\ta.style.display = \"none\";\n\t\tdocument.body.appendChild(a);\n\t\ta.click();\n\t\tdocument.body.removeChild(a);\n\t}\n}\n\ncustomElements.define(\"bulk-runner\", BulkRunner);\n";
+var bulkRunnerJs = "// Lit base component for the bulk-task pages\n// (lookup-fields, edit-records, create-records, mass-save, mass-delete).\n//\n// This file is a \"module fragment\": it is concatenated into a <script type=\"module\">\n// block by the page template, which provides the lit imports. Do NOT add an\n// `import` line for lit here — it would clash with the template's import when\n// fragments are concatenated together.\n//\n// Subclass to enable batching by overriding `groupKey(task)`.\n\n// Mirrors src/utils.js#splitVerticalBar for client-side use (subclass groupKey\n// implementations). Keep both copies in sync if escape semantics change.\nfunction splitVerticalBar(value) {\n\tconst sentinel = \"__VERTICAL_BAR_ESCAPE__\" + Math.random().toString(36).substring(2);\n\tconst withSentinel = value.replaceAll(\"\\\\|\", sentinel);\n\treturn withSentinel.split(\"|\").map(i => i.replaceAll(sentinel, \"|\"));\n}\n\nclass BulkRunner extends LitElement {\n\tstatic properties = {\n\t\ttaskTypeLabel: { type: String, attribute: \"task-type-label\" },\n\t\tcommandPostUrl: { type: String, attribute: \"command-post-url\" },\n\t\tphase: { state: true },\n\t\tmodel: { state: true },\n\t\tpageStart: { state: true },\n\t\tpageCount: { state: true },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.taskTypeLabel = \"\";\n\t\tthis.commandPostUrl = \"\";\n\t\tthis.phase = \"input\";\n\t\tthis.model = [];\n\t\tthis.pageStart = 0;\n\t\tthis.pageCount = 100;\n\t}\n\n\tcreateRenderRoot() {\n\t\treturn this;\n\t}\n\n\tgroupKey(task) {\n\t\treturn \"\";\n\t}\n\n\trender() {\n\t\treturn this.phase === \"input\" ? this.renderInput() : this.renderStatus();\n\t}\n\n\trenderInput() {\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" autofocus></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t@click=${this.runAll}>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\trenderStatus() {\n\t\tconst startedCount = this.model.filter(i => i.status !== \"\").length;\n\t\tconst visibleStart = this.pageStart;\n\t\tconst visibleEnd = Math.min(this.model.length, visibleStart + this.pageCount);\n\t\tconst visible = this.model.slice(visibleStart, visibleEnd);\n\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<div>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageStart + 1)}\n\t\t\t\t\t\t\t\t@change=${this.onPageStartChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Start</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 5em; margin-left: 1em\">\n\t\t\t\t\t\t<input type=\"text\" class=\"mdl-textfield__input\"\n\t\t\t\t\t\t\t\t.value=${String(this.pageCount)}\n\t\t\t\t\t\t\t\t@change=${this.onPageCountChange} />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\">Count</label>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">\n\t\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t\tstyle=\"margin-left: 1em\"\n\t\t\t\t\t\t\t\t@click=${this.downloadStatus}>\n\t\t\t\t\t\t\t<span class=\"material-icons md-18\">download</span> Download\n\t\t\t\t\t\t</button>\n\t\t\t\t\t</span>\n\t\t\t\t\t<span style=\"margin-left: 1em\">Progress: ${startedCount} of ${this.model.length}</span>\n\t\t\t\t</div>\n\t\t\t\t<div>\n\t\t\t\t\t<table class=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\" style=\"width: 100%\">\n\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell\">Number</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Task</th>\n\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\" style=\"width: 100%\">Result</th>\n\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t${visible.map((item, i) => {\n\t\t\t\t\t\t\t\tconst isError = item.status.toLowerCase().includes(\"error\");\n\t\t\t\t\t\t\t\tconst cellStyle = isError\n\t\t\t\t\t\t\t\t\t? \"color: red; white-space: normal\"\n\t\t\t\t\t\t\t\t\t: \"white-space: normal\";\n\t\t\t\t\t\t\t\treturn html`\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${visibleStart + i + 1}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">${item.task}</td>\n\t\t\t\t\t\t\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=${cellStyle}>${item.status}</td>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t`;\n\t\t\t\t\t\t\t})}\n\t\t\t\t\t\t</tbody>\n\t\t\t\t\t</table>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n\n\tupdated() {\n\t\t// MDL classes need re-upgrading after re-render so freshly created\n\t\t// buttons/inputs pick up ripple/floating-label behavior.\n\t\tif (window.componentHandler) {\n\t\t\twindow.componentHandler.upgradeElements(this);\n\t\t}\n\t}\n\n\tonPageStartChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageStart = Number.isFinite(parsed) ? Math.max(0, parsed - 1) : 0;\n\t}\n\n\tonPageCountChange(e) {\n\t\tconst parsed = parseInt(e.target.value);\n\t\tthis.pageCount = Number.isFinite(parsed) && parsed > 0 ? parsed : 100;\n\t}\n\n\trunAll() {\n\t\tconst taskValues = this.querySelector(\"#tasks\").value;\n\t\tconst tasks = taskValues.split(/\\r?\\n/);\n\t\tconst newModel = [];\n\t\tfor (const task of tasks) {\n\t\t\tconst trimmed = task.trim();\n\t\t\tif (trimmed !== \"\") {\n\t\t\t\tnewModel.push({\n\t\t\t\t\ttask,\n\t\t\t\t\tstatus: \"\",\n\t\t\t\t\tgroup: this.groupKey(task) || \"\",\n\t\t\t\t});\n\t\t\t}\n\t\t}\n\t\tthis.model = newModel;\n\t\tthis.phase = \"running\";\n\t\tthis.runNext();\n\t}\n\n\trunNext() {\n\t\tconst nextIndex = this.model.findIndex(e => e.status === \"\");\n\t\tif (nextIndex === -1) {\n\t\t\tthis.requestUpdate();\n\t\t\treturn;\n\t\t}\n\t\tconst first = this.model[nextIndex];\n\t\tconst batch = first.group === \"\"\n\t\t\t? [first]\n\t\t\t: this.model.filter(i => i.group === first.group);\n\n\t\tfor (const next of batch) {\n\t\t\tnext.status = \"Running\";\n\t\t}\n\t\tthis.requestUpdate();\n\t\tthis.runCommand(batch);\n\t}\n\n\trunCommand(nextBatch) {\n\t\tconst request = new XMLHttpRequest();\n\t\trequest.onreadystatechange = () => {\n\t\t\tif (request.readyState !== 4) {\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tconst status = request.status;\n\t\t\tif (status !== 200) {\n\t\t\t\tnextBatch[0].status = \"Error \" + status + \": \" + request.responseText;\n\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\tnextBatch[i].status = \"Error for: \" + nextBatch[0].group;\n\t\t\t\t}\n\t\t\t}\n\t\t\telse {\n\t\t\t\ttry {\n\t\t\t\t\tconst responses = JSON.parse(request.responseText);\n\t\t\t\t\tfor (let i = 0; i < responses.length; i++) {\n\t\t\t\t\t\tconst adjustedStatus = (responses[i] === \"\" ? \"(blank)\" : \"\" + responses[i]);\n\t\t\t\t\t\tnextBatch[i].status = adjustedStatus;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tcatch (e) {\n\t\t\t\t\tnextBatch[0].status = \"\" + request.responseText;\n\t\t\t\t\tfor (let i = 1; i < nextBatch.length; i++) {\n\t\t\t\t\t\tnextBatch[i].status = \"Error as part of: \" + nextBatch[0].group;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tthis.requestUpdate();\n\t\t\tthis.runNext();\n\t\t};\n\t\trequest.open(\"POST\", this.commandPostUrl);\n\t\trequest.setRequestHeader(\"Content-type\", \"application/json\");\n\t\trequest.send(JSON.stringify(nextBatch.map(i => i.task)));\n\t}\n\n\tcsvEncode(value) {\n\t\treturn String(value).replaceAll('\"', '\"\"');\n\t}\n\n\tdownloadStatus() {\n\t\tconst rows = [\"Number,Task,Result\"];\n\t\tfor (let i = 0; i < this.model.length; i++) {\n\t\t\tconst item = this.model[i];\n\t\t\trows.push((i + 1) + ',\"' + this.csvEncode(item.task) + '\",\"' + this.csvEncode(item.status) + '\"');\n\t\t}\n\t\tconst csv = rows.join(\"\\r\\n\");\n\t\tconst a = document.createElement(\"a\");\n\t\ta.setAttribute(\"href\", \"data:text/plain;charset=utf-8,\" + encodeURIComponent(csv));\n\t\ta.setAttribute(\"download\", \"result.csv\");\n\t\ta.style.display = \"none\";\n\t\tdocument.body.appendChild(a);\n\t\ta.click();\n\t\tdocument.body.removeChild(a);\n\t}\n}\n\ncustomElements.define(\"bulk-runner\", BulkRunner);\n";
 
 var clientJs$2 = "// Record-type subclass of BulkRunner.\n//\n// Adds an Internal ID input above the bulk-runner scaffold and rebuilds the\n// command URL whenever it changes. Each row in the textarea is a Record Type\n// to probe against the entered Internal ID.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n// IMPORTANT: bulk-runner.client.js MUST be inlined before this file.\n\nclass RecordTypeBulkRunner extends BulkRunner {\n\tstatic properties = {\n\t\t...BulkRunner.properties,\n\t\tcommandPrefix: { type: String, attribute: \"command-prefix\" },\n\t\trecordIdParam: { type: String, attribute: \"record-id-param\" },\n\t\tdefaultTasks: { type: String, attribute: \"default-tasks\" },\n\t\tdefaultPageCount: { type: Number, attribute: \"default-page-count\" },\n\t};\n\n\tconstructor() {\n\t\tsuper();\n\t\tthis.commandPrefix = \"\";\n\t\tthis.recordIdParam = \"\";\n\t\tthis.defaultTasks = \"\";\n\t\tthis.defaultPageCount = 100;\n\t}\n\n\tconnectedCallback() {\n\t\tsuper.connectedCallback();\n\t\tthis.pageCount = this.defaultPageCount;\n\t}\n\n\tonRecordIdChange(e) {\n\t\tconst id = e.target.value;\n\t\tthis.commandPostUrl = this.commandPrefix + \"&\" + this.recordIdParam + \"=\" + id;\n\t}\n\n\trenderInput() {\n\t\treturn html`\n\t\t\t<div>\n\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t\t\t\t<input class=\"mdl-textfield__input\" type=\"text\" id=\"recordId\"\n\t\t\t\t\t\t\tautofocus\n\t\t\t\t\t\t\t@change=${this.onRecordIdChange} />\n\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID or External ID</label>\n\t\t\t\t</div>\n\t\t\t\t<hr/>\n\t\t\t\t<fieldset style=\"width: 40em\">\n\t\t\t\t\t<legend>${this.taskTypeLabel} (one per line)</legend>\n\t\t\t\t\t<textarea class=\"mdl-textfield__input\" rows=\"20\" id=\"tasks\" .value=${this.defaultTasks}></textarea>\n\t\t\t\t</fieldset>\n\t\t\t\t<div>\n\t\t\t\t\t<button class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\t\t\t@click=${this.runAll}>\n\t\t\t\t\t\t<span class=\"material-icons md-18\">play_arrow</span> Run All\n\t\t\t\t\t</button>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t`;\n\t}\n}\n\ncustomElements.define(\"bulk-runner-record-type\", RecordTypeBulkRunner);\n";
 
@@ -300,6 +304,8 @@ function splitAmpersand(value) {
 }
 
 
+// Also mirrored in src/client/bulk-runner.client.js for client-side groupKey
+// use. Keep both copies in sync if escape semantics change.
 function splitVerticalBar(value) {
 	const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
 	const withSentinel = value.replaceAll("\\|", sentinel);
@@ -314,6 +320,18 @@ function splitSlash(value) {
 	const sentinel = "__SLASH_ESCAPE__" + Math.random().toString(36).substring(2);
 	const withSentinel = value.replaceAll("\\/", sentinel);
 	return withSentinel.split("/").map(i => i.replaceAll(sentinel, "/"));
+}
+
+
+// Set-equality for lists. Used for multiselect comparisons where NetSuite may
+// return values in a different order than they were set.
+function listsEqual(a, b) {
+	if (a.length !== b.length) {
+		return false;
+	}
+	const sortedA = [...a].sort();
+	const sortedB = [...b].sort();
+	return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
 var templateHtml$6 = "<script type=\"text/javascript\">\n\t$(document).ready(() => {\n\t\t$(\".record-type-select\").select2({\n\t\t\tplaceholder: \"Please make a selection\"\n\t\t});\n\t});\n\tfunction showLoading() {\n\t\tdocument.getElementById('spinner').style.display = \"block\";\n\t\tdocument.getElementById('details').style.display = \"none\";\n\t}\n\tfunction onSearch(value) {\n\t\tdocument.getElementById('recordType').value = value;\n\t}\n</script>\n<div>\n\t<h2>Retrieve all info about a particular record</h2>\n\t{{documentationHtml}}\n</div>\n<form method=\"post\">\n\t<fieldset>\n\t\t<legend>Record Type Search</legend>\n\t\t<select\n\t\t\t\tclass=\"record-type-select\"\n\t\t\t\tid=\"record-type-search\"\n\t\t\t\tonchange=\"onSearch(this.value);\">\n\t\t\t<option></option>\n\t\t\t{{recordTypeOptionsHtml}}\n\t\t</select>\n\t</fieldset>\n\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t<legend>Record Type</legend>\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordType\"\n\t\t\tname=\"{{paramRecordType}}\"\n\t\t\tvalue=\"{{recordType}}\"/>\n\t</fieldset>\n\t<br/>\n\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"recordId\"\n\t\t\tname=\"{{paramRecordId}}\"\n\t\t\tvalue=\"{{recordId}}\"\n\t\t\tautofocus/>\n\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t</div>\n\t<br/>\n\t<button\n\t\t\ttype=\"submit\"\n\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\tonclick=\"showLoading()\">\n\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t</button>\n\t<hr/>\n\t<div id=\"spinner\" class=\"mdl-spinner mdl-js-spinner is-active\" style=\"display: none\"></div>\n\t<div id=\"details\">\n\t\t{{detailsHtml}}\n\t</div>\n</form>\n";
@@ -378,11 +396,11 @@ function detailsListing(recordType, recordId) {
 					? "" + fieldValue : "";
 
 				return `<tr>
-					<td class="mdl-data-table__cell--non-numeric">${fieldId}</td>
-					<td class="mdl-data-table__cell--non-numeric">${recordField?.label}</td>
-					<td class="mdl-data-table__cell--non-numeric">${recordField?.type}</td>
-					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em;">${fieldText}</td>
-					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em; font-family: monospace">${fieldValueIfDifferent}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(fieldId)}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(recordField?.label)}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(recordField?.type)}</td>
+					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em;">${escapeHtml(fieldText)}</td>
+					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em; font-family: monospace">${escapeHtml(fieldValueIfDifferent)}</td>
 				</tr>`;
 			});
 
@@ -404,10 +422,10 @@ function detailsListing(recordType, recordId) {
 					return `<th class="mdl-data-table__cell--non-numeric" valign="top"
 							style="position: sticky; top: 0; background-color: white; z-index: 999; box-shadow: 0 -1px 0 0 #d3d3d3 inset">
 						<span style="font-family: monospace">
-							${sublistField}
-							${type ? `<br/>(${type})` : ""}
+							${escapeHtml(sublistField)}
+							${type ? `<br/>(${escapeHtml(type)})` : ""}
 						</span>
-						<span style="font-weight: bold">${label ? `<br/>${label}` : ""} </span>
+						<span style="font-weight: bold">${label ? `<br/>${escapeHtml(label)}` : ""} </span>
 					</th>`;
 				}).join("");
 
@@ -424,8 +442,8 @@ function detailsListing(recordType, recordId) {
 						}
 
 						return `<td class="mdl-data-table__cell--non-numeric">
-							<span style="font-family: monospace; ${error ? "color: red" : ""}">${value}</span>
-							${fieldText === value ? "" : `<br/>${fieldText}`}
+							<span style="font-family: monospace; ${error ? "color: red" : ""}">${escapeHtml(value)}</span>
+							${fieldText === value ? "" : `<br/>${escapeHtml(fieldText)}`}
 						</td>`;
 					});
 
@@ -453,11 +471,11 @@ function detailsListing(recordType, recordId) {
 					</tbody>
 				</table></div>`;
 
-				return `<h4 style="font-family: monospace">${sublistId}</h4>${sublistTable}<br/><br/>`;
+				return `<h4 style="font-family: monospace">${escapeHtml(sublistId)}</h4>${sublistTable}<br/><br/>`;
 			});
 
 		return `
-			<h2>${recordType} Internal ID: ${recordId}</h2>
+			<h2>${escapeHtml(recordType)} Internal ID: ${escapeHtml(recordId)}</h2>
 
 			<h3>Fields</h3>
 			<div style="width: 100%; overflow-x: auto; max-height: 40em; overflow-y: auto">
@@ -495,10 +513,10 @@ function detailsListing(recordType, recordId) {
 	}
 	catch (e) {
 		return `
-			<h2>${recordType} Internal ID: ${recordId}</h2>
+			<h2>${escapeHtml(recordType)} Internal ID: ${escapeHtml(recordId)}</h2>
 			<h3 style="color: red">
-				Error: ${loaded ? "retrieving -" : "loading -"} ${e.message} <br/>
-				${e.stack}
+				Error: ${loaded ? "retrieving -" : "loading -"} ${escapeHtml(e.message)} <br/>
+				${escapeHtml(e.stack)}
 			</h3>`;
 	}
 }
@@ -768,7 +786,7 @@ function findSublistLines(rec, sublistId, sublistLineQuery) {
 	return candidates;
 }
 
-var clientJs$1 = "// Edit-records subclass of BulkRunner: groups tasks by record type + ID so\n// multiple edits to the same record are saved as a single transaction.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n// IMPORTANT: bulk-runner.client.js MUST be inlined before this file in the\n// page template's <script type=\"module\"> block, since BulkRunner must be in\n// scope when this class declaration runs.\n\nclass EditRecordsBulkRunner extends BulkRunner {\n\tgroupKey(task) {\n\t\tconst parts = task.split(\"|\").map(part => part.replace(/\\W/g, \"\").toLowerCase());\n\t\treturn parts[0] + \"|\" + parts[1];\n\t}\n}\n\ncustomElements.define(\"bulk-runner-edit-records\", EditRecordsBulkRunner);\n";
+var clientJs$1 = "// Edit-records subclass of BulkRunner: groups tasks by record type + ID so\n// multiple edits to the same record are saved as a single transaction.\n//\n// Module fragment — see bulk-runner.client.js for composition rules.\n// IMPORTANT: bulk-runner.client.js MUST be inlined before this file in the\n// page template's <script type=\"module\"> block, since BulkRunner must be in\n// scope when this class declaration runs.\n\nclass EditRecordsBulkRunner extends BulkRunner {\n\tgroupKey(task) {\n\t\tconst parts = splitVerticalBar(task).map(part => part.replace(/\\W/g, \"\").toLowerCase());\n\t\treturn parts[0] + \"|\" + parts[1];\n\t}\n}\n\ncustomElements.define(\"bulk-runner-edit-records\", EditRecordsBulkRunner);\n";
 
 var templateHtml$4 = "<script type=\"module\">\nimport { LitElement, html } from \"https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm\";\n\n{{bulkRunnerJs}}\n{{clientJs}}\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr/>\n<bulk-runner-edit-records\n\t\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\t\tcommand-post-url=\"{{commandUrl}}\">\n</bulk-runner-edit-records>\n";
 
@@ -946,7 +964,7 @@ function setRecordSelect(rec, fieldId, fieldText, multi) {
 		const fieldValues = asList.map(i => parseInt(i));
 		const existingValue = rec.getValue({fieldId});
 		const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+		if (! listsEqual(asList, existingList)) {
 			rec.setValue({
 				fieldId,
 				value: (multi ? fieldValues : fieldValues[0]),
@@ -961,7 +979,7 @@ function setRecordSelect(rec, fieldId, fieldText, multi) {
 	const existingText = rec.getText({fieldId});
 	const existingList = Array.isArray(existingText) ? existingText : [existingText];
 
-	if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+	if (! listsEqual(asList, existingList)) {
 		rec.setText({
 			fieldId,
 			text: (multi ? asList : asList[0]),
@@ -1024,7 +1042,7 @@ function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine
 		const fieldValues = asList.map(i => parseInt(i));
 		const existingValue = rec.getSublistValue({sublistId, fieldId, line: sublistLine});
 		const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+		if (! listsEqual(asList, existingList)) {
 			rec.setSublistValue({
 				sublistId,
 				fieldId,
@@ -1041,7 +1059,7 @@ function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine
 	const existingText = rec.getSublistText({sublistId, fieldId, line: sublistLine});
 	const existingList = Array.isArray(existingText) ? existingText : [existingText];
 
-	if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+	if (! listsEqual(asList, existingList)) {
 		rec.setSublistText({
 			sublistId,
 			fieldId,
@@ -1250,59 +1268,68 @@ var createRecords = {
 
 
 function handleCreateRecord(context) {
-	const tabDelimitedRows = JSON.parse(context.request.body);
-	const firstTabDelimitedRow = tabDelimitedRows[0];
-	const firstParts = splitVerticalBar(firstTabDelimitedRow);
-	const recordType = getRecordType(firstParts[0]);
-	const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
-	const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
+	let recordId;
+	try {
+		const tabDelimitedRows = JSON.parse(context.request.body);
+		const firstTabDelimitedRow = tabDelimitedRows[0];
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
+		const recordType = getRecordType(firstParts[0]);
+		const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
+		const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
 
-	const allValidators = [];
+		const allValidators = [];
 
-	const defaultValues = {};
+		const defaultValues = {};
 
-	const rec = record.create({
-		type: recordType,
-		defaultValues,
-	});
+		const rec = record.create({
+			type: recordType,
+			defaultValues,
+		});
 
-	for (const fieldValue of defaultFieldValues) {
-		const validator = setDefaultRecordField(rec, fieldValue.fieldId, fieldValue.fieldText);
-		allValidators.push(validator);
-	}
-
-	const recordId = rec.save({});
-
-	const loaded = record.load({
-		type: recordType,
-		id: recordId,
-	});
-
-	for (const fieldValue of fieldValues) {
-		const validator = setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText);
-		allValidators.push(validator);
-	}
-
-	loaded.save({});
-
-	const reload = record.load({
-		type: recordType,
-		id: recordId,
-	});
-
-	const messages = [];
-	for (const validator of allValidators) {
-		try {
-			messages.push(validator(reload));
+		for (const fieldValue of defaultFieldValues) {
+			const validator = setDefaultRecordField(rec, fieldValue.fieldId, fieldValue.fieldText);
+			allValidators.push(validator);
 		}
-		catch (e) {
-			messages.push(`Unable to validate: ${e.message}`);
-		}
-	}
 
-	return JSON.stringify([
-		`Internal ID: ${recordId} | ${messages.join(" | ")}`,
-	]);
+		recordId = rec.save({});
+
+		const loaded = record.load({
+			type: recordType,
+			id: recordId,
+		});
+
+		for (const fieldValue of fieldValues) {
+			const validator = setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText);
+			allValidators.push(validator);
+		}
+
+		loaded.save({});
+
+		const reload = record.load({
+			type: recordType,
+			id: recordId,
+		});
+
+		const messages = [];
+		for (const validator of allValidators) {
+			try {
+				messages.push(validator(reload));
+			}
+			catch (e) {
+				messages.push(`Unable to validate: ${e.message}`);
+			}
+		}
+
+		return JSON.stringify([
+			`Internal ID: ${recordId} | ${messages.join(" | ")}`,
+		]);
+	}
+	catch (e) {
+		const prefix = recordId == null
+			? "Error: "
+			: `Error after creating Internal ID ${recordId}: `;
+		return JSON.stringify([prefix + e.message]);
+	}
 }
 
 
@@ -1354,7 +1381,7 @@ function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
 		return reload => {
 			const afterSave = reload.getValue({fieldId});
 			const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-			return JSON.stringify(asList) === JSON.stringify(afterSaveList)
+			return listsEqual(asList, afterSaveList)
 				? `Default ${fieldId} to '${fieldText}'`
 				: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 		};
@@ -1368,7 +1395,7 @@ function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
 	return reload => {
 		const afterSave = reload.getText({fieldId});
 		const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-		return JSON.stringify(afterSaveList) === JSON.stringify(asList)
+		return listsEqual(asList, afterSaveList)
 			? `Default ${fieldId} to '${fieldText}'`
 			: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 	};

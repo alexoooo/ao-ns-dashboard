@@ -8,7 +8,7 @@
 
 class EditRecordsBulkRunner extends BulkRunner {
 	groupKey(task) {
-		const parts = task.split("|").map(part => part.replace(/\W/g, "").toLowerCase());
+		const parts = splitVerticalBar(task).map(part => part.replace(/\W/g, "").toLowerCase());
 		return parts[0] + "|" + parts[1];
 	}
 }

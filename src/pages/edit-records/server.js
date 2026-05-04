@@ -3,7 +3,7 @@ import record from "N/record";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { normalizeKey, splitVerticalBar, splitSlash } from "../../utils.js";
+import { normalizeKey, splitVerticalBar, splitSlash, listsEqual } from "../../utils.js";
 import { parseFieldAssignmentList } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import { getSublistLine } from "../lookup-fields/server.js";
@@ -190,7 +190,7 @@ function setRecordSelect(rec, fieldId, fieldText, multi) {
 		const fieldValues = asList.map(i => parseInt(i));
 		const existingValue = rec.getValue({fieldId});
 		const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+		if (! listsEqual(asList, existingList)) {
 			rec.setValue({
 				fieldId,
 				value: (multi ? fieldValues : fieldValues[0]),
@@ -205,7 +205,7 @@ function setRecordSelect(rec, fieldId, fieldText, multi) {
 	const existingText = rec.getText({fieldId});
 	const existingList = Array.isArray(existingText) ? existingText : [existingText];
 
-	if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+	if (! listsEqual(asList, existingList)) {
 		rec.setText({
 			fieldId,
 			text: (multi ? asList : asList[0]),
@@ -268,7 +268,7 @@ function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine
 		const fieldValues = asList.map(i => parseInt(i));
 		const existingValue = rec.getSublistValue({sublistId, fieldId, line: sublistLine});
 		const existingList = Array.isArray(existingValue) ? existingValue : [existingValue];
-		if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+		if (! listsEqual(asList, existingList)) {
 			rec.setSublistValue({
 				sublistId,
 				fieldId,
@@ -285,7 +285,7 @@ function setSublistSelect(rec, sublistId, sublistLineQuery, fieldId, sublistLine
 	const existingText = rec.getSublistText({sublistId, fieldId, line: sublistLine});
 	const existingList = Array.isArray(existingText) ? existingText : [existingText];
 
-	if (JSON.stringify(asList) !== JSON.stringify(existingList)) {
+	if (! listsEqual(asList, existingList)) {
 		rec.setSublistText({
 			sublistId,
 			fieldId,

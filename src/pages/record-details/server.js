@@ -1,7 +1,7 @@
 import record from "N/record";
 
 import { paramRecordType, paramRecordId } from "../../constants.js";
-import { interpolate, documentationSection } from "../../html.js";
+import { interpolate, documentationSection, escapeHtml } from "../../html.js";
 import { normalizeKey } from "../../utils.js";
 import { recordTypeOptions } from "../../record-types.js";
 import recordTypePage from "../record-type/server.js";
@@ -68,11 +68,11 @@ function detailsListing(recordType, recordId) {
 					? "" + fieldValue : "";
 
 				return `<tr>
-					<td class="mdl-data-table__cell--non-numeric">${fieldId}</td>
-					<td class="mdl-data-table__cell--non-numeric">${recordField?.label}</td>
-					<td class="mdl-data-table__cell--non-numeric">${recordField?.type}</td>
-					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em;">${fieldText}</td>
-					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em; font-family: monospace">${fieldValueIfDifferent}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(fieldId)}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(recordField?.label)}</td>
+					<td class="mdl-data-table__cell--non-numeric">${escapeHtml(recordField?.type)}</td>
+					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em;">${escapeHtml(fieldText)}</td>
+					<td class="mdl-data-table__cell--non-numeric" style="word-break: break-all;word-wrap: break-word; max-width: 25em; font-family: monospace">${escapeHtml(fieldValueIfDifferent)}</td>
 				</tr>`;
 			});
 
@@ -94,10 +94,10 @@ function detailsListing(recordType, recordId) {
 					return `<th class="mdl-data-table__cell--non-numeric" valign="top"
 							style="position: sticky; top: 0; background-color: white; z-index: 999; box-shadow: 0 -1px 0 0 #d3d3d3 inset">
 						<span style="font-family: monospace">
-							${sublistField}
-							${type ? `<br/>(${type})` : ""}
+							${escapeHtml(sublistField)}
+							${type ? `<br/>(${escapeHtml(type)})` : ""}
 						</span>
-						<span style="font-weight: bold">${label ? `<br/>${label}` : ""} </span>
+						<span style="font-weight: bold">${label ? `<br/>${escapeHtml(label)}` : ""} </span>
 					</th>`;
 				}).join("");
 
@@ -114,8 +114,8 @@ function detailsListing(recordType, recordId) {
 						}
 
 						return `<td class="mdl-data-table__cell--non-numeric">
-							<span style="font-family: monospace; ${error ? "color: red" : ""}">${value}</span>
-							${fieldText === value ? "" : `<br/>${fieldText}`}
+							<span style="font-family: monospace; ${error ? "color: red" : ""}">${escapeHtml(value)}</span>
+							${fieldText === value ? "" : `<br/>${escapeHtml(fieldText)}`}
 						</td>`;
 					});
 
@@ -143,11 +143,11 @@ function detailsListing(recordType, recordId) {
 					</tbody>
 				</table></div>`;
 
-				return `<h4 style="font-family: monospace">${sublistId}</h4>${sublistTable}<br/><br/>`;
+				return `<h4 style="font-family: monospace">${escapeHtml(sublistId)}</h4>${sublistTable}<br/><br/>`;
 			});
 
 		return `
-			<h2>${recordType} Internal ID: ${recordId}</h2>
+			<h2>${escapeHtml(recordType)} Internal ID: ${escapeHtml(recordId)}</h2>
 
 			<h3>Fields</h3>
 			<div style="width: 100%; overflow-x: auto; max-height: 40em; overflow-y: auto">
@@ -185,10 +185,10 @@ function detailsListing(recordType, recordId) {
 	}
 	catch (e) {
 		return `
-			<h2>${recordType} Internal ID: ${recordId}</h2>
+			<h2>${escapeHtml(recordType)} Internal ID: ${escapeHtml(recordId)}</h2>
 			<h3 style="color: red">
-				Error: ${loaded ? "retrieving -" : "loading -"} ${e.message} <br/>
-				${e.stack}
+				Error: ${loaded ? "retrieving -" : "loading -"} ${escapeHtml(e.message)} <br/>
+				${escapeHtml(e.stack)}
 			</h3>`;
 	}
 }

@@ -7,8 +7,12 @@ export function getCommandParam(context) {
 
 
 export function scriptDeployParam(context) {
-	return "?script=" + context.request.parameters["script"] + "&" +
-		"deploy=" + context.request.parameters["deploy"];
+	const script = context.request.parameters["script"];
+	const deploy = context.request.parameters["deploy"];
+	if (! /^\d+$/.test(script || "") || ! /^\d+$/.test(deploy || "")) {
+		throw new Error("Invalid script/deploy parameters");
+	}
+	return "?script=" + script + "&deploy=" + deploy;
 }
 
 

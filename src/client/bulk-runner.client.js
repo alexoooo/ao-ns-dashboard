@@ -8,6 +8,14 @@
 //
 // Subclass to enable batching by overriding `groupKey(task)`.
 
+// Mirrors src/utils.js#splitVerticalBar for client-side use (subclass groupKey
+// implementations). Keep both copies in sync if escape semantics change.
+function splitVerticalBar(value) {
+	const sentinel = "__VERTICAL_BAR_ESCAPE__" + Math.random().toString(36).substring(2);
+	const withSentinel = value.replaceAll("\\|", sentinel);
+	return withSentinel.split("|").map(i => i.replaceAll(sentinel, "|"));
+}
+
 class BulkRunner extends LitElement {
 	static properties = {
 		taskTypeLabel: { type: String, attribute: "task-type-label" },

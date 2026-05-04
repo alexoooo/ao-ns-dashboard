@@ -3,7 +3,7 @@ import record from "N/record";
 import { paramCommand } from "../../constants.js";
 import { interpolate, documentationSection } from "../../html.js";
 import { scriptDeployParam } from "../../url.js";
-import { splitVerticalBar } from "../../utils.js";
+import { splitVerticalBar, listsEqual } from "../../utils.js";
 import { parseFieldAssignmentList } from "../../field-assignments.js";
 import { getRecordType } from "../../record-types.js";
 import editRecordsPage, { setRecordField } from "../edit-records/server.js";
@@ -48,59 +48,68 @@ export default {
 
 
 function handleCreateRecord(context) {
-	const tabDelimitedRows = JSON.parse(context.request.body);
-	const firstTabDelimitedRow = tabDelimitedRows[0];
-	const firstParts = splitVerticalBar(firstTabDelimitedRow);
-	const recordType = getRecordType(firstParts[0]);
-	const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
-	const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
+	let recordId;
+	try {
+		const tabDelimitedRows = JSON.parse(context.request.body);
+		const firstTabDelimitedRow = tabDelimitedRows[0];
+		const firstParts = splitVerticalBar(firstTabDelimitedRow);
+		const recordType = getRecordType(firstParts[0]);
+		const defaultFieldValues = parseFieldAssignmentList(firstParts[1] || "");
+		const fieldValues = parseFieldAssignmentList(firstParts[2] || "");
 
-	const allValidators = [];
+		const allValidators = [];
 
-	const defaultValues = {};
+		const defaultValues = {};
 
-	const rec = record.create({
-		type: recordType,
-		defaultValues,
-	});
+		const rec = record.create({
+			type: recordType,
+			defaultValues,
+		});
 
-	for (const fieldValue of defaultFieldValues) {
-		const validator = setDefaultRecordField(rec, fieldValue.fieldId, fieldValue.fieldText);
-		allValidators.push(validator);
-	}
-
-	const recordId = rec.save({});
-
-	const loaded = record.load({
-		type: recordType,
-		id: recordId,
-	});
-
-	for (const fieldValue of fieldValues) {
-		const validator = setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText);
-		allValidators.push(validator);
-	}
-
-	loaded.save({});
-
-	const reload = record.load({
-		type: recordType,
-		id: recordId,
-	});
-
-	const messages = [];
-	for (const validator of allValidators) {
-		try {
-			messages.push(validator(reload));
+		for (const fieldValue of defaultFieldValues) {
+			const validator = setDefaultRecordField(rec, fieldValue.fieldId, fieldValue.fieldText);
+			allValidators.push(validator);
 		}
-		catch (e) {
-			messages.push(`Unable to validate: ${e.message}`);
-		}
-	}
 
-	return JSON.stringify([
-		`Internal ID: ${recordId} | ${messages.join(" | ")}`,
-	]);
+		recordId = rec.save({});
+
+		const loaded = record.load({
+			type: recordType,
+			id: recordId,
+		});
+
+		for (const fieldValue of fieldValues) {
+			const validator = setRecordField(loaded, fieldValue.fieldId, fieldValue.fieldText);
+			allValidators.push(validator);
+		}
+
+		loaded.save({});
+
+		const reload = record.load({
+			type: recordType,
+			id: recordId,
+		});
+
+		const messages = [];
+		for (const validator of allValidators) {
+			try {
+				messages.push(validator(reload));
+			}
+			catch (e) {
+				messages.push(`Unable to validate: ${e.message}`);
+			}
+		}
+
+		return JSON.stringify([
+			`Internal ID: ${recordId} | ${messages.join(" | ")}`,
+		]);
+	}
+	catch (e) {
+		const prefix = recordId == null
+			? "Error: "
+			: `Error after creating Internal ID ${recordId}: `;
+		return JSON.stringify([prefix + e.message]);
+	}
 }
 
 
@@ -152,7 +161,7 @@ function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
 		return reload => {
 			const afterSave = reload.getValue({fieldId});
 			const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-			return JSON.stringify(asList) === JSON.stringify(afterSaveList)
+			return listsEqual(asList, afterSaveList)
 				? `Default ${fieldId} to '${fieldText}'`
 				: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 		};
@@ -166,7 +175,7 @@ function setDefaultRecordSelect(rec, fieldId, fieldText, multi) {
 	return reload => {
 		const afterSave = reload.getText({fieldId});
 		const afterSaveList = Array.isArray(afterSave) ? afterSave : [afterSave];
-		return JSON.stringify(afterSaveList) === JSON.stringify(asList)
+		return listsEqual(asList, afterSaveList)
 			? `Default ${fieldId} to '${fieldText}'`
 			: `Unexpected ${fieldId} default, tried '${fieldText}' but got '${afterSave}'`;
 	};
