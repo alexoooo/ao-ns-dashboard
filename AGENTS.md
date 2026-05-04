@@ -106,6 +106,38 @@ The shared bulk-task component is `client/bulk-runner.client.js` (`<bulk-runner>
 
 `client/csv.client.js` exports `csvEncode(value)` — used by both `bulk-runner.client.js#downloadStatus` and `suiteql/client.client.js#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
 
+### Sticky pinned-bar pattern (controls + thead above a results table)
+
+Pages with a controls row above a results table (`suiteql/client.client.js`, `client/bulk-runner.client.js`) use a single convention so the controls and column headers stay visible while scrolling:
+
+- All primary controls (run, download, pagination, status) live on a **single** action row above the table — no nested rows or `<hr>` separators.
+- Action row: `position: sticky; top: 0; background: white; z-index: 1; padding: 0.5em 0; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)`.
+- Thead `<th>`: `position: sticky; top: var(--<scope>-actions-height, <fallback>); background: white; z-index: 2; box-shadow: 0 4px 4px -4px rgba(0,0,0,0.3)` — same shadow value.
+- Set the CSS variable from JS in `updated()` so the thead always lands flush below the action row regardless of pagination wrapping or content changes:
+  ```js
+  const actions = this.querySelector(".<scope>-actions");
+  if (actions) {
+      this.style.setProperty("--<scope>-actions-height", actions.offsetHeight + "px");
+  }
+  ```
+- **Z-index ordering matters**: action row `z-index: 1`, thead `z-index: 2`. The thead's white background then occludes the action row's bottom shadow where they meet — without the swap you get a double shadow line.
+- **Shadow value rationale**: `0 4px 4px -4px rgba(0,0,0,0.3)`. Negative spread cancels lateral blur (no overspill on the sides), and offset-y matches the blur radius (no overspill above the element's bottom edge).
+- The table must **not** be wrapped in an element with `overflow` set on either axis — that creates a scroll container and `position: sticky` on the thead becomes relative to that wrapper instead of `mdl-layout__content`. See the next note for handling wide tables.
+
+### MDL horizontal-scroll gotcha
+
+`.mdl-layout__content` ships with `overflow-x: hidden`, which clips content wider than the viewport. Wrapping wide content in `overflow-x: auto` does **not** work as a fix: per spec, setting one overflow axis to non-`visible` computes the other to `auto`, and the wrapper becomes a scroll container that breaks any page-level `position: sticky` inside it.
+
+For pages that need both horizontal scroll and page-level sticky elements, override the layout's overflow from the page template:
+
+```html
+<style>
+    .mdl-layout__content { overflow-x: auto !important; }
+</style>
+```
+
+See `src/pages/suiteql/template.html` for an example. The override is per-request HTML so it only applies on that page.
+
 ### Adding a new client module
 
 1. Create `src/client/<name>.client.js` (or `src/pages/<page>/client.client.js`) with `import`/`export` as needed.
