@@ -5,7 +5,7 @@
 // internal double-quotes so the cell can be safely wrapped in "...".
 export function csvEncode(value: unknown): string {
 	let str = stringify(value);
-	if (/^[=+\-@\t\r]/.test(str)) {
+	if (typeof value !== "number" && /^[=+\-@\t\r]/.test(str)) {
 		str = "'" + str;
 	}
 	return str.replaceAll('"', '""');

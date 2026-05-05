@@ -26,7 +26,7 @@ const massDeletePage: PageDef = {
 				<ul>
 					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
 					<li>Each line is a single record to delete, identified by Record Type and Internal ID.</li>
-					<li>The page reloads the record after the delete to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
+					<li>The page reloads the record after it is deleted to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
 				</ul>
 				${taskInputFormatHelp()}
 			`),
