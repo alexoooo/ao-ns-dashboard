@@ -19,6 +19,7 @@ import {LitElement, html, type PropertyValues, type TemplateResult} from "lit";
 // jQuery + Select2 are loaded globally by layout.html's <script> tags.
 declare const $: (selector: unknown) => {
 	select2(options: {placeholder: string}): unknown;
+	on(event: string, handler: (e: Event) => void): unknown;
 };
 
 class RecordDetailsPage extends LitElement {
@@ -66,8 +67,12 @@ class RecordDetailsPage extends LitElement {
 		}
 
 		// Using jQuery directly because Select2 is a jQuery plugin and that's
-		// how it's loaded site-wide (see layout.html).
+		// how it's loaded site-wide (see layout.html). The change handler is
+		// bound via jQuery too — Select2 fires `change` through jQuery's
+		// `.trigger()`, which does not reach native `addEventListener` (so
+		// Lit's `@change` would never see the user's selection).
 		$(select).select2({placeholder: "Please make a selection"});
+		$(select).on("change", e => this.onTypeSelectChange(e));
 	}
 
 	override updated(_changed: PropertyValues): void {
@@ -105,11 +110,8 @@ class RecordDetailsPage extends LitElement {
 				<fieldset>
 					<legend>Record Type Search</legend>
 					<!-- options injected via firstUpdated() before Select2 initialises -->
-					<select
-						class="record-type-select"
-						id="record-type-search"
-						@change=${this.onTypeSelectChange}
-					></select>
+					<!-- change is bound via jQuery in firstUpdated() — see the comment there -->
+					<select class="record-type-select" id="record-type-search"></select>
 				</fieldset>
 				<fieldset style="margin-top: 0.5em; width: 30em">
 					<!-- NB: floating label doesn't work with programmatic value assignment -->

@@ -1,5 +1,8 @@
 .idea
-.claude
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/cache/
+.claude/logs/
 node_modules
 
 # Tooling
