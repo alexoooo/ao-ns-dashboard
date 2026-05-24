@@ -22,7 +22,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "node scripts/bump-version.mjs && rollup -c",
     "dev": "rollup -c -w",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

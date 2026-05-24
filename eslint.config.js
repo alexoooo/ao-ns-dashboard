@@ -27,7 +27,7 @@ const topLevelNsApiSelector = netsuiteRuntimeModules
 
 export default tseslint.config(
 	{
-		ignores: ["node_modules/**", "ao-ns-dashboard.js", "coverage/**", "*.tsbuildinfo"],
+		ignores: ["node_modules/**", "ao-ns-dashboard_*.js", "coverage/**", "*.tsbuildinfo"],
 	},
 
 	// Type-checked rules for src + tests

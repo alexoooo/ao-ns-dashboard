@@ -11,12 +11,18 @@ Source lives under `src/` as TypeScript ES modules. Rollup bundles it into a sin
 ## Build & checks
 
 - One-time: `npm install` (Node ≥ 20).
-- Build: `npm run build` → produces `ao-ns-dashboard.js` at the repo root.
-- Watch: `npm run dev`.
+- Build: `npm run build` → bumps the version in `src/app/constants.ts`, produces `ao-ns-dashboard_<version>.js` at the repo root, deletes any previous versioned bundle.
+- Watch: `npm run dev` (does **not** bump — keeps the current versioned filename and rewrites it on every save).
 - Unified gate: `npm run check` runs `tsc --noEmit && eslint && prettier --check && vitest run` — must be green before committing.
 - Individually: `npm run typecheck`, `npm run lint`, `npm run lint:fix`, `npm run format`, `npm run format:check`, `npm test`, `npm run test:watch`.
 
-`ao-ns-dashboard.js` is the build artifact but is committed to the repo (the README installation instructions point at it). Re-run `npm run build` whenever `src/` changes.
+### Release artifact
+
+The build emits exactly one file at the repo root: `ao-ns-dashboard_<version>.js`. There is no unversioned bundle. The cleanup runs inside rollup's `writeBundle` hook (see `rollup.config.js`), so the previous versioned file (and the legacy `ao-ns-dashboard.js` if it lingers) gets deleted as soon as the new one is written.
+
+`<version>` follows `yyyy.mm.dd<suffix>` where suffix is `a`, `b`, …, `z`, `aa`, `ab`, …. `scripts/bump-version.mjs` (which `npm run build` runs before rollup) advances the suffix by one if the current version's date matches today, and resets to `<today>a` on a new day. **Do not edit `version` in `src/app/constants.ts` by hand** — let the build manage it.
+
+The versioned bundle is committed to git. Re-run `npm run build` whenever `src/` changes, and commit both the bumped `src/app/constants.ts` and the new `ao-ns-dashboard_<version>.js` (git will show the previous one being deleted).
 
 End-to-end verification is manual — deploy the bundle to a NetSuite sandbox and exercise each page. See `CONTRIBUTING.md` for the manual test checklist.
 
@@ -217,7 +223,7 @@ Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, e
 
 ### Conventions
 
-- `version` constant in `constants.ts` shows in the header — bump it when shipping a user-visible change.
+- `version` constant in `constants.ts` shows in the header. It follows `yyyy.mm.dd<suffix>` and is bumped automatically by `npm run build` (see "Release artifact" above). Do not edit it manually.
 - The header turns red on non-sandbox environments (hostname doesn't contain `-sb`) — see `layout.html`.
 - External CSS/JS is loaded from cdnjs.cloudflare.com (Material Design Lite, jQuery, Select2).
 - Indentation: tabs, width 4 (enforced by Prettier + `.editorconfig`). Preserve indentation in template literals — leading whitespace in `<script>` tags shows up in the rendered HTML.

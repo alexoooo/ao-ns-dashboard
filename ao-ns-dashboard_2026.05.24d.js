@@ -70,7 +70,7 @@ function documentationSection(documentationHtml) {
 
 var layoutHtml = "<!doctype html>\n<head>\n\t<title>{{title}}</title>\n\t<script type=\"importmap\">\n\t\t{{importMapJsonJs}}\n\t</script>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" />\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\" />\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\t<style>\n\t\t/* MDL's default is overflow-x: hidden, which clips wide tables. Pages\n\t\t   that need horizontal scroll opt in via PageDef.bodyClass = \"page-wide\".\n\t\t   Wrapping the table in an overflow-x: auto div would create a scroll\n\t\t   container that breaks the page-level sticky thead, so let the page\n\t\t   itself scroll horizontally instead. */\n\t\tbody.page-wide .mdl-layout__content {\n\t\t\toverflow-x: auto !important;\n\t\t}\n\t</style>\n\n\t<script\n\t\tsrc=\"https://code.jquery.com/jquery-3.6.0.js\"\n\t\tintegrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\"\n\t\tcrossorigin=\"anonymous\"\n\t></script>\n\t<script\n\t\tsrc=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\"\n\t\tintegrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t></script>\n\t<link\n\t\trel=\"stylesheet\"\n\t\thref=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\"\n\t\tintegrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t/>\n\t<script>\n\t\t$(document).on(\"select2:open\", () => {\n\t\t\tdocument.querySelector(\".select2-search__field\").focus();\n\t\t});\n\t\t$(function () {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split(\".\")[0];\n\t\t\tif (!env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName(\"mdl-layout__header-row\")[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\t// textContent (not innerHTML): hostname is browser-controlled but\n\t\t\t// nothing in this codepath should ever interpret it as markup.\n\t\t\tdocument.getElementById(\"env\").textContent = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body class=\"{{bodyClassesHtml}}\">\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br />\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">{{navHtml}}</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">{{bodyHtml}}</div>\n\t\t</main>\n\t</div>\n</body>\n";
 
-const version = "2026.05.24a";
+const version = "2026.05.24d";
 const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
 const paramPage = "page";
@@ -193,7 +193,7 @@ function fromError(e) {
     return failure(errorMessage(e), errorName(e));
 }
 
-var templateHtml$8 = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>\n\tGet the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a>\n</h4>\n<br />\n";
+var templateHtml$9 = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>\n\tGet the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a>\n</h4>\n<br />\n";
 
 const welcomePage = {
     name: "welcome",
@@ -201,7 +201,7 @@ const welcomePage = {
     render(_context) {
         const displayName = runtime.getCurrentUser().name;
         const name = displayName.startsWith("EMP") ? displayName.split(" ").slice(1).join(" ") : displayName;
-        return interpolate(templateHtml$8, { name });
+        return interpolate(templateHtml$9, { name });
     },
 };
 
@@ -260,7 +260,7 @@ function recordTypeOptions(selectedRecordType) {
         .join("");
 }
 
-var templateHtml$7 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
+var templateHtml$8 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
 
 const commandName$6 = "record-type";
 const recordTypePage = {
@@ -274,7 +274,7 @@ const recordTypePage = {
             .map(i => i[0] + i.substring(1).toLowerCase())
             .join(" "))
             .join("\n");
-        return interpolate(templateHtml$7, {
+        return interpolate(templateHtml$8, {
             commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
             paramRecordId,
             documentationHtml: documentationSection(`
@@ -415,7 +415,7 @@ function listsEqual(a, b) {
     return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
-var templateHtml$6 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<div>{{documentationHtml}}</div>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
+var templateHtml$7 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<div>{{documentationHtml}}</div>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
 
 const recordDetailsPage = {
     name: "record-details",
@@ -426,7 +426,7 @@ const recordDetailsPage = {
         const detailsHtml = recordType === "" || recordId === ""
             ? `Please provide "Record Type" and "Internal ID" (above)`
             : detailsListing(recordType, recordId);
-        return interpolate(templateHtml$6, {
+        return interpolate(templateHtml$7, {
             documentationHtml: documentationSection(`
 				<ul>
 					<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
@@ -703,14 +703,14 @@ function findSublistLines(rec, sublistId, sublistLineQuery) {
     return candidates;
 }
 
-var templateHtml$5 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID|Location|Field ID\" command-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
+var templateHtml$6 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID|Location|Field ID\" command-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$5 = "lookup-fields";
 const lookupFieldsPage = {
     name: "lookup-fields",
     label: "Lookup Fields",
     render(context) {
-        return interpolate(templateHtml$5, {
+        return interpolate(templateHtml$6, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$5,
             documentationHtml: documentationSection(`
 				<ul>
@@ -1007,7 +1007,7 @@ function readText(fn) {
     return Array.isArray(raw) ? raw.join(",") : raw;
 }
 
-var templateHtml$4 = "<script type=\"module\">\n\timport \"edit-records\";\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-edit-records\n\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\tcommand-post-url=\"{{commandUrl}}\"\n>\n</bulk-runner-edit-records>\n";
+var templateHtml$5 = "<script type=\"module\">\n\timport \"edit-records\";\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-edit-records\n\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\tcommand-post-url=\"{{commandUrl}}\"\n>\n</bulk-runner-edit-records>\n";
 
 const commandName$4 = "edit";
 const actionSet = "set";
@@ -1018,7 +1018,7 @@ const editRecordsPage = {
     name: "edit-records",
     label: "Edit Records",
     render(context) {
-        return interpolate(templateHtml$4, {
+        return interpolate(templateHtml$5, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$4,
             documentationHtml: documentationSection(`
 				<ul>
@@ -1198,14 +1198,14 @@ function getIgnoreCalcArgument(fieldAssignments, allowExtra) {
     throw new Error("Only true/false allowed for ignoreRecalc: " + ignoreRecalcValueText);
 }
 
-var templateHtml$3 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Create one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Default Values|Field Values\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$4 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Create one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Default Values|Field Values\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$3 = "create";
 const createRecordsPage = {
     name: "create-records",
     label: "Create Records",
     render(context) {
-        return interpolate(templateHtml$3, {
+        return interpolate(templateHtml$4, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$3,
             documentationHtml: documentationSection(`
 				<ul>
@@ -1262,14 +1262,14 @@ function handleCreateRecord(context) {
     }
 }
 
-var templateHtml$2 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$3 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$2 = "mass-save";
 const massSavePage = {
     name: "mass-save",
     label: "Mass Edit/Save",
     render(context) {
-        return interpolate(templateHtml$2, {
+        return interpolate(templateHtml$3, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$2,
             documentationHtml: documentationSection(`
 				<ul>
@@ -1307,14 +1307,14 @@ function handleMassSave(context) {
     return success(["Edit/Save"]);
 }
 
-var templateHtml$1 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$2 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$1 = "mass-delete";
 const massDeletePage = {
     name: "mass-delete",
     label: "Mass Delete (DANGER!)",
     render(context) {
-        return interpolate(templateHtml$1, {
+        return interpolate(templateHtml$2, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$1,
             documentationHtml: documentationSection(`
 				<p style="color: #b00"><strong>Warning:</strong> deletion is permanent and cannot be undone from this page. Verify your input list before running.</p>
@@ -1375,7 +1375,7 @@ function handleMassDelete(context) {
     }
 }
 
-var templateHtml = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
+var templateHtml$1 = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
 
 const commandName = "suiteql";
 const suiteqlPage = {
@@ -1386,7 +1386,7 @@ const suiteqlPage = {
     // body-class CSS that this opts into.
     bodyClass: "page-wide",
     render(context) {
-        return interpolate(templateHtml, {
+        return interpolate(templateHtml$1, {
             commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
             documentationHtml: documentationSection(`
 				<ul>
@@ -1442,6 +1442,68 @@ function handleSuiteQl(context) {
     }
 }
 
+var templateHtml = "<h2>Explore Items and their BOMs</h2>\n{{documentationHtml}}\n<hr />\n<form method=\"post\">\n\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\" style=\"width: 30em\">\n\t\t<input\n\t\t\tclass=\"mdl-textfield__input\"\n\t\t\ttype=\"text\"\n\t\t\tid=\"item\"\n\t\t\tname=\"{{paramItem}}\"\n\t\t\tvalue=\"{{itemNumber}}\"\n\t\t\tautofocus\n\t\t/>\n\t\t<label class=\"mdl-textfield__label\" for=\"item\">Item Number</label>\n\t</div>\n\t<br />\n\t<button type=\"submit\" class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\">\n\t\t<span class=\"material-icons md-18\">search</span> Check\n\t</button>\n</form>\n<hr />\n{{resultHtml}}\n";
+
+const paramItem = "item";
+const itemBomsPage = {
+    name: "item-boms",
+    label: "Item BOMs",
+    render(context) {
+        const itemNumber = (context.request.parameters[paramItem] ?? "").trim();
+        const resultHtml = itemNumber === "" ? "" : existenceResult(itemNumber);
+        return interpolate(templateHtml, {
+            documentationHtml: documentationSection(`
+				<ul>
+					<li>Enter an <strong>Item Name/Number</strong> (the human-readable code, e.g. <code>ABC-123</code>) and click <strong>Check</strong> to see whether it exists.</li>
+					<li>Any item type is accepted &mdash; the result reports the matched item type and Internal ID.</li>
+					<li>BOM details for the matched item will be added in a later iteration.</li>
+				</ul>
+			`),
+            paramItem,
+            itemNumber,
+            resultHtml,
+        });
+    },
+};
+function existenceResult(itemNumber) {
+    let matches;
+    try {
+        matches = searchByItemId(itemNumber);
+    }
+    catch (e) {
+        return `<h3 style="color: red">Error: ${escapeHtml(errorMessage(e))}</h3>`;
+    }
+    if (matches.length === 0) {
+        return `<h3>Item not found: <code>${escapeHtml(itemNumber)}</code></h3>`;
+    }
+    if (matches.length === 1) {
+        const m = matches[0];
+        return `<h3 style="color: green">Found <code>${escapeHtml(itemNumber)}</code> &mdash; ${escapeHtml(m.itemType)}, Internal ID = ${escapeHtml(m.internalId)}</h3>`;
+    }
+    const rows = matches
+        .map(m => `<li>${escapeHtml(m.itemType)} &mdash; Internal ID = ${escapeHtml(m.internalId)}</li>`)
+        .join("");
+    return `<h3>Multiple matches for <code>${escapeHtml(itemNumber)}</code>:</h3><ul>${rows}</ul>`;
+}
+function searchByItemId(itemNumber) {
+    const itemSearch = search.create({
+        type: search.Type.ITEM,
+        filters: [
+            search.createFilter({
+                name: "itemid",
+                operator: search.Operator.IS,
+                values: itemNumber,
+            }),
+        ],
+        columns: [search.createColumn({ name: "internalid" }), search.createColumn({ name: "type" })],
+    });
+    const results = itemSearch.run().getRange({ start: 0, end: 10 }) ?? [];
+    return results.map(r => ({
+        internalId: String(r.getValue({ name: "internalid" })),
+        itemType: r.getText({ name: "type" }) || String(r.getValue({ name: "type" })),
+    }));
+}
+
 // Ordered list of pages. Order controls the navigation drawer.
 // The first entry is the default page (loaded when no ?page= is given).
 const pages = [
@@ -1453,6 +1515,7 @@ const pages = [
     createRecordsPage,
     massSavePage,
     suiteqlPage,
+    itemBomsPage,
     massDeletePage,
 ];
 
