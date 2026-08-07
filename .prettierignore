@@ -1,4 +1,4 @@
 node_modules
-ao-ns-dashboard_*.js
+ao-ns-dashboard.js
 coverage
 *.tsbuildinfo

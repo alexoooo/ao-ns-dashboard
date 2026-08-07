@@ -19,9 +19,9 @@ The header turns red on non-sandbox environments as a safety reminder.
 
 ## Installation
 
-The bundle to upload is the single `ao-ns-dashboard_<version>.js` file at the repo root (only the latest version is kept). Customization / Scripting / Scripts / New, then:
+The bundle to upload is the single `ao-ns-dashboard.js` file at the repo root. Customization / Scripting / Scripts / New, then:
 
-1. **Script File** → [+] → Choose file → select `ao-ns-dashboard_<version>.js`, set "file name" to `ao-ns-dashboard.js`, Save.
+1. **Script File** → [+] → Choose file → select `ao-ns-dashboard.js`, Save.
 2. **Create Script Record**.
 3. **Deployments** → Add new.
 
@@ -31,11 +31,11 @@ Requirements: Node.js 20+.
 
 ```bash
 npm install              # one-time
-npm run build            # bumps version, produces ao-ns-dashboard_<version>.js, deletes previous
+npm run build            # bumps version, produces ao-ns-dashboard.js
 npm run dev              # watch mode (rebuild on save; does not bump)
 npm run check            # tsc + eslint + prettier + vitest:  run before committing
 ```
 
-After every `src/**` change, run `npm run build` and commit the regenerated `ao-ns-dashboard_<version>.js` (the build bumps the version in `src/app/constants.ts` and deletes the previous versioned bundle). End-to-end verification is manual against a NetSuite sandbox; see [CONTRIBUTING.md](CONTRIBUTING.md) for the test checklist.
+After every `src/**` change, run `npm run build` and commit the regenerated `ao-ns-dashboard.js` (the build also bumps the version in `src/app/constants.ts`). End-to-end verification is manual against a NetSuite sandbox; see [CONTRIBUTING.md](CONTRIBUTING.md) for the test checklist.
 
 For architecture, conventions, and gotchas, see [AGENTS.md](AGENTS.md).

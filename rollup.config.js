@@ -8,31 +8,22 @@ import typescript from "@rollup/plugin-typescript";
 
 const banner = fs.readFileSync("src/app/banner.txt", "utf8");
 
-// Read the current version from constants.ts so the bundle filename carries it
-// (e.g. `ao-ns-dashboard_2026.05.24a.js`). `npm run build` runs
-// `scripts/bump-version.mjs` before rollup, so the value picked up here is
-// already the version this build will ship under.
-const constantsSrc = fs.readFileSync("src/app/constants.ts", "utf8");
-const versionMatch = constantsSrc.match(/export const version = "([^"]+)"/);
-if (!versionMatch) {
-	throw new Error("Could not find version constant in src/app/constants.ts");
-}
-const version = versionMatch[1];
-const outputFile = `ao-ns-dashboard_${version}.js`;
+// The bundle always lands at the repo root under a fixed name — the same name
+// it gets uploaded under in NetSuite. The version lives in the source (and in
+// the banner/UI), not in the filename, so the artifact overwrites cleanly in
+// git instead of showing up as a delete + add on every build.
+const outputFile = "ao-ns-dashboard.js";
 
-// After writing the new bundle, delete any previous build artifacts at the
-// repo root: stale versioned files from earlier builds, and the legacy
-// unversioned `ao-ns-dashboard.js`. Only the bundle for the current version
-// should remain.
-const cleanupOldBundles = {
-	name: "cleanup-old-bundles",
+// Remove versioned bundles left over from the old naming scheme
+// (`ao-ns-dashboard_<version>.js`), so a stale artifact can't linger next to
+// the real one.
+const cleanupVersionedBundles = {
+	name: "cleanup-versioned-bundles",
 	writeBundle() {
 		for (const f of fs.readdirSync(".")) {
-			const isStaleVersioned = /^ao-ns-dashboard_.+\.js$/.test(f) && f !== outputFile;
-			const isLegacyUnversioned = f === "ao-ns-dashboard.js";
-			if (isStaleVersioned || isLegacyUnversioned) {
+			if (/^ao-ns-dashboard_.+\.js$/.test(f)) {
 				fs.unlinkSync(f);
-				console.log(`Deleted previous bundle: ${f}`);
+				console.log(`Deleted stale versioned bundle: ${f}`);
 			}
 		}
 	},
@@ -139,6 +130,6 @@ export default {
 				sourceMap: false,
 			},
 		}),
-		cleanupOldBundles,
+		cleanupVersionedBundles,
 	],
 };
