@@ -1,0 +1,22 @@
+<h2>Explore Items and their BOMs</h2>
+{{documentationHtml}}
+<hr />
+<form method="post">
+	<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 30em">
+		<input
+			class="mdl-textfield__input"
+			type="text"
+			id="item"
+			name="{{paramItem}}"
+			value="{{itemNumber}}"
+			autofocus
+		/>
+		<label class="mdl-textfield__label" for="item">Item Number</label>
+	</div>
+	<br />
+	<button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+		<span class="material-icons md-18">search</span> Check
+	</button>
+</form>
+<hr />
+{{resultHtml}}

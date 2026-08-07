@@ -8,6 +8,36 @@ import typescript from "@rollup/plugin-typescript";
 
 const banner = fs.readFileSync("src/app/banner.txt", "utf8");
 
+// Read the current version from constants.ts so the bundle filename carries it
+// (e.g. `ao-ns-dashboard_2026.05.24a.js`). `npm run build` runs
+// `scripts/bump-version.mjs` before rollup, so the value picked up here is
+// already the version this build will ship under.
+const constantsSrc = fs.readFileSync("src/app/constants.ts", "utf8");
+const versionMatch = constantsSrc.match(/export const version = "([^"]+)"/);
+if (!versionMatch) {
+	throw new Error("Could not find version constant in src/app/constants.ts");
+}
+const version = versionMatch[1];
+const outputFile = `ao-ns-dashboard_${version}.js`;
+
+// After writing the new bundle, delete any previous build artifacts at the
+// repo root: stale versioned files from earlier builds, and the legacy
+// unversioned `ao-ns-dashboard.js`. Only the bundle for the current version
+// should remain.
+const cleanupOldBundles = {
+	name: "cleanup-old-bundles",
+	writeBundle() {
+		for (const f of fs.readdirSync(".")) {
+			const isStaleVersioned = /^ao-ns-dashboard_.+\.js$/.test(f) && f !== outputFile;
+			const isLegacyUnversioned = f === "ao-ns-dashboard.js";
+			if (isStaleVersioned || isLegacyUnversioned) {
+				fs.unlinkSync(f);
+				console.log(`Deleted previous bundle: ${f}`);
+			}
+		}
+	},
+};
+
 // Custom plugin: certain imports resolve to a file's source text exported
 // as the default export, so it can be embedded into the bundle.
 //
@@ -82,7 +112,7 @@ function transpileClientModule(source, fileName) {
 export default {
 	input: "src/app/index.ts",
 	output: {
-		file: "ao-ns-dashboard.js",
+		file: outputFile,
 		format: "amd",
 		exports: "default",
 		banner,
@@ -109,5 +139,6 @@ export default {
 				sourceMap: false,
 			},
 		}),
+		cleanupOldBundles,
 	],
 };

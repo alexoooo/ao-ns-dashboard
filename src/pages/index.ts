@@ -10,6 +10,7 @@ import createRecords from "./create-records/server";
 import massSave from "./mass-save/server";
 import massDelete from "./mass-delete/server";
 import suiteql from "./suiteql/server";
+import itemBoms from "./item-boms/server";
 import type {PageDef} from "../app/types";
 
 const pages: PageDef[] = [
@@ -21,6 +22,7 @@ const pages: PageDef[] = [
 	createRecords,
 	massSave,
 	suiteql,
+	itemBoms,
 	massDelete,
 ];
 

@@ -266,7 +266,7 @@ function recordTypeOptions(selectedRecordType) {
         .join("");
 }
 
-var templateHtml$7 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
+var templateHtml$7 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
 
 const commandName$6 = "record-type";
 const recordTypePage = {
@@ -423,7 +423,7 @@ function listsEqual(a, b) {
     return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
-var templateHtml$6 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
+var templateHtml$6 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<div>{{documentationHtml}}</div>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
 
 const recordDetailsPage = {
     name: "record-details",
@@ -435,6 +435,13 @@ const recordDetailsPage = {
             ? `Please provide "Record Type" and "Internal ID" (above)`
             : detailsListing(recordType, recordId);
         return interpolate(templateHtml$6, {
+            documentationHtml: documentationSection(`
+				<ul>
+					<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
+					<li>The Field ID and Sublist ID values shown here are what to use on the other pages (Lookup Fields, Edit Records, etc.).</li>
+					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
+				</ul>
+			`),
             // `*Attr` keys go into HTML attribute values on <record-details-page>
             // — `interpolate` HTML-escapes by default, which is what we need so
             // the markup payload survives attribute-value parsing. The Lit
@@ -713,7 +720,7 @@ function findSublistLines(rec, sublistId, sublistLineQuery) {
     return candidates;
 }
 
-var templateHtml$5 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID|Location|Field ID\" command-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
+var templateHtml$5 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Retrieve field values from some records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID|Location|Field ID\" command-post-url=\"{{commandUrl}}\">\n</bulk-runner>\n";
 
 const commandName$5 = "lookup-fields";
 const lookupFieldsPage = {
@@ -1079,7 +1086,7 @@ function readText(fn) {
     return Array.isArray(raw) ? raw.join(",") : raw;
 }
 
-var templateHtml$4 = "<script type=\"module\">\n\timport \"edit-records\";\n</script>\n\n<h2>Edit one or more records</h2>\n<hr />\n<bulk-runner-edit-records\n\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\tcommand-post-url=\"{{commandUrl}}\"\n>\n</bulk-runner-edit-records>\n";
+var templateHtml$4 = "<script type=\"module\">\n\timport \"edit-records\";\n</script>\n\n<h2>Edit one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner-edit-records\n\ttask-type-label=\"Record Type|Internal ID|Location|Field Values|Action\"\n\tcommand-post-url=\"{{commandUrl}}\"\n>\n</bulk-runner-edit-records>\n";
 
 const commandName$4 = "edit";
 const actionSet = "set";
@@ -1280,7 +1287,7 @@ function getIgnoreCalcArgument(fieldAssignments, allowExtra) {
     throw new Error("Only true/false allowed for ignoreRecalc: " + ignoreRecalcValueText);
 }
 
-var templateHtml$3 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Create one or more records</h2>\n<hr />\n<bulk-runner task-type-label=\"Record Type|Default Values|Field Values\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$3 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h2>Create one or more records</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Default Values|Field Values\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$3 = "create";
 const createRecordsPage = {
@@ -1346,7 +1353,7 @@ function handleCreateRecord(context) {
     }
 }
 
-var templateHtml$2 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$2 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1>Edit/Save Records</h1>\n<h2>(without changing values, to trigger events)</h2>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$2 = "mass-save";
 const massSavePage = {
@@ -1393,7 +1400,7 @@ function handleMassSave(context) {
     return success(["Edit/Save"]);
 }
 
-var templateHtml$1 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
+var templateHtml$1 = "<script type=\"module\">\n\timport \"bulk-runner\";\n</script>\n\n<h1 style=\"color: red\">***Records are PERMANENTLY DELETED***</h1>\n{{documentationHtml}}\n<hr />\n<bulk-runner task-type-label=\"Record Type|Internal ID\" command-post-url=\"{{commandUrl}}\"> </bulk-runner>\n";
 
 const commandName$1 = "mass-delete";
 const massDeletePage = {
@@ -1463,7 +1470,7 @@ function handleMassDelete(context) {
     }
 }
 
-var templateHtml = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n\n<h2>SuiteQL Query</h2>\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
+var templateHtml = "<script type=\"module\">\n\timport \"suiteql\";\n</script>\n\n<h2>SuiteQL Query</h2>\n{{documentationHtml}}\n<hr />\n<suiteql-page command-post-url=\"{{commandUrl}}\"></suiteql-page>\n";
 
 const commandName = "suiteql";
 const suiteqlPage = {
