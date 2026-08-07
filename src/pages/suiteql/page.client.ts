@@ -13,10 +13,16 @@ interface SuiteqlPageData {
 	totalCount: number;
 }
 
-function formatCell(value: unknown): string {
-	if (value == null) return "";
+// SQL NULL renders as a greyed marker rather than a blank cell, so it can be
+// told apart from an empty string. `bigint` is in N/query's QueryResultValue
+// union and JSON.stringify throws on it, so it has to be handled before the
+// JSON fallback.
+function formatCell(value: unknown): TemplateResult | string {
+	if (value == null) return html`<span style="color: #999; font-style: italic">null</span>`;
 	if (typeof value === "string") return value;
-	if (typeof value === "number" || typeof value === "boolean") return String(value);
+	if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+		return String(value);
+	}
 	return JSON.stringify(value);
 }
 

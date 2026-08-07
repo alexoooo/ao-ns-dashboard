@@ -2,7 +2,7 @@ import record from "N/record";
 import search from "N/search";
 
 import {paramCommand, paramRecordId} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {scriptDeployParam} from "../../lib/url";
 import {allRecordTypes, undocumentedRecordTypes, getRecordType} from "../../server/record-types";
 import {errorMessage} from "../../lib/error-utils";
@@ -30,19 +30,22 @@ const recordTypePage: PageDef = {
 		return interpolate(templateHtml, {
 			commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
 			paramRecordId,
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>Record Type names here may differ from what NetSuite shows in its UI &mdash; e.g. NetSuite "Customer Payment" is just <code>Payment</code> here.</li>
-					<li>The same Internal ID can exist under multiple Record Types &mdash; results show every type the ID was found under.</li>
-					<li>Undocumented Record Types currently mapped: ${Object.keys(undocumentedRecordTypes)
-						.map(k => `<code>${k}</code>`)
-						.join(", ")}.</li>
-					<li>Custom Record Types are not auto-populated in the input but can be typed in manually below.</li>
-				</ul>
-			`),
 			defaultTasks,
 			defaultPageCount: Object.keys(all).length,
 		});
+	},
+
+	documentation(): string {
+		return `
+			<ul>
+				<li>Record Type names here may differ from what NetSuite shows in its UI &mdash; e.g. NetSuite "Customer Payment" is just <code>Payment</code> here.</li>
+				<li>The same Internal ID can exist under multiple Record Types &mdash; results show every type the ID was found under.</li>
+				<li>Undocumented Record Types currently mapped: ${Object.keys(undocumentedRecordTypes)
+					.map(k => `<code>${k}</code>`)
+					.join(", ")}.</li>
+				<li>Custom Record Types are not auto-populated in the input but can be typed in manually below.</li>
+			</ul>
+		`;
 	},
 
 	commands: {

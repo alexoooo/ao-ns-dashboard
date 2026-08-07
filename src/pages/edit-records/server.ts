@@ -2,7 +2,7 @@ import record from "N/record";
 import type {Record as NsRecord} from "N/record";
 
 import {paramCommand} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {pageLink, taskInputFormatHelp} from "../../lib/help";
 import {scriptDeployParam} from "../../lib/url";
 import {normalizeKey, splitVerticalBar, splitSlash} from "../../lib/utils";
@@ -29,21 +29,32 @@ const editRecordsPage: PageDef = {
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>For Record Type / Internal ID / Location, see ${pageLink(context, lookupFieldsPage)}.</li>
-					<li><strong>Field Values</strong> are <code>fieldId=value</code> pairs joined by <code>&amp;</code>. For <code>select</code> fields the option number can be used in place of the text. Multiple values can be passed to <code>${actionSet}</code> and <code>${actionInsertLine}</code>.</li>
-					<li><strong>Actions</strong>:
-						<ul>
-							<li><code>${actionSet}</code> &mdash; assign new value to one or more fields.</li>
-							<li><code>${actionInsertLine}</code> &mdash; add new sublist line before the given Location; use line <code>-0</code> to insert at the end.</li>
-							<li><code>${actionRemoveLine}</code> &mdash; remove existing sublist line.</li>
-						</ul>
-					</li>
-				</ul>
-				${taskInputFormatHelp()}
-			`),
 		});
+	},
+
+	documentation(context: SuiteletContext): string {
+		return `
+			<ul>
+				<li>For Record Type / Internal ID / Location, see ${pageLink(context, lookupFieldsPage)}.</li>
+				<li><strong>Field Values</strong> are <code>fieldId=value</code> pairs joined by <code>&amp;</code>. For <code>select</code> fields the option number can be used in place of the text. Multiple values can be passed to <code>${actionSet}</code> and <code>${actionInsertLine}</code>.</li>
+				<li><strong>Setting a <code>select</code> field by text</strong>:
+					<ul>
+						<li>The text must be the option's full display label, exactly as NetSuite shows it &mdash; for hierarchical lists that includes the parent, e.g. <code>Parent : Child</code>.</li>
+						<li>Surrounding spaces are ignored, so <code>dept= Sales </code> is the same as <code>dept=Sales</code>.</li>
+						<li>An all-digit value is always read as an internal ID, never as display text.</li>
+						<li>When the text can't be matched the task fails with the closest available options listed &mdash; nothing is saved. Use the internal ID when the field has more than 1000 options, since text lookup can't reach past that.</li>
+					</ul>
+				</li>
+				<li><strong>Actions</strong>:
+					<ul>
+						<li><code>${actionSet}</code> &mdash; assign new value to one or more fields.</li>
+						<li><code>${actionInsertLine}</code> &mdash; add new sublist line before the given Location; use line <code>-0</code> to insert at the end.</li>
+						<li><code>${actionRemoveLine}</code> &mdash; remove existing sublist line.</li>
+					</ul>
+				</li>
+			</ul>
+			${taskInputFormatHelp()}
+		`;
 	},
 
 	commands: {

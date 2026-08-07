@@ -38,6 +38,11 @@ export interface PageDef {
 	render(context: SuiteletContext): string;
 	commands?: Record<string, CommandHandler<unknown>>;
 
+	// Optional page help body (typically a `<ul>`). The layout wraps it in the
+	// shared `documentationSection()` disclosure and positions it at the
+	// top-right of the page content — pages don't place it themselves.
+	documentation?(context: SuiteletContext): string;
+
 	// Optional CSS class added to the layout `<body>`. Pages that need
 	// layout-level overrides (e.g. `overflow-x: auto` for horizontally-wide
 	// tables) can declare them here instead of injecting per-page <style>

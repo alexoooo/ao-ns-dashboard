@@ -1,6 +1,6 @@
 import runtime from "N/runtime";
 
-import {interpolate, escapeHtml} from "../lib/html";
+import {interpolate, escapeHtml, documentationSection} from "../lib/html";
 import layoutHtml from "./layout.html";
 import {version, mdlCssUrl, mdlJsUrl, paramPage, paramCommand} from "./constants";
 import {setPageParam} from "../lib/url";
@@ -30,6 +30,12 @@ function dispatchCommand(context: SuiteletContext, command: string): void {
 			envelope = fromError(e);
 		}
 	}
+	// Without an explicit content type NetSuite treats the response as HTML and
+	// appends debug footers (`<!-- Host [ … ] -->`, `<!-- All SQL was faster than
+	// 100 ms -->`) after the body, which makes the envelope unparseable. The
+	// client strips them defensively too (api.client.ts) since this header isn't
+	// honoured in every account/context.
+	context.response.setHeader({name: "Content-Type", value: "application/json; charset=utf-8"});
 	context.response.write(JSON.stringify(envelope));
 }
 
@@ -60,6 +66,9 @@ function renderPage(context: SuiteletContext): void {
 			// Pages can opt into layout-level overrides via PageDef.bodyClass.
 			// Escaped because it's a regular HTML attribute value.
 			bodyClassesHtml: escapeHtml(page.bodyClass ?? ""),
+			// Always supplied — `interpolate` throws on a missing key and the
+			// welcome page has no help.
+			documentationHtml: page.documentation ? documentationSection(page.documentation(context)) : "",
 			bodyHtml: page.render(context),
 		})
 	);

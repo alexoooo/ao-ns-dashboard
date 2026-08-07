@@ -1,7 +1,7 @@
 import record from "N/record";
 
 import {paramCommand} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {pageLink, taskInputFormatHelp} from "../../lib/help";
 import {scriptDeployParam} from "../../lib/url";
 import {splitVerticalBar} from "../../lib/utils";
@@ -24,17 +24,20 @@ const createRecordsPage: PageDef = {
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>For valid Record Types, see ${pageLink(context, lookupFieldsPage)}.</li>
-					<li>Both <strong>Default Values</strong> and <strong>Field Values</strong> use <code>fieldId=value</code> pairs joined by <code>&amp;</code>.</li>
-					<li>To know which values must go in <strong>Default Values</strong> (vs Field Values), refer to SuiteScript's <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4267255811.html#bridgehead_4423371543">"N/record Default Values"</a> docs (incomplete). For some record types, certain Default Values are mandatory.</li>
-					<li>The result line includes the new Internal ID that NetSuite assigned.</li>
-					<li>Sublists are not supported during creation &mdash; create the record first, then use ${pageLink(context, editRecordsPage)} to populate sublists.</li>
-				</ul>
-				${taskInputFormatHelp()}
-			`),
 		});
+	},
+
+	documentation(context: SuiteletContext): string {
+		return `
+			<ul>
+				<li>For valid Record Types, see ${pageLink(context, lookupFieldsPage)}.</li>
+				<li>Both <strong>Default Values</strong> and <strong>Field Values</strong> use <code>fieldId=value</code> pairs joined by <code>&amp;</code>.</li>
+				<li>To know which values must go in <strong>Default Values</strong> (vs Field Values), refer to SuiteScript's <a href="https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/section_4267255811.html#bridgehead_4423371543">"N/record Default Values"</a> docs (incomplete). For some record types, certain Default Values are mandatory.</li>
+				<li>The result line includes the new Internal ID that NetSuite assigned.</li>
+				<li>Sublists are not supported during creation &mdash; create the record first, then use ${pageLink(context, editRecordsPage)} to populate sublists.</li>
+			</ul>
+			${taskInputFormatHelp()}
+		`;
 	},
 
 	commands: {

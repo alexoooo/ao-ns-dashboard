@@ -1,7 +1,7 @@
 import record from "N/record";
 
 import {paramCommand} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {pageLink, taskInputFormatHelp} from "../../lib/help";
 import {scriptDeployParam} from "../../lib/url";
 import {normalizeKey, splitVerticalBar} from "../../lib/utils";
@@ -20,20 +20,23 @@ const massSavePage: PageDef = {
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
-					<li>For each record listed, the page loads it and saves it without modification:
-						<ol>
-							<li>Load the record.</li>
-							<li>Save the record.</li>
-						</ol>
-					</li>
-					<li>The save triggers any associated events (e.g. workflows). Use this to retroactively re-run automation.</li>
-				</ul>
-				${taskInputFormatHelp()}
-			`),
 		});
+	},
+
+	documentation(context: SuiteletContext): string {
+		return `
+			<ul>
+				<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
+				<li>For each record listed, the page loads it and saves it without modification:
+					<ol>
+						<li>Load the record.</li>
+						<li>Save the record.</li>
+					</ol>
+				</li>
+				<li>The save triggers any associated events (e.g. workflows). Use this to retroactively re-run automation.</li>
+			</ul>
+			${taskInputFormatHelp()}
+		`;
 	},
 
 	commands: {

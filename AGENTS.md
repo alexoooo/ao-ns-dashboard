@@ -28,7 +28,7 @@ src/
 │  ├─ index.ts                    Entry — exports default { onRequest: main }
 │  ├─ main.ts                     Dispatcher: routes ?page= and ?command=
 │  ├─ banner.txt                  License + @NApiVersion/@NScriptType comment prepended to the bundle
-│  ├─ layout.html                 Outer page shell (drawer, header, body wrapper, importmap placeholder)
+│  ├─ layout.html                 Outer page shell (drawer, header, help toggle, body wrapper, importmap placeholder)
 │  ├─ globals.d.ts                Ambient declarations for ?raw imports + window.componentHandler
 │  ├─ client-modules.ts           Single source of truth for client-side ES modules (id → source map)
 │  ├─ constants.ts                param names, version, MDL URLs
@@ -82,6 +82,7 @@ const editRecordsPage: PageDef = {
     label: "Edit Records",
     bodyClass: "page-wide",                  // optional — see "Layout-level overrides"
     render(context) { ... },                 // returns HTML string for the body
+    documentation(context) { ... },          // optional — help body, placed by the layout
     commands: { [name]: handler },           // optional — JSON-body POST handlers
 };
 export default editRecordsPage;
@@ -100,6 +101,19 @@ type CommandResponse<T> = {ok: true; data: T} | {ok: false; error: {code?: strin
 Build envelopes inside a handler with `success(data)` / `failure(message, code?)` from `src/app/command.ts`. Thrown errors are caught by the dispatcher and turned into `failure` envelopes via `fromError(e)` (which preserves `e.name` as the error `code`, e.g. `RCRD_DSNT_EXIST`).
 
 Bulk-task pages return `CommandResponse<string[]>` — one message per task in the batch. `<bulk-runner>` reads `data` and renders each entry into the result table; on `ok: false` it marks the whole batch with the error message. SuiteQL returns `CommandResponse<SuiteqlResultPage>`.
+
+**NetSuite HTML debug footers (don't remove either half of this defence).** Unless a Suitelet response declares a non-HTML content type, NetSuite appends its own debug comments _after_ whatever the script wrote:
+
+```
+{"ok":true,"data":{…}}<!-- 481 s: 47% #61 --> <!-- Host [ … ] --> <!-- COMPID [ … ] --> <!-- All SQL was faster than 100 ms -->
+```
+
+which makes `JSON.parse` throw on a perfectly good envelope. This is the same Content-Type unreliability that killed the `?clientJs=<id>` module route (see "Client-side modules" below). Two guards, deliberately both:
+
+1. `dispatchCommand` sets `Content-Type: application/json; charset=utf-8` before writing — suppresses the footers.
+2. `parseEnvelope` in `client/api.client.ts` retries through `stripTrailingHtmlComments()` when a body fails to parse — the header isn't honoured in every account/context.
+
+Note that a JSON `null` is _not_ a symptom of this: `null` is a valid JSON literal, and NULL-valued SuiteQL columns serialise to bare `null` by design.
 
 ### Adding a new page
 
@@ -136,7 +150,7 @@ Lit (`"lit"`) is loaded from a CDN (`https://cdn.jsdelivr.net/npm/lit@3.2.1/+esm
 
 The shared bulk-task component is `client/bulk-runner.client.ts` (`<bulk-runner>`). Properties: `task-type-label`, `command-post-url`. Override `groupKey(task)` in a subclass to enable batching — see `pages/edit-records/page.client.ts` (`<bulk-runner-edit-records>`) which groups by record type + ID. Pages that don't need batching (lookup-fields, create-records, mass-save, mass-delete) use the base `<bulk-runner>` directly. SuiteQL has its own `<suiteql-page>`. Record-details has `<record-details-page>`.
 
-`client/api.client.ts` exports `postJson<T>(url, body, signal?)` — every component that calls a `?command=` endpoint goes through it. It returns a typed `CommandResponse<T>` and converts network errors into `failure` envelopes; only `AbortError` is rethrown so callers can distinguish cancellation.
+`client/api.client.ts` exports `postJson<T>(url, body, signal?)` — every component that calls a `?command=` endpoint goes through it. It returns a typed `CommandResponse<T>` and converts network errors into `failure` envelopes; only `AbortError` is rethrown so callers can distinguish cancellation. Body parsing goes through `parseEnvelope`, which tolerates NetSuite's HTML debug footers and excerpts oversized unparseable bodies rather than dumping megabytes into a status line.
 
 `client/csv.client.ts` exports `csvEncode(value)` — used by `bulk-runner.client.ts#downloadStatus` and `suiteql/page.client.ts#downloadCsv`. Modules that need it `import { csvEncode } from "csv"`.
 
@@ -213,7 +227,7 @@ NetSuite's `SuiteScriptError` doesn't reliably pass `e instanceof Error` in the 
 
 Strict TypeScript (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`). NetSuite's `@hitc/netsuite-types` types `request.parameters` and `request.body` as `any`; the project disables `@typescript-eslint/no-unsafe-*` because casting at every read site is noise. Real implicit-`any` mistakes are still caught by `noImplicitAny`.
 
-Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, escapes, HTML helpers, field-assignment grouping) — SuiteScript-API code is verified manually against a sandbox.
+Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, escapes, HTML helpers, field-assignment grouping, select-input normalisation, CSV encoding, command-envelope parsing) — SuiteScript-API code is verified manually against a sandbox.
 
 ### Conventions
 
@@ -222,7 +236,8 @@ Tests live under `tests/` and run via Vitest. Target pure logic only (parsing, e
 - External CSS/JS is loaded from cdnjs.cloudflare.com (Material Design Lite, jQuery, Select2).
 - Indentation: tabs, width 4 (enforced by Prettier + `.editorconfig`). Preserve indentation in template literals — leading whitespace in `<script>` tags shows up in the rendered HTML.
 - Cross-page references use the imported page def's `.label` (e.g. `${lookupFieldsPage.label}`) so renaming a page is a single-file edit. Importing a page def for `pageLink(context, pageDef)` is the only legitimate cross-page server import — internal helper logic belongs in `src/server/`, not in another page's `server.ts`.
-- **Page documentation** is rendered by `documentationSection(html)` in `src/lib/html.ts`, which wraps the body in a native `<details>/<summary>` disclosure. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/lib/help.ts` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).
+- **Page documentation** is returned by the optional `documentation(context)` method on a `PageDef` — the help body only, no wrapper and no placement. `main.ts#renderPage` passes it through `documentationSection(html)` (`src/lib/html.ts`), which wraps it in a native `<details>/<summary>` disclosure, and `layout.html` floats that at the top-right of `.page-content` so the toggle shares a line with the page heading. Page templates must **not** carry a `{{documentationHtml}}` placeholder. Compose the body with `<ul>/<li>` (not `<h3>·` fakery). Use `pageLink(context, otherPageDef)` from `src/lib/help.ts` for cross-page hyperlinks, and `taskInputFormatHelp()` from the same module for the shared pipe / `&` / `/` / `\\` escape spec on any bulk-task page (lookup-fields, edit-records, create-records, mass-save, mass-delete).
+- **Bulk-task result colouring**: `bulk-runner.client.ts` paints a result row red when its message text contains `"error"` (case-insensitive). Any message describing a failed operation must therefore say so in words — see the `Error:` prefixes in `validateSetField` (`src/server/field-setters.ts`). A failure message without that substring is indistinguishable from a success.
 
 ## Adapting this layout to your own Suitelet
 

@@ -1,7 +1,7 @@
 import record from "N/record";
 
 import {paramCommand} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {pageLink, taskInputFormatHelp} from "../../lib/help";
 import {scriptDeployParam} from "../../lib/url";
 import {normalizeKey, splitVerticalBar} from "../../lib/utils";
@@ -21,16 +21,19 @@ const massDeletePage: PageDef = {
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
-			documentationHtml: documentationSection(`
-				<p style="color: #b00"><strong>Warning:</strong> deletion is permanent and cannot be undone from this page. Verify your input list before running.</p>
-				<ul>
-					<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
-					<li>Each line is a single record to delete, identified by Record Type and Internal ID.</li>
-					<li>The page reloads the record after it is deleted to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
-				</ul>
-				${taskInputFormatHelp()}
-			`),
 		});
+	},
+
+	documentation(context: SuiteletContext): string {
+		return `
+			<p style="color: #b00"><strong>Warning:</strong> deletion is permanent and cannot be undone from this page. Verify your input list before running.</p>
+			<ul>
+				<li>For Record Type / Internal ID, see ${pageLink(context, lookupFieldsPage)}.</li>
+				<li>Each line is a single record to delete, identified by Record Type and Internal ID.</li>
+				<li>The page reloads the record after it is deleted to confirm it is gone &mdash; the result line will say "Delete successful" on success or surface the error otherwise.</li>
+			</ul>
+			${taskInputFormatHelp()}
+		`;
 	},
 
 	commands: {

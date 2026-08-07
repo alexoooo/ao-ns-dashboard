@@ -1,7 +1,7 @@
 import record from "N/record";
 
 import {paramRecordType, paramRecordId} from "../../app/constants";
-import {interpolate, documentationSection, escapeHtml} from "../../lib/html";
+import {interpolate, escapeHtml} from "../../lib/html";
 import {pageLink} from "../../lib/help";
 import {normalizeKey} from "../../lib/utils";
 import {recordTypeOptions} from "../../server/record-types";
@@ -24,13 +24,6 @@ const recordDetailsPage: PageDef = {
 				: detailsListing(recordType, recordId);
 
 		return interpolate(templateHtml, {
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
-					<li>The Field ID and Sublist ID values shown here are what to use on the other pages (Lookup Fields, Edit Records, etc.).</li>
-					<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
-				</ul>
-			`),
 			// `*Attr` keys go into HTML attribute values on <record-details-page>
 			// — `interpolate` HTML-escapes by default, which is what we need so
 			// the markup payload survives attribute-value parsing. The Lit
@@ -42,6 +35,16 @@ const recordDetailsPage: PageDef = {
 			recordId,
 			detailsAttr: detailsHtml,
 		});
+	},
+
+	documentation(context: SuiteletContext): string {
+		return `
+			<ul>
+				<li>Pick a Record Type and enter the record's Internal ID to see all its fields and sublists.</li>
+				<li>The Field ID and Sublist ID values shown here are what to use on the other pages (Lookup Fields, Edit Records, etc.).</li>
+				<li>If you don't know the Record Type for an Internal ID, see ${pageLink(context, recordTypePage)} first.</li>
+			</ul>
+		`;
 	},
 };
 

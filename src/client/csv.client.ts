@@ -5,7 +5,7 @@
 // internal double-quotes so the cell can be safely wrapped in "...".
 export function csvEncode(value: unknown): string {
 	let str = stringify(value);
-	if (typeof value !== "number" && /^[=+\-@\t\r]/.test(str)) {
+	if (typeof value !== "number" && typeof value !== "bigint" && /^[=+\-@\t\r]/.test(str)) {
 		str = "'" + str;
 	}
 	return str.replaceAll('"', '""');
@@ -14,7 +14,11 @@ export function csvEncode(value: unknown): string {
 function stringify(value: unknown): string {
 	if (value == null) return "";
 	if (typeof value === "string") return value;
-	if (typeof value === "number" || typeof value === "boolean") return String(value);
+	// `bigint` is handled here rather than by the JSON fallback below, which
+	// throws on it — SuiteQL columns can come back as bigint.
+	if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+		return String(value);
+	}
 	// Plain objects and arrays would otherwise stringify as "[object Object]"
 	// or comma-joined; JSON gives a useful, deterministic representation.
 	return JSON.stringify(value);

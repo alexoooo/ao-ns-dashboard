@@ -1,7 +1,7 @@
 import query from "N/query";
 
 import {paramCommand} from "../../app/constants";
-import {interpolate, documentationSection} from "../../lib/html";
+import {interpolate} from "../../lib/html";
 import {scriptDeployParam} from "../../lib/url";
 import {errorMessage} from "../../lib/error-utils";
 import {failure, success} from "../../app/command";
@@ -36,21 +36,25 @@ const suiteqlPage: PageDef = {
 	render(context: SuiteletContext): string {
 		return interpolate(templateHtml, {
 			commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName,
-			documentationHtml: documentationSection(`
-				<ul>
-					<li>Enter a SuiteQL query and click <strong>Run Query</strong>.</li>
-					<li>Results are paged in chunks of up to 1000 rows (NetSuite's max page size). Use <strong>Previous</strong> / <strong>Next</strong> to navigate when the result set is larger than one page.</li>
-					<li>Click <strong>Download</strong> to export the current page as CSV.</li>
-					<li>Examples:
-						<ul>
-							<li><code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></li>
-							<li><code>SELECT COUNT(*) AS n FROM customer</code></li>
-						</ul>
-					</li>
-					<li>Errors (e.g. invalid SQL) are reported in the status line next to the buttons.</li>
-				</ul>
-			`),
 		});
+	},
+
+	documentation(): string {
+		return `
+			<ul>
+				<li>Enter a SuiteQL query and click <strong>Run Query</strong>.</li>
+				<li>Results are paged in chunks of up to 1000 rows (NetSuite's max page size). Use <strong>Previous</strong> / <strong>Next</strong> to navigate when the result set is larger than one page.</li>
+				<li>Click <strong>Download</strong> to export the current page as CSV.</li>
+				<li>SQL <code>NULL</code> is shown as a greyed <em>null</em> so it can be told apart from an empty string; both export as an empty CSV field.</li>
+				<li>Examples:
+					<ul>
+						<li><code>SELECT id, type, trandate FROM transaction FETCH FIRST 100 ROWS ONLY</code></li>
+						<li><code>SELECT COUNT(*) AS n FROM customer</code></li>
+					</ul>
+				</li>
+				<li>Errors (e.g. invalid SQL) are reported in the status line next to the buttons.</li>
+			</ul>
+		`;
 	},
 
 	commands: {
