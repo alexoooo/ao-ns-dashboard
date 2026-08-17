@@ -16,6 +16,7 @@
       "edit-records": ["src/pages/edit-records/page.client"],
       "record-type": ["src/pages/record-type/page.client"],
       "record-details": ["src/pages/record-details/page.client"],
+      "reverse-lookup": ["src/pages/reverse-lookup/page.client"],
       "suiteql": ["src/pages/suiteql/page.client"]
     },
 

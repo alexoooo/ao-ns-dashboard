@@ -110,7 +110,7 @@ export default {
 		indent: false,
 		sourcemap: false,
 	},
-	external: ["N/record", "N/search", "N/query", "N/runtime"],
+	external: ["N/record", "N/search", "N/query", "N/runtime", "N/file", "N/url"],
 	treeshake: false,
 	onwarn(warning, warn) {
 		if (warning.code === "UNUSED_EXTERNAL_IMPORT") return;

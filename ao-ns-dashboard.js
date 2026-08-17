@@ -26,7 +26,7 @@
 * @NApiVersion 2.1
 * @NScriptType Suitelet
 */
-define(['N/runtime', 'N/record', 'N/search', 'N/query'], (function (runtime, record, search, query) { 'use strict';
+define(['N/runtime', 'N/record', 'N/search', 'N/file', 'N/query', 'N/url'], (function (runtime, record, search, file, query, nsUrl) { 'use strict';
 
 const escapeMap = {
     "&": "&amp;",
@@ -76,7 +76,7 @@ function documentationSection(documentationHtml) {
 
 var layoutHtml = "<!doctype html>\n<head>\n\t<title>{{title}}</title>\n\t<script type=\"importmap\">\n\t\t{{importMapJsonJs}}\n\t</script>\n\t<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\" />\n\t<link rel=\"stylesheet\" href=\"{{mdlCssUrl}}\" />\n\t<script defer src=\"{{mdlJsUrl}}\"></script>\n\t<style>\n\t\t/* MDL's default is overflow-x: hidden, which clips wide tables. Pages\n\t\t   that need horizontal scroll opt in via PageDef.bodyClass = \"page-wide\".\n\t\t   Wrapping the table in an overflow-x: auto div would create a scroll\n\t\t   container that breaks the page-level sticky thead, so let the page\n\t\t   itself scroll horizontally instead. */\n\t\tbody.page-wide .mdl-layout__content {\n\t\t\toverflow-x: auto !important;\n\t\t}\n\t</style>\n\n\t<script\n\t\tsrc=\"https://code.jquery.com/jquery-3.6.0.js\"\n\t\tintegrity=\"sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=\"\n\t\tcrossorigin=\"anonymous\"\n\t></script>\n\t<script\n\t\tsrc=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.js\"\n\t\tintegrity=\"sha512-w8hm+E7eW80RcTpHGflcYz2A9wvvjbADCPcqepR11qvCUQmZEo65n7o+3JYpYP1yrzW6xyHqcqrNMOz1kQ+o6A==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t></script>\n\t<link\n\t\trel=\"stylesheet\"\n\t\thref=\"https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.css\"\n\t\tintegrity=\"sha512-PO7TIdn2hPTkZ6DSc5eN2DyMpTn/ZixXUQMDLUx+O5d7zGy0h1Th5jgYt84DXvMRhF3N0Ucfd7snCyzlJbAHQA==\"\n\t\tcrossorigin=\"anonymous\"\n\t\treferrerpolicy=\"no-referrer\"\n\t/>\n\t<script>\n\t\t$(document).on(\"select2:open\", () => {\n\t\t\tdocument.querySelector(\".select2-search__field\").focus();\n\t\t});\n\t\t$(function () {\n\t\t\tconst host = window.location.hostname;\n\t\t\tconst env = host.split(\".\")[0];\n\t\t\tif (!env.includes(\"-sb\")) {\n\t\t\t\tdocument.getElementsByClassName(\"mdl-layout__header-row\")[0].style = \"background-color: red\";\n\t\t\t}\n\t\t\t// textContent (not innerHTML): hostname is browser-controlled but\n\t\t\t// nothing in this codepath should ever interpret it as markup.\n\t\t\tdocument.getElementById(\"env\").textContent = \"[\" + env + \"]\";\n\t\t});\n\t</script>\n</head>\n<body class=\"{{bodyClassesHtml}}\">\n\t<div class=\"mdl-layout mdl-js-layout mdl-layout--fixed-header mdl-layout--fixed-drawer\" style=\"width: 100%\">\n\t\t<header class=\"mdl-layout__header\">\n\t\t\t<div class=\"mdl-layout__header-row\">\n\t\t\t\t<span class=\"mdl-layout-title\" style=\"width: 100%\">\n\t\t\t\t\t{{title}}\n\t\t\t\t\t<span style=\"float: right; text-align: right\" title=\"version\">\n\t\t\t\t\t\t<span id=\"env\" title=\"Environment\" style=\"font-family: monospace\">...</span>\n\t\t\t\t\t\tv{{version}} <br />\n\t\t\t\t\t\tNetSuite {{nsVersion}}\n\t\t\t\t\t</span>\n\t\t\t\t</span>\n\t\t\t</div>\n\t\t</header>\n\n\t\t<div class=\"mdl-layout__drawer\">\n\t\t\t<nav class=\"mdl-navigation\">{{navHtml}}</nav>\n\t\t</div>\n\n\t\t<main class=\"mdl-layout__content\">\n\t\t\t<div class=\"page-content\" style=\"padding: 1em\">{{documentationHtml}}{{bodyHtml}}</div>\n\t\t</main>\n\t</div>\n</body>\n";
 
-const version = "2026.08.07c";
+const version = "2026.08.16e";
 const mdlCssUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";
 const mdlJsUrl = "https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.min.js";
 const paramPage = "page";
@@ -115,6 +115,8 @@ var suiteqlSource = "// SuiteQL Query page Lit component. Tracks the current pag
 
 var recordDetailsSource = "// Record Details page Lit component.\n//\n// Wraps the Select2-driven record-type dropdown and the record-id form in a\n// custom element so the page follows the same component model as every other\n// page (no inline jQuery / global functions). The server still renders the\n// `detailsHtml` block server-side and passes it as an attribute; this\n// component just owns the form chrome and the loading-spinner state.\n//\n// We deliberately do NOT use `lit/directives/unsafe-html.js` to inject the\n// server-rendered HTML chunks — that submodule isn't in the import map (only\n// the bundled `\"lit\"` entry-point is) and we don't want to manage transitive\n// CDN paths just for one directive. Instead, we reserve empty hosts in the\n// Lit template (no bindings inside), then set their `innerHTML` directly.\n// lit-html doesn't reconcile children of elements with no internal template\n// parts, so the injected DOM stays put across re-renders.\nimport { LitElement, html } from \"lit\";\nclass RecordDetailsPage extends LitElement {\n    constructor() {\n        super();\n        this.paramRecordType = \"\";\n        this.paramRecordId = \"\";\n        this.recordType = \"\";\n        this.recordId = \"\";\n        this.recordTypeOptionsHtml = \"\";\n        this.detailsHtml = \"\";\n        this.loading = false;\n    }\n    createRenderRoot() {\n        return this;\n    }\n    firstUpdated() {\n        // Populate the <select>'s option list BEFORE Select2 initialises —\n        // Select2 reads existing <option> children when it builds its UI.\n        // Includes the empty placeholder option so Select2's \"placeholder\"\n        // behaviour works correctly.\n        const select = this.querySelector(\".record-type-select\");\n        if (select) {\n            select.innerHTML = \"<option></option>\" + this.recordTypeOptionsHtml;\n        }\n        // Using jQuery directly because Select2 is a jQuery plugin and that's\n        // how it's loaded site-wide (see layout.html). The change handler is\n        // bound via jQuery too — Select2 fires `change` through jQuery's\n        // `.trigger()`, which does not reach native `addEventListener` (so\n        // Lit's `@change` would never see the user's selection).\n        $(select).select2({ placeholder: \"Please make a selection\" });\n        $(select).on(\"change\", e => this.onTypeSelectChange(e));\n    }\n    updated(_changed) {\n        // MDL classes need re-upgrading after each render so freshly created\n        // inputs/buttons pick up ripple/floating-label behavior.\n        window.componentHandler?.upgradeElements(this);\n        // Server-rendered detailsHtml only changes once per page load (the\n        // server re-renders on form submit, which is a fresh request), so\n        // we just inject every time the host is present and not loading.\n        const host = this.querySelector(\".details-host\");\n        if (host && this.detailsHtml !== \"\") {\n            host.innerHTML = this.detailsHtml;\n        }\n    }\n    onTypeSelectChange(e) {\n        const target = e.target;\n        this.recordType = target.value;\n    }\n    onSubmit() {\n        // Show the spinner immediately; the page reload that follows will\n        // replace this state with the server-rendered detailsHtml.\n        this.loading = true;\n    }\n    render() {\n        return html `\n\t\t\t<div>\n\t\t\t\t<h2>Retrieve all info about a particular record</h2>\n\t\t\t\t<hr />\n\t\t\t</div>\n\t\t\t<form method=\"post\" @submit=${this.onSubmit}>\n\t\t\t\t<fieldset>\n\t\t\t\t\t<legend>Record Type Search</legend>\n\t\t\t\t\t<!-- options injected via firstUpdated() before Select2 initialises -->\n\t\t\t\t\t<!-- change is bound via jQuery in firstUpdated() — see the comment there -->\n\t\t\t\t\t<select class=\"record-type-select\" id=\"record-type-search\"></select>\n\t\t\t\t</fieldset>\n\t\t\t\t<fieldset style=\"margin-top: 0.5em; width: 30em\">\n\t\t\t\t\t<!-- NB: floating label doesn't work with programmatic value assignment -->\n\t\t\t\t\t<legend>Record Type</legend>\n\t\t\t\t\t<input\n\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\tid=\"recordType\"\n\t\t\t\t\t\tname=${this.paramRecordType}\n\t\t\t\t\t\t.value=${this.recordType}\n\t\t\t\t\t/>\n\t\t\t\t</fieldset>\n\t\t\t\t<br />\n\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield mdl-textfield--floating-label\">\n\t\t\t\t\t<input\n\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\tid=\"recordId\"\n\t\t\t\t\t\tname=${this.paramRecordId}\n\t\t\t\t\t\t.value=${this.recordId}\n\t\t\t\t\t\tautofocus\n\t\t\t\t\t/>\n\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"recordId\">Internal ID</label>\n\t\t\t\t</div>\n\t\t\t\t<br />\n\t\t\t\t<button type=\"submit\" class=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\">\n\t\t\t\t\t<span class=\"material-icons md-18\">search</span> Get Details\n\t\t\t\t</button>\n\t\t\t\t<hr />\n\t\t\t\t${this.loading\n            ? html `<div class=\"mdl-spinner mdl-js-spinner is-active\"></div>`\n            : html `<div class=\"details-host\"></div>`}\n\t\t\t</form>\n\t\t`;\n    }\n}\nObject.defineProperty(RecordDetailsPage, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        paramRecordType: { type: String, attribute: \"param-record-type\" },\n        paramRecordId: { type: String, attribute: \"param-record-id\" },\n        recordType: { type: String, attribute: \"record-type\" },\n        recordId: { type: String, attribute: \"record-id\" },\n        recordTypeOptionsHtml: { type: String, attribute: \"record-type-options-html\" },\n        detailsHtml: { type: String, attribute: \"details-html\" },\n        loading: { state: true },\n    }\n});\ncustomElements.define(\"record-details-page\", RecordDetailsPage);\n";
 
+var reverseLookupSource = "import { LitElement, html } from \"lit\";\nimport { postJson } from \"api\";\nfunction emptyBranch() {\n    return { response: null, loading: false, error: \"\", children: new Map() };\n}\nclass ReverseLookupPage extends LitElement {\n    constructor() {\n        super();\n        Object.defineProperty(this, \"cache\", {\n            enumerable: true,\n            configurable: true,\n            writable: true,\n            value: new Map()\n        });\n        Object.defineProperty(this, \"abortControllers\", {\n            enumerable: true,\n            configurable: true,\n            writable: true,\n            value: new Set()\n        });\n        this.commandPostUrl = \"\";\n        this.typeOptionsHtml = \"\";\n        this.root = emptyBranch();\n    }\n    createRenderRoot() {\n        return this;\n    }\n    firstUpdated() {\n        const select = this.querySelector(\"#reverse-type\");\n        if (select)\n            select.innerHTML = '<option value=\"\"></option>' + this.typeOptionsHtml;\n    }\n    updated() {\n        window.componentHandler?.upgradeElements(this);\n    }\n    disconnectedCallback() {\n        super.disconnectedCallback();\n        for (const controller of this.abortControllers)\n            controller.abort();\n        this.abortControllers.clear();\n    }\n    render() {\n        return html `\n\t\t\t<h2>Find what refers to a NetSuite object</h2>\n\t\t\t<form @submit=${this.runRoot}>\n\t\t\t\t<fieldset style=\"max-width: 70em\">\n\t\t\t\t\t<legend>Target</legend>\n\t\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield\" style=\"width: 60em; max-width: 100%\">\n\t\t\t\t\t\t<input class=\"mdl-textfield__input\" id=\"reverse-url\" type=\"text\" />\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"reverse-url\">NetSuite URL (takes precedence)</label>\n\t\t\t\t\t</div>\n\t\t\t\t\t<div style=\"display: flex; gap: 1em; align-items: end; flex-wrap: wrap\">\n\t\t\t\t\t\t<label>\n\t\t\t\t\t\t\tType<br />\n\t\t\t\t\t\t\t<select id=\"reverse-type\" style=\"min-width: 22em; height: 2.5em\"></select>\n\t\t\t\t\t\t</label>\n\t\t\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield\">\n\t\t\t\t\t\t\t<input class=\"mdl-textfield__input\" id=\"reverse-id\" type=\"text\" />\n\t\t\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"reverse-id\">ID</label>\n\t\t\t\t\t\t</div>\n\t\t\t\t\t</div>\n\t\t\t\t</fieldset>\n\t\t\t\t<fieldset style=\"max-width: 70em; margin-top: 0.75em\">\n\t\t\t\t\t<legend>Optional heuristic scan</legend>\n\t\t\t\t\t<label class=\"mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect\" for=\"reverse-scan\">\n\t\t\t\t\t\t<input type=\"checkbox\" id=\"reverse-scan\" class=\"mdl-checkbox__input\" />\n\t\t\t\t\t\t<span class=\"mdl-checkbox__label\">Scan JavaScript source</span>\n\t\t\t\t\t</label>\n\t\t\t\t\t<div class=\"mdl-textfield mdl-js-textfield\" style=\"width: 30em; max-width: 100%; margin-left: 1em\">\n\t\t\t\t\t\t<input\n\t\t\t\t\t\t\tclass=\"mdl-textfield__input\"\n\t\t\t\t\t\t\tid=\"reverse-folder\"\n\t\t\t\t\t\t\ttype=\"text\"\n\t\t\t\t\t\t\tplaceholder=\"SuiteScripts/ao\"\n\t\t\t\t\t\t/>\n\t\t\t\t\t\t<label class=\"mdl-textfield__label\" for=\"reverse-folder\">Required recursive folder</label>\n\t\t\t\t\t</div>\n\t\t\t\t</fieldset>\n\t\t\t\t<button\n\t\t\t\t\ttype=\"submit\"\n\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised mdl-button--colored\"\n\t\t\t\t\tstyle=\"margin-top: 0.75em\"\n\t\t\t\t\t?disabled=${this.root.loading}\n\t\t\t\t>\n\t\t\t\t\t<span class=\"material-icons md-18\">account_tree</span> Reverse Lookup\n\t\t\t\t</button>\n\t\t\t</form>\n\t\t\t<hr />\n\t\t\t${this.root.loading ? html `<div class=\"mdl-spinner mdl-js-spinner is-active\"></div>` : \"\"}\n\t\t\t${this.root.error ? html `<p style=\"color: red\">Error: ${this.root.error}</p>` : \"\"}\n\t\t\t${this.root.response ? this.renderResponse(this.root, new Set()) : \"\"}\n\t\t`;\n    }\n    renderResponse(branch, ancestors) {\n        const response = branch.response;\n        const nextAncestors = new Set(ancestors);\n        nextAncestors.add(response.target.key);\n        return html `\n\t\t\t<section style=\"margin: 0.75em 0 1.25em 0\">\n\t\t\t\t<h3 style=\"margin-bottom: 0.25em\">${response.target.label}</h3>\n\t\t\t\t<div style=\"color: #666; font-family: monospace\">${response.target.type} | ${response.target.id}</div>\n\t\t\t\t${response.notices.map(notice => html `<p style=\"color: #8a5a00\">${notice}</p>`)}\n\t\t\t\t${response.groups.map(group => this.renderGroup(branch, group, nextAncestors))}\n\t\t\t</section>\n\t\t`;\n    }\n    renderGroup(branch, group, ancestors) {\n        return html `\n\t\t\t<div style=\"margin: 1em 0\">\n\t\t\t\t<h4 style=\"margin-bottom: 0.35em\">\n\t\t\t\t\t${group.label}\n\t\t\t\t\t<span style=\"font-size: 0.75em; color: ${group.confidence === \"heuristic\" ? \"#8a5a00\" : \"#555\"}\"\n\t\t\t\t\t\t>(${group.confidence})</span\n\t\t\t\t\t>\n\t\t\t\t</h4>\n\t\t\t\t${group.message\n            ? html `<div style=\"color: ${group.status === \"error\" ? \"red\" : \"#666\"}\">${group.message}</div>`\n            : \"\"}\n\t\t\t\t${group.status === \"ok\" && group.results.length === 0 ? html `<div>No references found.</div>` : \"\"}\n\t\t\t\t${group.truncated ? html `<div style=\"color: #8a5a00\">Results were truncated.</div>` : \"\"}\n\t\t\t\t${group.results.length > 0\n            ? html `\n\t\t\t\t\t\t\t<table\n\t\t\t\t\t\t\t\tclass=\"mdl-data-table mdl-js-data-table mdl-shadow--2dp\"\n\t\t\t\t\t\t\t\tstyle=\"white-space: normal; width: 100%\"\n\t\t\t\t\t\t\t>\n\t\t\t\t\t\t\t\t<thead>\n\t\t\t\t\t\t\t\t\t<tr>\n\t\t\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Referrer</th>\n\t\t\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Evidence</th>\n\t\t\t\t\t\t\t\t\t\t<th class=\"mdl-data-table__cell--non-numeric\">Actions</th>\n\t\t\t\t\t\t\t\t\t</tr>\n\t\t\t\t\t\t\t\t</thead>\n\t\t\t\t\t\t\t\t<tbody>\n\t\t\t\t\t\t\t\t\t${group.results.map(node => this.renderNode(branch, node, ancestors))}\n\t\t\t\t\t\t\t\t</tbody>\n\t\t\t\t\t\t\t</table>\n\t\t\t\t\t\t`\n            : \"\"}\n\t\t\t</div>\n\t\t`;\n    }\n    renderNode(branch, node, ancestors) {\n        const child = branch.children.get(node.target.key);\n        const cycle = ancestors.has(node.target.key);\n        return html `\n\t\t\t<tr>\n\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\">\n\t\t\t\t\t<strong>${node.target.label}</strong><br />\n\t\t\t\t\t<code>${node.target.type} | ${node.target.id}</code>\n\t\t\t\t</td>\n\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=\"max-width: 45em; word-break: break-word\">\n\t\t\t\t\t${node.evidence}\n\t\t\t\t</td>\n\t\t\t\t<td class=\"mdl-data-table__cell--non-numeric\" style=\"white-space: nowrap\">\n\t\t\t\t\t<button\n\t\t\t\t\t\tclass=\"mdl-button mdl-js-button mdl-button--raised\"\n\t\t\t\t\t\t?disabled=${cycle || child?.loading === true}\n\t\t\t\t\t\t@click=${() => this.toggleOrExpand(branch, node, ancestors)}\n\t\t\t\t\t>\n\t\t\t\t\t\t${cycle ? \"Cycle\" : child?.response ? \"Collapse\" : child?.error ? \"Retry\" : \"Expand\"}\n\t\t\t\t\t</button>\n\t\t\t\t\t${node.url\n            ? html `<a class=\"mdl-button mdl-js-button\" href=${node.url} target=\"_blank\" rel=\"noopener\"\n\t\t\t\t\t\t\t\t>Open</a\n\t\t\t\t\t\t\t>`\n            : \"\"}\n\t\t\t\t</td>\n\t\t\t</tr>\n\t\t\t${child\n            ? html `<tr>\n\t\t\t\t\t\t<td\n\t\t\t\t\t\t\tcolspan=\"3\"\n\t\t\t\t\t\t\tclass=\"mdl-data-table__cell--non-numeric\"\n\t\t\t\t\t\t\tstyle=\"padding-left: 2em; background: #fafafa\"\n\t\t\t\t\t\t>\n\t\t\t\t\t\t\t${child.loading ? html `Loading…` : \"\"}\n\t\t\t\t\t\t\t${child.error ? html `<span style=\"color: red\">Error: ${child.error}</span>` : \"\"}\n\t\t\t\t\t\t\t${child.response ? this.renderResponse(child, ancestors) : \"\"}\n\t\t\t\t\t\t</td>\n\t\t\t\t\t</tr>`\n            : \"\"}\n\t\t`;\n    }\n    runRoot(event) {\n        event.preventDefault();\n        const url = this.querySelector(\"#reverse-url\").value.trim();\n        const type = this.querySelector(\"#reverse-type\").value;\n        const id = this.querySelector(\"#reverse-id\").value.trim();\n        const input = url ? { url } : { type, id };\n        this.root = emptyBranch();\n        void this.loadBranch(this.root, input);\n    }\n    toggleOrExpand(parent, node, ancestors) {\n        if (ancestors.has(node.target.key))\n            return;\n        const existing = parent.children.get(node.target.key);\n        if (existing?.response) {\n            parent.children.delete(node.target.key);\n            this.requestUpdate();\n            return;\n        }\n        const child = existing ?? emptyBranch();\n        parent.children.set(node.target.key, child);\n        void this.loadBranch(child, {\n            type: node.target.type,\n            id: node.target.id,\n            ...(node.target.parentScriptId ? { parentScriptId: node.target.parentScriptId } : {}),\n        });\n    }\n    async loadBranch(branch, input) {\n        branch.loading = true;\n        branch.error = \"\";\n        branch.response = null;\n        this.requestUpdate();\n        const scan = this.querySelector(\"#reverse-scan\")?.checked === true;\n        const folderPath = this.querySelector(\"#reverse-folder\")?.value.trim() ?? \"\";\n        if (scan && folderPath === \"\") {\n            branch.loading = false;\n            branch.error = \"A File Cabinet folder is required when source scanning is enabled\";\n            this.requestUpdate();\n            return;\n        }\n        const cacheKey = `${input.type ?? input.url}:${input.id ?? \"\"}|${scan ? folderPath : \"\"}`;\n        const cached = this.cache.get(cacheKey);\n        if (cached) {\n            branch.loading = false;\n            branch.response = cached;\n            if (branch === this.root)\n                this.populateRootFields(cached);\n            this.requestUpdate();\n            return;\n        }\n        const controller = new AbortController();\n        this.abortControllers.add(controller);\n        try {\n            const envelope = await postJson(this.commandPostUrl, { input, ...(scan ? { sourceScan: { folderPath } } : {}) }, controller.signal);\n            if (!envelope.ok) {\n                branch.error = envelope.error.message;\n            }\n            else {\n                branch.response = envelope.data;\n                this.cache.set(cacheKey, envelope.data);\n                if (branch === this.root)\n                    this.populateRootFields(envelope.data);\n            }\n        }\n        catch (e) {\n            if (!(e instanceof DOMException && e.name === \"AbortError\")) {\n                branch.error = e instanceof Error ? e.message : String(e);\n            }\n        }\n        finally {\n            branch.loading = false;\n            this.abortControllers.delete(controller);\n            this.requestUpdate();\n        }\n    }\n    populateRootFields(response) {\n        const type = this.querySelector(\"#reverse-type\");\n        const id = this.querySelector(\"#reverse-id\");\n        if (type)\n            type.value = response.target.type;\n        if (id) {\n            id.value = response.target.id;\n            id.parentElement?.classList.toggle(\"is-dirty\", id.value !== \"\");\n        }\n    }\n}\nObject.defineProperty(ReverseLookupPage, \"properties\", {\n    enumerable: true,\n    configurable: true,\n    writable: true,\n    value: {\n        commandPostUrl: { type: String, attribute: \"command-post-url\" },\n        typeOptionsHtml: { type: String, attribute: \"type-options-html\" },\n        root: { state: true },\n    }\n});\ncustomElements.define(\"reverse-lookup-page\", ReverseLookupPage);\n";
+
 // Single source of truth for client-side ES modules.
 //
 // Each entry maps a bare specifier (the import name used by `*.client.ts`
@@ -137,6 +139,7 @@ const clientModules = {
     "edit-records": editRecordsSource,
     "record-type": recordTypeSource,
     "record-details": recordDetailsSource,
+    "reverse-lookup": reverseLookupSource,
     suiteql: suiteqlSource,
 };
 // External (non-data:) entries kept in the import map alongside the bundled
@@ -199,7 +202,7 @@ function fromError(e) {
     return failure(errorMessage(e), errorName(e));
 }
 
-var templateHtml$9 = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>\n\tGet the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a>\n</h4>\n<br />\n";
+var templateHtml$a = "<h1>Welcome, {{name}}!</h1>\n<h2>Let's get down to business :)</h2>\n<h3><span class=\"material-icons md-48\">arrow_back</span> Navigation is on the left</h3>\n<h4>\n\tGet the latest version here:\n\t<a href=\"https://github.com/alexoooo/ao-ns-dashboard\">https://github.com/alexoooo/ao-ns-dashboard</a>\n</h4>\n<br />\n";
 
 const welcomePage = {
     name: "welcome",
@@ -207,7 +210,7 @@ const welcomePage = {
     render(_context) {
         const displayName = runtime.getCurrentUser().name;
         const name = displayName.startsWith("EMP") ? displayName.split(" ").slice(1).join(" ") : displayName;
-        return interpolate(templateHtml$9, { name });
+        return interpolate(templateHtml$a, { name });
     },
 };
 
@@ -266,9 +269,9 @@ function recordTypeOptions(selectedRecordType) {
         .join("");
 }
 
-var templateHtml$8 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
+var templateHtml$9 = "<script type=\"module\">\n\timport \"record-type\";\n</script>\n\n<h2>Detect the Record Type(s) for an Internal ID</h2>\n<hr />\n<bulk-runner-record-type\n\ttask-type-label=\"Record Type\"\n\tcommand-prefix=\"{{commandPrefix}}\"\n\trecord-id-param=\"{{paramRecordId}}\"\n\tdefault-tasks=\"{{defaultTasks}}\"\n\tdefault-page-count=\"{{defaultPageCount}}\"\n>\n</bulk-runner-record-type>\n";
 
-const commandName$6 = "record-type";
+const commandName$7 = "record-type";
 const recordTypePage = {
     name: "record-type",
     label: "Detect Record Type",
@@ -280,8 +283,8 @@ const recordTypePage = {
             .map(i => i[0] + i.substring(1).toLowerCase())
             .join(" "))
             .join("\n");
-        return interpolate(templateHtml$8, {
-            commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
+        return interpolate(templateHtml$9, {
+            commandPrefix: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$7,
             paramRecordId,
             defaultTasks,
             defaultPageCount: Object.keys(all).length,
@@ -300,7 +303,7 @@ const recordTypePage = {
 		`;
     },
     commands: {
-        [commandName$6]: handleTypeListing,
+        [commandName$7]: handleTypeListing,
     },
 };
 function handleTypeListing(context) {
@@ -423,7 +426,7 @@ function listsEqual(a, b) {
     return JSON.stringify(sortedA) === JSON.stringify(sortedB);
 }
 
-var templateHtml$7 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
+var templateHtml$8 = "<script type=\"module\">\n\timport \"record-details\";\n</script>\n<record-details-page\n\tparam-record-type=\"{{paramRecordType}}\"\n\tparam-record-id=\"{{paramRecordId}}\"\n\trecord-type=\"{{recordType}}\"\n\trecord-id=\"{{recordId}}\"\n\trecord-type-options-html=\"{{recordTypeOptionsAttr}}\"\n\tdetails-html=\"{{detailsAttr}}\"\n></record-details-page>\n";
 
 const recordDetailsPage = {
     name: "record-details",
@@ -434,7 +437,7 @@ const recordDetailsPage = {
         const detailsHtml = recordType === "" || recordId === ""
             ? `Please provide "Record Type" and "Internal ID" (above)`
             : detailsListing(recordType, recordId);
-        return interpolate(templateHtml$7, {
+        return interpolate(templateHtml$8, {
             // `*Attr` keys go into HTML attribute values on <record-details-page>
             // — `interpolate` HTML-escapes by default, which is what we need so
             // the markup payload survives attribute-value parsing. The Lit
@@ -589,6 +592,616 @@ function detailsListing(recordType, recordId) {
 				Error: ${loaded ? "retrieving -" : "loading -"} ${escapeHtml(errorMessage(e))} <br/>
 				${escapeHtml(stack)}
 			</h3>`;
+    }
+}
+
+const routeTypes = {
+    "mediaitem.nl": "file",
+    "script.nl": "script",
+    "scriptrecord.nl": "scriptdeployment",
+    "scriptdeploy.nl": "scriptdeployment",
+    "scriptdeployment.nl": "scriptdeployment",
+    "savedsearch.nl": "savedsearch",
+    "search.nl": "savedsearch",
+    "searchresults.nl": "savedsearch",
+    "vendor.nl": "vendor",
+    "employee.nl": "employee",
+    "contact.nl": "contact",
+    "item.nl": "item",
+    "acct.nl": "account",
+    "department.nl": "department",
+    "class.nl": "classification",
+    "location.nl": "location",
+    "salesord.nl": "salesorder",
+    "custinvc.nl": "invoice",
+    "custcred.nl": "creditmemo",
+    "cashsale.nl": "cashsale",
+    "purchord.nl": "purchaseorder",
+    "vendbill.nl": "vendorbill",
+    "vendcred.nl": "vendorcredit",
+    "journal.nl": "journalentry",
+};
+function parseReverseLookupInput(input) {
+    const rawUrl = input.url?.trim() ?? "";
+    if (rawUrl !== "") {
+        return parseNetSuiteUrl(rawUrl);
+    }
+    const type = normalizeTargetType(input.type ?? "");
+    const id = (input.id ?? "").trim();
+    if (type === "")
+        throw new Error("Type is required");
+    if (id === "")
+        throw new Error("ID is required");
+    return input.parentScriptId ? { type, id, parentScriptId: input.parentScriptId.trim() } : { type, id };
+}
+function parseNetSuiteUrl(value) {
+    const trimmed = value.trim();
+    const withoutFragment = trimmed.split("#", 1)[0] ?? "";
+    const question = withoutFragment.indexOf("?");
+    const path = question < 0 ? withoutFragment : withoutFragment.slice(0, question);
+    const query = question < 0 ? "" : withoutFragment.slice(question + 1);
+    const filename = path.replace(/\/+$/, "").split("/").pop()?.toLowerCase() ?? "";
+    const params = parseQueryParameters(query);
+    if (filename === "" || !filename.endsWith(".nl"))
+        throw new Error("Invalid URL");
+    if (filename === "scriptlet.nl" || filename === "restlet.nl") {
+        const script = params["script"]?.trim() ?? "";
+        const deploy = params["deploy"]?.trim() ?? "";
+        if (deploy === "")
+            throw new Error("The script URL does not contain a deployment ID");
+        return script === ""
+            ? { type: "scriptdeployment", id: deploy }
+            : { type: "scriptdeployment", id: deploy, parentScriptId: script };
+    }
+    const rectype = params["rectype"]?.trim();
+    const routeType = rectype || routeTypes[filename];
+    const searchId = params["searchid"]?.trim();
+    const id = (searchId || params["id"] || params["e"] || "").trim();
+    if (id === "")
+        throw new Error("The URL does not contain a recognizable ID");
+    if (routeType)
+        return { type: normalizeTargetType(routeType), id };
+    throw new Error(`The URL contains ID ${id}, but its record type is ambiguous; choose a type and use the ID field`);
+}
+function parseQueryParameters(query) {
+    const params = {};
+    for (const part of query.replace(/&amp;/gi, "&").split("&")) {
+        if (part === "")
+            continue;
+        const equals = part.indexOf("=");
+        const rawKey = equals < 0 ? part : part.slice(0, equals);
+        const rawValue = equals < 0 ? "" : part.slice(equals + 1);
+        try {
+            const key = decodeURIComponent(rawKey.replace(/\+/g, " ")).toLowerCase();
+            if (!(key in params))
+                params[key] = decodeURIComponent(rawValue.replace(/\+/g, " "));
+        }
+        catch (_e) {
+            throw new Error("Invalid URL");
+        }
+    }
+    return params;
+}
+function normalizeTargetType(value) {
+    const raw = value.trim().toLowerCase();
+    const aliasKey = raw.replace(/[\s_-]+/g, "");
+    const aliases = {
+        filecabinetfile: "file",
+        savedsearch: "savedsearch",
+        scriptdeployment: "scriptdeployment",
+        class: "classification",
+        transaction: "transaction",
+        scriptrecord: "script",
+    };
+    return aliases[aliasKey] ?? raw;
+}
+function targetKind(type) {
+    if (type === "file")
+        return "file";
+    if (type === "script")
+        return "script";
+    if (type === "scriptdeployment")
+        return "script-deployment";
+    if (type === "savedsearch")
+        return "saved-search";
+    return "record";
+}
+function targetKey(type, id) {
+    return normalizeTargetType(type) + ":" + id.trim().toLowerCase();
+}
+function normalizeFolderPath(value) {
+    const path = value
+        .trim()
+        .replace(/\\/g, "/")
+        .replace(/^\/+|\/+$/g, "")
+        .replace(/\/{2,}/g, "/");
+    if (path === "")
+        throw new Error("A File Cabinet folder path is required for source scanning");
+    if (path.split("/").some(part => part === "." || part === "..")) {
+        throw new Error("Folder paths cannot contain . or .. segments");
+    }
+    return path;
+}
+function findStableIdentifierMatches(source, identifier, limit = 20) {
+    const needle = identifier.trim();
+    if (needle === "" || /^-?\d+$/.test(needle))
+        return [];
+    const stableId = /^custom(?:search|script|deploy)[a-z0-9_]*$/i.test(needle);
+    const haystack = source.toLowerCase();
+    const lowerNeedle = needle.toLowerCase();
+    const matches = [];
+    let from = 0;
+    while (matches.length < limit) {
+        const index = haystack.indexOf(lowerNeedle, from);
+        if (index < 0)
+            break;
+        from = index + lowerNeedle.length;
+        if (stableId) {
+            const before = index > 0 ? source[index - 1] : "";
+            const after = source[index + needle.length] ?? "";
+            if (/[a-z0-9_]/i.test(before) || /[a-z0-9_]/i.test(after))
+                continue;
+        }
+        const lineStart = source.lastIndexOf("\n", index - 1) + 1;
+        const nextNewline = source.indexOf("\n", index);
+        const lineEnd = nextNewline < 0 ? source.length : nextNewline;
+        const rawLine = source.slice(lineStart, lineEnd).trim();
+        matches.push({
+            line: source.slice(0, index).split("\n").length,
+            excerpt: rawLine.length <= 180 ? rawLine : rawLine.slice(0, 177) + "...",
+        });
+    }
+    return matches;
+}
+
+const resultLimit = 100;
+const sourceFileLimit = 50;
+function runReverseLookup(request) {
+    if (!request.input)
+        throw new Error("Lookup input is required");
+    const parsed = parseReverseLookupInput(request.input);
+    const target = resolveTarget(parsed.type, parsed.id, parsed.parentScriptId);
+    const notices = [];
+    const providers = providersFor(target);
+    const groups = providers.map(provider => runProvider(provider, target));
+    if (providers.length === 0) {
+        notices.push(`No structured reverse-reference checks are registered for ${target.type}`);
+    }
+    if (request.sourceScan) {
+        const identifier = target.scriptId ?? target.filePath ?? "";
+        if (identifier === "") {
+            notices.push("Source scanning was skipped because this target has no stable script ID or File Cabinet path");
+        }
+        else {
+            groups.push(runSourceScan(target, identifier, request.sourceScan.folderPath));
+        }
+    }
+    return { target, groups, notices };
+}
+function resolveTarget(type, id, parentScriptId) {
+    const kind = targetKind(type);
+    if (kind === "file") {
+        const loaded = file.load({ id });
+        return makeTarget(type, String(loaded.id), `File: ${loaded.path}`, {
+            filePath: loaded.path,
+        });
+    }
+    if (kind === "saved-search") {
+        let loaded;
+        try {
+            loaded = search.load({ id });
+        }
+        catch (e) {
+            if (/^customsearch_/i.test(id)) {
+                return makeTarget(type, id, `Saved Search: ${id}`, { scriptId: id });
+            }
+            throw e;
+        }
+        const internalId = loaded.searchId == null ? id : String(loaded.searchId);
+        const scriptId = loaded.id || "";
+        return makeTarget(type, internalId, `Saved Search: ${loaded.title || scriptId || internalId}`, scriptId ? { scriptId } : {});
+    }
+    if (kind === "script") {
+        const rows = selectRows(/^\d+$/.test(id)
+            ? "SELECT id, name, scriptid FROM script WHERE id = ? FETCH FIRST 1 ROWS ONLY"
+            : "SELECT id, name, scriptid FROM script WHERE LOWER(scriptid) = LOWER(?) FETCH FIRST 1 ROWS ONLY", [id]);
+        const row = rows[0];
+        if (!row)
+            throw new Error(`Script ${id} was not found`);
+        const scriptId = stringValue(row, "scriptid");
+        return makeTarget(type, stringValue(row, "id"), `Script: ${stringValue(row, "name") || id}`, scriptId ? { scriptId } : {});
+    }
+    if (kind === "script-deployment") {
+        const options = parentScriptId ? { parentScriptId } : {};
+        return makeTarget(type, id, `Script Deployment: ${id}`, options);
+    }
+    return makeTarget(type, id, `${displayType(type)}: ${id}`);
+}
+function makeTarget(type, id, label, extra = {}) {
+    return {
+        key: targetKey(type, id),
+        kind: targetKind(type),
+        type,
+        id,
+        label,
+        ...(extra.scriptId ? { scriptId: extra.scriptId } : {}),
+        ...(extra.filePath ? { filePath: extra.filePath } : {}),
+        ...(extra.parentScriptId ? { parentScriptId: extra.parentScriptId } : {}),
+    };
+}
+function providersFor(target) {
+    const providers = [];
+    if (target.kind === "file")
+        providers.push(fileScriptsProvider);
+    if (target.kind === "script")
+        providers.push(scriptDeploymentsProvider);
+    if (entityTypes.has(target.type))
+        providers.push(entityTransactionsProvider);
+    if (target.type === "customer")
+        providers.push(customerContactsProvider, customerProjectsProvider);
+    if (target.type === "item" || target.type.endsWith("item"))
+        providers.push(itemTransactionsProvider);
+    if (target.type === "account")
+        providers.push(accountTransactionsProvider);
+    if (target.type === "department" || target.type === "classification" || target.type === "location") {
+        providers.push(classificationTransactionsProvider(target.type));
+    }
+    if (transactionTypes.has(target.type)) {
+        providers.push(createdFromTransactionsProvider, linkedTransactionsProvider);
+    }
+    return providers;
+}
+function runProvider(provider, target) {
+    try {
+        const found = provider.run(target);
+        return {
+            id: provider.id,
+            label: provider.label,
+            confidence: "structured",
+            status: "ok",
+            results: found.slice(0, resultLimit),
+            truncated: found.length > resultLimit,
+        };
+    }
+    catch (e) {
+        return {
+            id: provider.id,
+            label: provider.label,
+            confidence: "structured",
+            status: "error",
+            results: [],
+            truncated: false,
+            message: errorMessage(e),
+        };
+    }
+}
+const fileScriptsProvider = {
+    id: "file-scripts",
+    label: "Scripts using this file",
+    run(target) {
+        return rowsToNodes(selectRows("SELECT id, name, scriptid FROM script WHERE scriptfile = ? ORDER BY id FETCH FIRST 101 ROWS ONLY", [target.id]), "script", row => `Script: ${stringValue(row, "name") || stringValue(row, "scriptid")}`, "Script File points to this File Cabinet file");
+    },
+};
+const scriptDeploymentsProvider = {
+    id: "script-deployments",
+    label: "Deployments of this script",
+    run(target) {
+        const deploymentSearch = search.create({
+            type: search.Type.SCRIPT_DEPLOYMENT,
+            filters: [
+                search.createFilter({
+                    name: "script",
+                    operator: search.Operator.ANYOF,
+                    values: target.id,
+                }),
+            ],
+            columns: [
+                search.createColumn({ name: "internalid", sort: search.Sort.ASC }),
+                search.createColumn({ name: "title" }),
+                search.createColumn({ name: "scriptid" }),
+            ],
+        });
+        return (deploymentSearch.run().getRange({ start: 0, end: resultLimit + 1 }) ?? []).map(result => {
+            const id = result.id;
+            const title = String(result.getValue({ name: "title" }) || "");
+            const scriptId = String(result.getValue({ name: "scriptid" }) || "");
+            return {
+                target: makeTarget("scriptdeployment", id, `Deployment: ${title || scriptId || id}`, {
+                    parentScriptId: target.id,
+                }),
+                evidence: "Deployment Script points to this script",
+                ...recordUrl("scriptdeployment", id),
+            };
+        });
+    },
+};
+const entityTransactionsProvider = {
+    id: "entity-transactions",
+    label: "Transactions referring to this entity",
+    run(target) {
+        return transactionNodes("SELECT id, tranid, type FROM transaction WHERE entity = ? ORDER BY id FETCH FIRST 101 ROWS ONLY", [target.id], "Transaction Entity points to this record");
+    },
+};
+const customerContactsProvider = {
+    id: "customer-contacts",
+    label: "Contacts belonging to this customer",
+    run(target) {
+        return rowsToNodes(selectRows("SELECT id, entityid FROM contact WHERE company = ? ORDER BY id FETCH FIRST 101 ROWS ONLY", [
+            target.id,
+        ]), "contact", row => `Contact: ${stringValue(row, "entityid") || stringValue(row, "id")}`, "Contact Company points to this customer");
+    },
+};
+const customerProjectsProvider = {
+    id: "customer-projects",
+    label: "Projects belonging to this customer",
+    run(target) {
+        return rowsToNodes(selectRows("SELECT id, entityid FROM job WHERE customer = ? ORDER BY id FETCH FIRST 101 ROWS ONLY", [
+            target.id,
+        ]), "job", row => `Project: ${stringValue(row, "entityid") || stringValue(row, "id")}`, "Project Customer points to this customer");
+    },
+};
+const itemTransactionsProvider = {
+    id: "item-transactions",
+    label: "Transactions containing this item",
+    run(target) {
+        return transactionNodes("SELECT DISTINCT t.id, t.tranid, t.type FROM transaction t INNER JOIN transactionline tl ON tl.transaction = t.id WHERE tl.item = ? ORDER BY t.id FETCH FIRST 101 ROWS ONLY", [target.id], "A Transaction Line Item points to this item");
+    },
+};
+const accountTransactionsProvider = {
+    id: "account-transactions",
+    label: "Transactions posting to this account",
+    run(target) {
+        return transactionNodes("SELECT DISTINCT t.id, t.tranid, t.type FROM transaction t INNER JOIN transactionaccountingline tal ON tal.transaction = t.id WHERE tal.account = ? ORDER BY t.id FETCH FIRST 101 ROWS ONLY", [target.id], "A Transaction Accounting Line Account points to this account");
+    },
+};
+function classificationTransactionsProvider(type) {
+    const field = type === "classification" ? "class" : type;
+    return {
+        id: `${type}-transactions`,
+        label: `Transactions using this ${displayType(type)}`,
+        run(target) {
+            return transactionNodes(`SELECT DISTINCT t.id, t.tranid, t.type FROM transaction t INNER JOIN transactionline tl ON tl.transaction = t.id WHERE tl.${field} = ? ORDER BY t.id FETCH FIRST 101 ROWS ONLY`, [target.id], `A Transaction Line ${displayType(type)} points to this record`);
+        },
+    };
+}
+const createdFromTransactionsProvider = {
+    id: "created-from-transactions",
+    label: "Transactions created from this transaction",
+    run(target) {
+        return transactionNodes("SELECT DISTINCT t.id, t.tranid, t.type FROM transaction t INNER JOIN transactionline tl ON tl.transaction = t.id WHERE tl.createdfrom = ? ORDER BY t.id FETCH FIRST 101 ROWS ONLY", [target.id], "Created From points to this transaction");
+    },
+};
+const linkedTransactionsProvider = {
+    id: "linked-transactions",
+    label: "Applying or downstream transactions",
+    run(target) {
+        return transactionNodes("SELECT DISTINCT t.id, t.tranid, t.type FROM nexttransactionlinelink l INNER JOIN transaction t ON t.id = l.nextdoc WHERE l.previousdoc = ? ORDER BY t.id FETCH FIRST 101 ROWS ONLY", [target.id], "NetSuite's transaction link points back to this transaction");
+    },
+};
+function transactionNodes(sql, params, evidence) {
+    return rowsToNodes(selectRows(sql, params), "transaction", row => `Transaction: ${stringValue(row, "tranid") || stringValue(row, "id")} (${stringValue(row, "type")})`, evidence);
+}
+function rowsToNodes(rows, type, label, evidence, parentScriptId) {
+    return rows.map(row => {
+        const id = stringValue(row, "id");
+        const extra = parentScriptId ? { parentScriptId } : {};
+        const target = makeTarget(type, id, label(row), extra);
+        if (type === "script") {
+            const scriptId = stringValue(row, "scriptid");
+            if (scriptId)
+                target.scriptId = scriptId;
+        }
+        return {
+            target,
+            evidence,
+            ...recordUrl(type, id),
+        };
+    });
+}
+function recordUrl(type, id) {
+    try {
+        return { url: nsUrl.resolveRecord({ recordType: type, recordId: id }) };
+    }
+    catch (_e) {
+        return {};
+    }
+}
+function selectRows(sql, params) {
+    return query.runSuiteQL({ query: sql, params }).asMappedResults();
+}
+function stringValue(row, key) {
+    const value = row[key];
+    return value == null ? "" : String(value);
+}
+function displayType(type) {
+    return type.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
+}
+function runSourceScan(target, identifier, folderPath) {
+    try {
+        const normalizedPath = normalizeFolderPath(folderPath);
+        const folderIds = descendantFolderIds(normalizedPath);
+        const candidates = javascriptFiles(folderIds);
+        const results = [];
+        const identifiers = [identifier];
+        if (target.kind === "file") {
+            identifiers.push(identifier.startsWith("/") ? identifier.slice(1) : "/" + identifier);
+        }
+        for (const candidate of candidates.slice(0, sourceFileLimit)) {
+            const loaded = file.load({ id: candidate.id });
+            const contents = loaded.getContents();
+            for (const scanIdentifier of identifiers) {
+                for (const match of findStableIdentifierMatches(contents, scanIdentifier)) {
+                    results.push({
+                        target: makeTarget("file", String(loaded.id), `File: ${loaded.path}`, {
+                            filePath: loaded.path,
+                        }),
+                        evidence: `Line ${match.line}: ${match.excerpt}`,
+                        ...recordUrl("file", String(loaded.id)),
+                    });
+                }
+            }
+        }
+        return {
+            id: "source-scan",
+            label: `JavaScript source references to ${identifier}`,
+            confidence: "heuristic",
+            status: "ok",
+            results: dedupeNodes(results).slice(0, resultLimit),
+            truncated: candidates.length > sourceFileLimit || results.length > resultLimit,
+            message: `Scanned ${Math.min(candidates.length, sourceFileLimit)} JavaScript file(s) below ${normalizedPath}`,
+        };
+    }
+    catch (e) {
+        return {
+            id: "source-scan",
+            label: `JavaScript source references to ${identifier}`,
+            confidence: "heuristic",
+            status: "error",
+            results: [],
+            truncated: false,
+            message: errorMessage(e),
+        };
+    }
+}
+function descendantFolderIds(folderPath) {
+    const folderSearch = search.create({
+        type: search.Type.FOLDER,
+        filters: [],
+        columns: [
+            search.createColumn({ name: "internalid", sort: search.Sort.ASC }),
+            search.createColumn({ name: "name" }),
+            search.createColumn({ name: "parent" }),
+        ],
+    });
+    const folders = new Map();
+    const paged = folderSearch.runPaged({ pageSize: 1000 });
+    for (const range of paged.pageRanges) {
+        for (const result of paged.fetch({ index: range.index }).data) {
+            folders.set(result.id, {
+                name: String(result.getValue({ name: "name" })),
+                parent: String(result.getValue({ name: "parent" }) || ""),
+            });
+        }
+    }
+    const wanted = folderPath.toLowerCase();
+    const root = [...folders.keys()].find(id => folderFullPath(id, folders).toLowerCase() === wanted);
+    if (!root)
+        throw new Error(`File Cabinet folder not found: ${folderPath}`);
+    const ids = [root];
+    for (let i = 0; i < ids.length; i++) {
+        const parent = ids[i];
+        for (const [id, folder] of folders) {
+            if (folder.parent === parent && !ids.includes(id))
+                ids.push(id);
+        }
+    }
+    return ids;
+}
+function folderFullPath(id, folders) {
+    const parts = [];
+    const seen = new Set();
+    let current = id;
+    while (current !== "" && !seen.has(current)) {
+        seen.add(current);
+        const folder = folders.get(current);
+        if (!folder)
+            break;
+        parts.unshift(folder.name);
+        current = folder.parent;
+    }
+    return parts.join("/");
+}
+function javascriptFiles(folderIds) {
+    const fileSearch = search.create({
+        type: "file",
+        filters: [
+            search.createFilter({ name: "folder", operator: search.Operator.ANYOF, values: folderIds }),
+            search.createFilter({ name: "filetype", operator: search.Operator.ANYOF, values: "JAVASCRIPT" }),
+        ],
+        columns: [
+            search.createColumn({ name: "internalid", sort: search.Sort.ASC }),
+            search.createColumn({ name: "name" }),
+        ],
+    });
+    return (fileSearch.run().getRange({ start: 0, end: sourceFileLimit + 1 }) ?? []).map(result => ({
+        id: result.id,
+        name: String(result.getValue({ name: "name" })),
+    }));
+}
+function dedupeNodes(nodes) {
+    const seen = new Set();
+    return nodes.filter(node => {
+        const key = node.target.key + "|" + node.evidence;
+        if (seen.has(key))
+            return false;
+        seen.add(key);
+        return true;
+    });
+}
+const entityTypes = new Set(["customer", "lead", "prospect", "vendor", "employee", "partner", "job", "othername"]);
+const transactionTypes = new Set([
+    "transaction",
+    "salesorder",
+    "invoice",
+    "creditmemo",
+    "cashsale",
+    "purchaseorder",
+    "vendorbill",
+    "vendorcredit",
+    "journalentry",
+    "customerpayment",
+    "itemfulfillment",
+    "itemreceipt",
+    "returnauthorization",
+    "vendorreturnauthorization",
+]);
+
+var templateHtml$7 = "<script type=\"module\">\n\timport \"reverse-lookup\";\n</script>\n<reverse-lookup-page command-post-url=\"{{commandUrl}}\" type-options-html=\"{{typeOptionsAttr}}\"></reverse-lookup-page>\n";
+
+const commandName$6 = "reverse-lookup";
+const reverseLookupPage = {
+    name: "reverse-lookup",
+    label: "Reverse Lookup",
+    bodyClass: "page-wide",
+    render(context) {
+        const specialOptions = `
+			<option value="file">File</option>
+			<option value="savedsearch">Saved Search</option>
+			<option value="script">Script</option>
+			<option value="scriptdeployment">Script Deployment</option>
+			<option value="transaction">Transaction (generic)</option>`;
+        return interpolate(templateHtml$7, {
+            commandUrl: scriptDeployParam(context) + "&" + paramCommand + "=" + commandName$6,
+            typeOptionsAttr: specialOptions + recordTypeOptions(undefined),
+        });
+    },
+    documentation() {
+        return `
+			<ul>
+				<li>Paste a NetSuite URL, or choose a Type and enter an internal or script ID.</li>
+				<li>Results are direct referrers only. Expand any result to run another reverse lookup without reloading the page.</li>
+				<li><strong>Structured</strong> groups use NetSuite record relationships. An empty group does not prove that no other unsupported reference exists.</li>
+				<li>JavaScript scanning is optional, requires a scoped File Cabinet folder, and reports text matches as <strong>heuristic</strong>.</li>
+				<li>Source scanning recognizes stable <code>customsearch_…</code>/<code>customscript_…</code> IDs and exact File Cabinet paths, not bare numeric IDs.</li>
+			</ul>`;
+    },
+    commands: {
+        [commandName$6]: handleReverseLookup,
+    },
+};
+function handleReverseLookup(context) {
+    let request;
+    try {
+        request = JSON.parse(context.request.body);
+    }
+    catch (e) {
+        return failure("Invalid request body: " + errorMessage(e));
+    }
+    try {
+        return success(runReverseLookup(request));
+    }
+    catch (e) {
+        return failure(errorMessage(e));
     }
 }
 
@@ -1601,6 +2214,7 @@ const pages = [
     welcomePage,
     recordTypePage,
     recordDetailsPage,
+    reverseLookupPage,
     lookupFieldsPage,
     editRecordsPage,
     createRecordsPage,

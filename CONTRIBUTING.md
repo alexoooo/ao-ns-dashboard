@@ -53,6 +53,7 @@ NetSuite has no test harness, so end-to-end verification is manual. After deploy
 - [ ] **Welcome** — page loads, name shown.
 - [ ] **Detect Record Type** — enter a known internal ID, click Run All, confirm `*** Internal ID found` (or external ID lookup) appears.
 - [ ] **Record Details** — pick a record type via Select2, enter an ID, submit. Spinner appears, then field/sublist tables render. Refresh on the same URL re-renders without errors.
+- [ ] **Reverse Lookup** — look up a known JavaScript file, confirm its Script record appears, then expand it and confirm every Script Deployment appears. Verify an ambiguous URL asks for a type, provider errors stay local to their group, and an opt-in scan under a narrow sandbox folder reports heuristic source matches.
 - [ ] **Lookup Fields** — paste a few `recordType|id|location|fieldIds` lines, Run All. Sublist/line lookup works (`item/0`, `item/code=ABC`, `item/-1`).
 - [ ] **Edit Records** — multi-task batch (same record id) saves as a single transaction; verify `Changed X from 'a' to 'b'` messages.
 - [ ] **Create Records** — provides default values + field values, returns a new internal ID. Then **Edit Records** the new id to confirm a round-trip.

@@ -19,6 +19,7 @@ import editRecordsSource from "../pages/edit-records/page.client.ts?raw";
 import recordTypeSource from "../pages/record-type/page.client.ts?raw";
 import suiteqlSource from "../pages/suiteql/page.client.ts?raw";
 import recordDetailsSource from "../pages/record-details/page.client.ts?raw";
+import reverseLookupSource from "../pages/reverse-lookup/page.client.ts?raw";
 
 // Bare-specifier → module source. Order matches the import map output for
 // readability in the rendered HTML; it doesn't affect resolution.
@@ -30,6 +31,7 @@ export const clientModules: Record<string, string> = {
 	"edit-records": editRecordsSource,
 	"record-type": recordTypeSource,
 	"record-details": recordDetailsSource,
+	"reverse-lookup": reverseLookupSource,
 	suiteql: suiteqlSource,
 };
 

@@ -6,6 +6,7 @@ NetSuite SuiteScript 2.1 admin & automation dashboard: a single Suitelet that ad
 
 - **Detect Record Type**: given an Internal or External ID, find which record type(s) it belongs to.
 - **Record Details**: view every field and sublist line on a record in one page (great for discovering field IDs).
+- **Reverse Lookup**: find scripts, deployments, transactions, and other records that refer to a target, with optional scoped JavaScript source scanning.
 - **Lookup Fields**: script-driven field reads across many records, including arbitrary sublist queries.
 - **Edit Records**: batch field assignments and sublist insert/remove operations against existing records.
 - **Create Records**: bulk-create with default values + post-create field values.

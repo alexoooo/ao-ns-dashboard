@@ -1,4 +1,4 @@
-export const version = "2026.08.07c";
+export const version = "2026.08.16e";
 
 export const mdlCssUrl =
 	"https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css";

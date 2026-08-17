@@ -4,6 +4,7 @@
 import welcome from "./welcome/server";
 import recordType from "./record-type/server";
 import recordDetails from "./record-details/server";
+import reverseLookup from "./reverse-lookup/server";
 import lookupFields from "./lookup-fields/server";
 import editRecords from "./edit-records/server";
 import createRecords from "./create-records/server";
@@ -17,6 +18,7 @@ const pages: PageDef[] = [
 	welcome,
 	recordType,
 	recordDetails,
+	reverseLookup,
 	lookupFields,
 	editRecords,
 	createRecords,
