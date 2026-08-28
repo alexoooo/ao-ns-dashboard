@@ -80,6 +80,7 @@ export class BulkRunner extends LitElement {
 					<legend>${this.taskTypeLabel} (one per line)</legend>
 					<textarea class="mdl-textfield__input" rows="20" id="tasks" autofocus></textarea>
 				</fieldset>
+				${this.renderInputOptions()}
 				<div>
 					<button
 						class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored"
@@ -90,6 +91,10 @@ export class BulkRunner extends LitElement {
 				</div>
 			</div>
 		`;
+	}
+
+	renderInputOptions(): TemplateResult | null {
+		return null;
 	}
 
 	renderStatus(): TemplateResult {
@@ -292,7 +297,7 @@ export class BulkRunner extends LitElement {
 		try {
 			envelope = await postJson<string[]>(
 				this.commandPostUrl,
-				nextBatch.map(i => i.task),
+				this.commandBody(nextBatch),
 				this.abortController.signal
 			);
 		} catch (e) {
@@ -319,6 +324,10 @@ export class BulkRunner extends LitElement {
 		this.requestUpdate();
 		this.running = false;
 		this.runNext();
+	}
+
+	commandBody(nextBatch: BulkRunnerTask[]): unknown {
+		return nextBatch.map(i => i.task);
 	}
 
 	downloadStatus(): void {

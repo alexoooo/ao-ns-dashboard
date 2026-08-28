@@ -22,6 +22,11 @@ const actionInsertLine = "insert";
 const actionRemoveLine = "remove";
 const ignoreRecalcArg = normalizeKey("ignoreRecalc");
 
+interface EditRecordRequest {
+	tasks: string[];
+	ignoreMandatoryFields: boolean;
+}
+
 const editRecordsPage: PageDef = {
 	name: "edit-records",
 	label: "Edit Records",
@@ -52,6 +57,7 @@ const editRecordsPage: PageDef = {
 						<li><code>${actionRemoveLine}</code> &mdash; remove existing sublist line.</li>
 					</ul>
 				</li>
+				<li>Select <strong>Ignore mandatory fields</strong> to save with NetSuite's <code>ignoreMandatoryFields</code> option enabled for every record in the run.</li>
 			</ul>
 			${taskInputFormatHelp()}
 		`;
@@ -65,7 +71,8 @@ const editRecordsPage: PageDef = {
 export default editRecordsPage;
 
 function handleEditRecord(context: SuiteletContext): CommandResponse<string[]> {
-	const tabDelimitedRows = JSON.parse(context.request.body) as string[];
+	const request = JSON.parse(context.request.body) as EditRecordRequest;
+	const tabDelimitedRows = request.tasks;
 	const firstTabDelimitedRow = tabDelimitedRows[0] ?? "";
 	const firstParts = splitVerticalBar(firstTabDelimitedRow);
 	const recordType = getRecordType(firstParts[0] ?? "");
@@ -88,7 +95,7 @@ function handleEditRecord(context: SuiteletContext): CommandResponse<string[]> {
 		allValidators.push(handleEditRecordAction(rec, actionName, actionLocation, fieldValues));
 	}
 
-	rec.save({});
+	rec.save({ignoreMandatoryFields: request.ignoreMandatoryFields});
 
 	const reload = record.load({type: recordType, id: recordId});
 
